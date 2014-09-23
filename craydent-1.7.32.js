@@ -572,24 +572,23 @@ if (__thisIsNewer) {
 
                 case "$in":
                 case "$nin":
-                    for (var field in query) {
-                        if (!query.hasOwnProperty(field)) {
+                    for (var fieldProp in query) {
+                        if (!query.hasOwnProperty(fieldProp)) {
                             continue;
                         }
                         value = $c.propertyValue(record, field);
-                        for (var k = 0, klen = query[field].length; k < klen; k++) {
-                            var isRegex = query[field][k] && query[field][k].constructor == RegExp; //array of values
-                            if (operator == "$in" && (isRegex ? query[field][k].test(value) : value == query[field][k])) {
+                        for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
+                            var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values
+                            if (operator == "$in" && (isRegex ? query[fieldProp][k].test(value) : value == query[fieldProp][k])) {
                                 rtn = true;
                                 break;
-                            } else if(operator == "$nin" && (isRegex ? !query[field][k].test(value) : !value == query[field][k])) {
+                            } else if(operator == "$nin" && (isRegex ? !query[fieldProp][k].test(value) : value != query[fieldProp][k])) {
                                 rtn = true;
                                 break;
                             }
                         }
                         break;
                     }
-                    rtn = false;
                 break;
             }
         }
