@@ -1,5 +1,5 @@
 /*/---------------------------------------------------------/*/
-/*/ Craydent LLC v1.7.32                                    /*/
+/*/ Craydent LLC v1.7.33                                    /*/
 /*/	Copyright 2011 (http://craydent.com/about)          /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
 /*/	(http://craydent.com/license)                       /*/
@@ -8,7 +8,7 @@
 /*----------------------------------------------------------------------------------------------------------------
 /-	Global CONTANTS and variables
 /---------------------------------------------------------------------------------------------------------------*/
-var __version = "1.7.32",
+var __version = "1.7.33",
 __thisIsNewer = true,
 $w = window,
 $d = document,
@@ -63,36 +63,44 @@ if (__thisIsNewer) {
     /-	private methods
     /---------------------------------------------------------------------------------------------------------------*/
     function __andNotHelper (record, query, operands) {
-        for (var i = 0, len = query.length; i < len; i++) {
-            for (var prop in query[i]) {
-                if (!(prop in operands
-                    && _subQuery(record, query[i][prop], prop)
-                    || _subQuery(record, query[i][prop], "$equals", prop)
-                )) {
-                    return false;
+        try {
+            for (var i = 0, len = query.length; i < len; i++) {
+                for (var prop in query[i]) {
+                    if (!(prop in operands
+                        && _subQuery(record, query[i][prop], prop)
+                        || _subQuery(record, query[i][prop], "$equals", prop)
+                    )) {
+                        return false;
+                    }
                 }
             }
+            return true;
+        } catch (e) {
+            error('where.__andNotHelper', e);
         }
-        return true;
     }
     function __convert_regex_safe(reg_str) {
-        return reg_str.replace(/\\/gi,"\\\\")
-            .replace(/\$/gi, "\\$")
-            .replace(/\//gi, "\\/")
-            .replace(/\^/gi, "\\^")
-            .replace(/\./gi, "\\.")
-            .replace(/\|/gi, "\\|")
-            .replace(/\*/gi, "\\*")
-            .replace(/\+/gi, "\\+")
-            .replace(/\?/gi, "\\?")
-            .replace(/\!/gi, "\\!")
-            .replace(/\{/gi, "\\{")
-            .replace(/\}/gi, "\\}")
-            .replace(/\[/gi, "\\[")
-            .replace(/\]/gi, "\\]")
-            .replace(/\(/gi, "\\(")
-            .replace(/\)/gi, "\\)")
-            .replace('\n','\\n');
+        try {
+            return reg_str.replace(/\\/gi,"\\\\")
+                .replace(/\$/gi, "\\$")
+                .replace(/\//gi, "\\/")
+                .replace(/\^/gi, "\\^")
+                .replace(/\./gi, "\\.")
+                .replace(/\|/gi, "\\|")
+                .replace(/\*/gi, "\\*")
+                .replace(/\+/gi, "\\+")
+                .replace(/\?/gi, "\\?")
+                .replace(/\!/gi, "\\!")
+                .replace(/\{/gi, "\\{")
+                .replace(/\}/gi, "\\}")
+                .replace(/\[/gi, "\\[")
+                .replace(/\]/gi, "\\]")
+                .replace(/\(/gi, "\\(")
+                .replace(/\)/gi, "\\)")
+                .replace('\n','\\n');
+        } catch (e) {
+            error('__convert_regex_safe', e);
+        }
     }
     function __dup (old) {
         try {
@@ -100,19 +108,27 @@ if (__thisIsNewer) {
                 this[prop] = old[prop];	
             }
         } catch (e) {
-            error('dup', e);
+            error('__dup', e);
         }
     }
     function __or (){
-        for(var a = 0, len = arguments.length; a<len; a++){
-            if(arguments[a]){
-                return arguments[a];
+        try {
+            for(var a = 0, len = arguments.length; a<len; a++){
+                if(arguments[a]){
+                    return arguments[a];
+                }
             }
+            return "";
+        } catch (e) {
+            error('fillTemplate.__or', e);
         }
-        return "";
     }
     function __count(arr){
-        return arr.length;
+        try {
+            return arr.length;
+        } catch (e) {
+            error('fillTemplate.count', e);
+        }
     }
     function __run_replace (reg, template, use_run, obj) {
         try {
@@ -147,7 +163,7 @@ if (__thisIsNewer) {
             }
             return template;
         } catch (e) {
-            error('fillTemplate._run_replace', e);
+            error('fillTemplate.__run_replace', e);
         }
     }
     
@@ -168,7 +184,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("_ajaxServerResponse", e);
+            error("ajax._ajaxServerResponse", e);
             return false;
         }  
     }
@@ -184,7 +200,7 @@ if (__thisIsNewer) {
             }
             return (elem || $w[overwrite](object));
         } catch (e) {
-            error('selector', e);
+            error('_craydentSelector', e);
         }
     }
     function _defineFunction (name, func, override) {
@@ -217,18 +233,26 @@ if (__thisIsNewer) {
                 || (object instanceof HTMLElement && object[func]()) 
                 || $w['_'+func+'overwrite'](object));
         } catch (e) {
-            error(func, e);
+            error("_displayHelper." + func, e);
         }
     }
     function _ext (cls, property, func, override) {
-        cls['prototype'][property] = cls['prototype'][property] || func;
-        _df(property, func, override);
+        try {
+            cls['prototype'][property] = cls['prototype'][property] || func;
+            _df(property, func, override);
+        } catch (e) {
+            error('_ext', e);
+        }
     }
     function _even (num) {
+        try {
             if (isNaN(num)) {
                 return false;
             }
             return !(num&1);
+        } catch (e) {
+            error('_even', e);
+        }
     }
     function _getBrowserVersion(browser){
         try {
@@ -253,7 +277,8 @@ if (__thisIsNewer) {
                 dim = $d.body[dimension](true);
                 $d.body.style[dimension] = currentStyle;
             }
-            return (this.getClientRects && this.getClientRects()[0][dimension]) || this["offset" + dimension.capitalize()] || this["scroll" + dimension.capitalize()];
+            var cRect = this.getClientRects && this.getClientRects()[0];
+            return (cRect && cRect[dimension]) || this["offset" + dimension.capitalize()] || this["scroll" + dimension.capitalize()];
         } catch (e) {
             if (!this.parentNode && this != $d) {
                 var temp = this.cloneNode(1),
@@ -271,17 +296,33 @@ if (__thisIsNewer) {
         }
     }
     function _getFuncName (func) {
-        return _trim(func.toString().replace(/\/\/.*?[\r\n]/gi,'').replace(/[\t\r\n]*/gi, '').replace(/\/\*.*?\*\//gi, '').replace(/function\s*?(.*?)\s*?\(.*/,'$1'));
+        try {
+            return _trim(func.toString().replace(/\/\/.*?[\r\n]/gi,'').replace(/[\t\r\n]*/gi, '').replace(/\/\*.*?\*\//gi, '').replace(/function\s*?(.*?)\s*?\(.*/,'$1'));
+        } catch (e) {
+            error('_getFuncName', e);
+        }
     }
     function _getFuncArgs (func) {
-        return _trim(func.toString()).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(',');
+        try {
+            return _trim(func.toString()).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(',');
+        } catch (e) {
+            error('_getFuncArgs', e);
+        }
     }
     function _getGMTOffset () {
-        return this.getHours() - 24 - this.getUTCHours()
+        try {
+            return this.getHours() - 24 - this.getUTCHours();
+        } catch (e) {
+            error('_getGMTOffset', e);
+        }
     }
     function _invokeHashChange() {
-        var hc = $COMMIT.onhashchange || $c.onhashchange;
-        hc && $c.isFunction(hc) && hc();    
+        try {
+            var hc = $COMMIT.onhashchange || $c.onhashchange;
+            hc && $c.isFunction(hc) && hc();
+        } catch (e) {
+            error('_invokeHashChange', e);
+        }
     }
     function _replace_all(replace, subject, flag) {
         try {
@@ -290,7 +331,7 @@ if (__thisIsNewer) {
             }
             return this.replace(RegExp(__convert_regex_safe(replace), flag), subject);
         } catch (e) {
-            error("", e);
+            error("_replace_all", e);
         }
     } 
     function _set (variable, value, defer, options, loc){
@@ -356,243 +397,251 @@ if (__thisIsNewer) {
         }
     }
     function _subFieldHelper(obj, operands) {
-        if (!$c.isObject(obj)) {
-            return false;
-        }
-        
-        for (var prop in obj) {
-            if (prop in operands) {
-                return prop;
+        try {
+            if (!$c.isObject(obj)) {
+                return false;
             }
+
+            for (var prop in obj) {
+                if (prop in operands) {
+                    return prop;
+                }
+            }
+            return false;
+        } catch (e) {
+            error('_subFieldHelper', e);
         }
-        return false;
     }
     function _subQuery(record, query, operator, field) {
-        var operands = {
-            "$or":1,
-            "$and":1,
-            "$in":1,
-            "$nin":1,
-            "$regex":1,
-            "$gt":1,
-            "$lt":1,
-            "$gte":1,
-            "$lte":1,
-            "$exists":1,
-            "$equals":1,
-            "$ne":1,
-            "$nor":1,
-            "$type":1,
-            "$text":1,
-            "$mod":1,
-            "$all":1,
-            "$size":1,
-            "$where":1,
-            "$elemMatch":1,
-            "$not":1},
-            value = $c.propertyValue(record, field || ""),
-            opt = operator,
-            rtn = false;
-    
-        // prep multiple subqueries
-        for (var prop in query) {
-            if (query.hasOwnProperty(prop) && prop in operands) {
-                if(!$c.isArray(opt)) {
-                    opt = [];
+        try {
+            var operands = {
+                "$or":1,
+                "$and":1,
+                "$in":1,
+                "$nin":1,
+                "$regex":1,
+                "$gt":1,
+                "$lt":1,
+                "$gte":1,
+                "$lte":1,
+                "$exists":1,
+                "$equals":1,
+                "$ne":1,
+                "$nor":1,
+                "$type":1,
+                "$text":1,
+                "$mod":1,
+                "$all":1,
+                "$size":1,
+                "$where":1,
+                "$elemMatch":1,
+                "$not":1},
+                value = $c.propertyValue(record, field || ""),
+                opt = operator,
+                rtn = false;
+
+            // prep multiple subqueries
+            for (var prop in query) {
+                if (query.hasOwnProperty(prop) && prop in operands) {
+                    if(!$c.isArray(opt)) {
+                        opt = [];
+                    }
+                    opt.push(prop);
                 }
-                opt.push(prop);
             }
-        }
-        
-        if (!$c.isArray(opt)) {
-            opt = [opt];
-        }
-        
-        for (var i = 0, len = opt.length; i < len; i++) {
-            if (!rtn && i > 0) {
-                return rtn;
+
+            if (!$c.isArray(opt)) {
+                opt = [opt];
             }
-            switch(opt[i]) {
-                case "$equals":
-                    var isRegex = query.constructor == RegExp;
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = isRegex ? query.test(value) : 
-                            (query.hasOwnProperty("$equals") ? value == query['$equals'] : value == query);
-                break;
 
-                case "$ne":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = value != query['$ne'];
-                break;
-
-                case "$lt":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = value < query['$lt'];
-                break;
-
-                case "$lte":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = value <= query['$lte'];
-                break;
-                case "$gt":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = value > query['$gt'];
-                break;
-                case "$gte":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = value >= query['$gte'];
-                break;
-                case "$nor":
-                    for(var i = 0, len = query.length; i < len; i++) {
-                        if (_subQuery(record,[query[i]],'$or',field)) {
+            for (var i = 0, len = opt.length; i < len; i++) {
+                if (!rtn && i > 0) {
+                    return rtn;
+                }
+                switch(opt[i]) {
+                    case "$equals":
+                        var isRegex = query.constructor == RegExp;
+                        if (value === undefined) {
                             return false;
                         }
-                    }
-                    rtn = true;
-                break;
-                case "$regex":
-                    if (value === undefined) {
-                        return false;
-                    }
-                    rtn = query["$regex"].test(value);
-                break;
-                case "$exists":
-                    var finished = {validPath:0};
-                    $c.propertyValue(record, field,".",finished);
-                    rtn = finished.validPath == query["$exists"];
-                break;
-                case "$type":
-                    if (value === undefined && query === undefined || value !== undefined && value.constructor == query) {
-//                        return true;
-                        rtn = true;
-                        break;
-                    } 
-                    return false;
-                break;
-                case "$text":
-                    //return record.propertyValue(field).contains(query['$search']);
+                        rtn = isRegex ? query.test(value) : 
+                                (query.hasOwnProperty("$equals") ? value == query['$equals'] : value == query);
                     break;
-                case "$mod":
-                    if (!$c.isArray(query) || value === undefined) {
-                        return false;
-                    }
-                    rtn = value % query[0] == query[1];
-                break;
-                case "$all":
-                    if (!$c.isArray(value) || !$c.isArray(query)) {
-                        return false;
-                    }
-                    for (var i = 0, len = query.length; i < len; i++) {
-                        if (!$c.contains(value, query[i])) {
+
+                    case "$ne":
+                        if (value === undefined) {
                             return false;
                         }
-                    }
-                    rtn = true;
-                break;
-                case "$size":
-                    var val = parseInt(query);
-                    if (!$c.isArray(value) || !val && val !== 0) {
+                        rtn = value != query['$ne'];
+                    break;
+
+                    case "$lt":
+                        if (value === undefined) {
+                            return false;
+                        }
+                        rtn = value < query['$lt'];
+                    break;
+
+                    case "$lte":
+                        if (value === undefined) {
+                            return false;
+                        }
+                        rtn = value <= query['$lte'];
+                    break;
+                    case "$gt":
+                        if (value === undefined) {
+                            return false;
+                        }
+                        rtn = value > query['$gt'];
+                    break;
+                    case "$gte":
+                        if (value === undefined) {
+                            return false;
+                        }
+                        rtn = value >= query['$gte'];
+                    break;
+                    case "$nor":
+                        for(var i = 0, len = query.length; i < len; i++) {
+                            if (_subQuery(record,[query[i]],'$or',field)) {
+                                return false;
+                            }
+                        }
+                        rtn = true;
+                    break;
+                    case "$regex":
+                        if (value === undefined) {
+                            return false;
+                        }
+                        rtn = query["$regex"].test(value);
+                    break;
+                    case "$exists":
+                        var finished = {validPath:0};
+                        $c.propertyValue(record, field,".",finished);
+                        rtn = finished.validPath == query["$exists"];
+                    break;
+                    case "$type":
+                        if (value === undefined && query === undefined || value !== undefined && value.constructor == query) {
+    //                        return true;
+                            rtn = true;
+                            break;
+                        } 
                         return false;
-                    }
-                    rtn = value.length == val;
-                break;
-                case "$where":
-                    rtn = $c.isFunction(query) ? query.call(record) : tryEval.call(record, "(function(){"+query+"}).call(this)");
-                break;
-                case "$elemMatch":
-                    //query = { student: "Jane", grade: { $gt: 85 } } } };
-                    if (!$c.isArray(value)) {
-                        return false;
-                    }
-                    for (var i = 0, brk = false, len = value.length; i < len && !brk; i++) {
-                        var obj = value[i],
-                            val, operand;
-                        for (var prop in query) {
-                            if (!query.hasOwnProperty(prop)) {
+                    break;
+                    case "$text":
+                        //return record.propertyValue(field).contains(query['$search']);
+                        break;
+                    case "$mod":
+                        if (!$c.isArray(query) || value === undefined) {
+                            return false;
+                        }
+                        rtn = value % query[0] == query[1];
+                    break;
+                    case "$all":
+                        if (!$c.isArray(value) || !$c.isArray(query)) {
+                            return false;
+                        }
+                        for (var i = 0, len = query.length; i < len; i++) {
+                            if (!$c.contains(value, query[i])) {
+                                return false;
+                            }
+                        }
+                        rtn = true;
+                    break;
+                    case "$size":
+                        var val = parseInt(query);
+                        if (!$c.isArray(value) || !val && val !== 0) {
+                            return false;
+                        }
+                        rtn = value.length == val;
+                    break;
+                    case "$where":
+                        rtn = $c.isFunction(query) ? query.call(record) : tryEval.call(record, "(function(){"+query+"}).call(this)");
+                    break;
+                    case "$elemMatch":
+                        //query = { student: "Jane", grade: { $gt: 85 } } } };
+                        if (!$c.isArray(value)) {
+                            return false;
+                        }
+                        for (var i = 0, brk = false, len = value.length; i < len && !brk; i++) {
+                            var obj = value[i],
+                                val, operand;
+                            for (var prop in query) {
+                                if (!query.hasOwnProperty(prop)) {
+                                    continue;
+                                }
+                                if ($c.isObject(query[prop])) {
+                                    val = [query[prop]];
+                                    operand = "$or";
+                                } else {
+                                    val = query[prop];
+                                    operand = "$equals";  
+                                }
+                                if (_subQuery(record, val, operand, prop)) {
+                                    brk = true;
+                                    break;
+    //                                return true;
+                                }
+                            }
+                        }
+                        rtn = brk;
+                    break;
+                    case "$or":
+                        if (!$c.isArray(query)) {
+                            return false;
+                        }
+                        var satisfied = false;
+                        for (var i = 0, len = query.length; i < len && !satisfied; i++) {
+                            for (var prop in query[i]) {
+                                var subprop = _subFieldHelper(query[i][prop], operands);
+                                if (!(satisfied = prop in operands?
+                                    _subQuery(record, query[i][prop], prop) : 
+                                    (subprop ? _subQuery(record, query[i][prop], subprop, prop) :
+                                        _subQuery(record, query[i][prop], "$equals", prop)))) {
+                                    break;
+                                }
+                            }
+                        }
+                        rtn = satisfied;
+                    break;
+                    case "$and":
+                        rtn = __andNotHelper (record, query, operands);
+                    break;
+                    case "$not": 
+                        if ($c.isObject(query)) {
+                            rtn = !__andNotHelper (record, query, operands);
+                            break;
+                        }
+                        var isRegex =  query == RegExp;
+                        rtn = isRegex ? query.test(value) : value == query;
+                    break;
+
+
+                    case "$in":
+                    case "$nin":
+                        for (var fieldProp in query) {
+                            if (!query.hasOwnProperty(fieldProp)) {
                                 continue;
                             }
-                            if ($c.isObject(query[prop])) {
-                                val = [query[prop]];
-                                operand = "$or";
-                            } else {
-                                val = query[prop];
-                                operand = "$equals";  
+                            value = $c.propertyValue(record, field);
+                            for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
+                                var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values
+                                if (operator == "$in" && (isRegex ? query[fieldProp][k].test(value) : value == query[fieldProp][k])) {
+                                    rtn = true;
+                                    break;
+                                } else if(operator == "$nin" && (isRegex ? !query[fieldProp][k].test(value) : value != query[fieldProp][k])) {
+                                    rtn = true;
+                                    break;
+                                }
                             }
-                            if (_subQuery(record, val, operand, prop)) {
-                                brk = true;
-                                break;
-//                                return true;
-                            }
+                            break;
                         }
-                    }
-                    rtn = brk;
-                break;
-                case "$or":
-                    if (!$c.isArray(query)) {
-                        return false;
-                    }
-                    var satisfied = false;
-                    for (var i = 0, len = query.length; i < len && !satisfied; i++) {
-                        for (var prop in query[i]) {
-                            var subprop = _subFieldHelper(query[i][prop], operands);
-                            if (!(satisfied = prop in operands?
-                                _subQuery(record, query[i][prop], prop) : 
-                                (subprop ? _subQuery(record, query[i][prop], subprop, prop) :
-                                    _subQuery(record, query[i][prop], "$equals", prop)))) {
-                                break;
-                            }
-                        }
-                    }
-                    rtn = satisfied;
-                break;
-                case "$and":
-                    rtn = __andNotHelper (record, query, operands);
-                break;
-                case "$not": 
-                    if ($c.isObject(query)) {
-                        rtn = !__andNotHelper (record, query, operands);
-                        break;
-                    }
-                    var isRegex =  query == RegExp;
-                    rtn = isRegex ? query.test(value) : value == query;
-                break;
-
-
-                case "$in":
-                case "$nin":
-                    for (var fieldProp in query) {
-                        if (!query.hasOwnProperty(fieldProp)) {
-                            continue;
-                        }
-                        value = $c.propertyValue(record, field);
-                        for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
-                            var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values
-                            if (operator == "$in" && (isRegex ? query[fieldProp][k].test(value) : value == query[fieldProp][k])) {
-                                rtn = true;
-                                break;
-                            } else if(operator == "$nin" && (isRegex ? !query[fieldProp][k].test(value) : value != query[fieldProp][k])) {
-                                rtn = true;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                break;
+                    break;
+                }
             }
+            return rtn;
+        } catch (e) {
+            error('_subQuery', e);
         }
-        return rtn;
     }
     function _trim(str, side, characters) {
         try {
@@ -610,7 +659,7 @@ if (__thisIsNewer) {
                         trimChars[char] = 1;
                     }
                 } else if ($c.isString(characters)) {
-                    trimChars = eval('({"'+character+'":1})');
+                    trimChars = eval('({"'+characters+'":1})');
                 }
             }
             if (!side || side == 'l') {
@@ -675,14 +724,18 @@ if (__thisIsNewer) {
     /-	Benchmark testing Class
     /---------------------------------------------------------------------------------------------------------------*/
     function Benchmarker() {
-        this.start = new Date();
-        this.end = "";
-        this.executionTime = 0;
-        this.stop = function (func) {
-            this.end = new Date();
-            this.executionTime = (this.end - this.start)/1000;
-            return this.executionTime;
-        };
+        try {
+            this.start = new Date();
+            this.end = "";
+            this.executionTime = 0;
+            this.stop = function (func) {
+                this.end = new Date();
+                this.executionTime = (this.end - this.start)/1000;
+                return this.executionTime;
+            };
+        } catch (e) {
+            error('BenchMarker', e);
+        }
     }
 
     
@@ -895,7 +948,7 @@ if (__thisIsNewer) {
             }
             return ajaxHttpCaller;
         } catch (e) {
-            error("GetAJAXHttpObject", e);
+            error("Request", e);
         }
     }   
     
@@ -908,55 +961,59 @@ if (__thisIsNewer) {
      *      path : string
      **/
     function $COOKIE(key, value, options) {
-        options = options || {};
-        var c = $d.cookie;
-        if (options.cookie) {
-            c = options.cookie;
-        }
-        if($c.isObject(key)) {
-            for (prop in key) {
-                options = value;
-                value = key[prop];
-                key = prop;
-                break;
+        try {
+            options = options || {};
+            var c = $d.cookie;
+            if (options.cookie) {
+                c = options.cookie;
             }
-        }
-        var cookies = {},    
-        arr = c.split(/[,;]/);
+            if($c.isObject(key)) {
+                for (prop in key) {
+                    options = value;
+                    value = key[prop];
+                    key = prop;
+                    break;
+                }
+            }
+            var cookies = {},    
+            arr = c.split(/[,;]/);
 
-        if (!c && !value) {
-            return;
-        }
-        if (value) {
-            var expires = "", path = "";
-            if ($c.isInt(options.expiration)) {
-                var dt = new Date();
-                dt.setDate(dt.getDate() + options.expiration);
-                expires = "; expires=" + dt.toUTCString();
+            if (!c && !value) {
+                return;
             }
-            if ($c.isString(options.path)) {
-                path = "; path=/" + options.path;
+            if (value) {
+                var expires = "", path = "";
+                if ($c.isInt(options.expiration)) {
+                    var dt = new Date();
+                    dt.setDate(dt.getDate() + options.expiration);
+                    expires = "; expires=" + dt.toUTCString();
+                }
+                if ($c.isString(options.path)) {
+                    path = "; path=/" + options.path;
+                }
+                key = encodeURIComponent(key);
+                value = encodeURIComponent(value);
+                $d.cookie = key + "=" + value + expires + path;
+                return;
             }
-            key = encodeURIComponent(key);
-            value = encodeURIComponent(value);
-            $d.cookie = key + "=" + value + expires + path;
-            return;
-        }
-        for (var i = 0, len = arr.length; i < len; i++) {
-            var cookie = arr[i],            
-            parts = cookie.split(/=/, 2),
-            name = decodeURIComponent($c.ltrim(parts[0])),
-            value = parts.length > 1 ? decodeURIComponent($c.rtrim(parts[1])) : null;
-            cookies[name] = value;
-            if (key && key == name) {
-                return value;
+            for (var i = 0, len = arr.length; i < len; i++) {
+                var cookie = arr[i],            
+                parts = cookie.split(/=/, 2),
+                name = decodeURIComponent($c.ltrim(parts[0])),
+                value = parts.length > 1 ? decodeURIComponent($c.rtrim(parts[1])) : null;
+                cookies[name] = value;
+                if (key && key == name) {
+                    return value;
+                }
             }
-        }
 
-        if (key) {
-            return false;
+            if (key) {
+                return false;
+            }
+            return cookies;
+        } catch (e) {
+            error('$COOKIE', e);
         }
-        return cookies;
     }
     function $GET(variable, options) {//used to retrieve variables in the url
         try {
@@ -1111,34 +1168,42 @@ if (__thisIsNewer) {
         }
     }
     function $COMMIT(options) {
-        options = options || {};
-        var noHistory = options.noHistory || options == "noHistory" || options == "h";
-        if ($COMMIT.update) {
-            if ($COMMIT.search) {
-                if (noHistory) {
-                    $l.replace($COMMIT.search + ($COMMIT.hash || ""));
-                } else {
-                $l.href = $COMMIT.search + ($COMMIT.hash || "");
+        try {
+            options = options || {};
+            var noHistory = options.noHistory || options == "noHistory" || options == "h";
+            if ($COMMIT.update) {
+                if ($COMMIT.search) {
+                    if (noHistory) {
+                        $l.replace($COMMIT.search + ($COMMIT.hash || ""));
+                    } else {
+                    $l.href = $COMMIT.search + ($COMMIT.hash || "");
+                    }
+                } else if ($COMMIT.hash) {
+                    if (noHistory) {
+                        var hash = $COMMIT.hash[0] == '#' ? $COMMIT.hash : "#" + $COMMIT.hash
+                        $l.replace($COMMIT.hash);
+                    } else {
+                    $l.hash = $COMMIT.hash;
+                    }
+                    $COOKIE("CRAYDENTHASH", $l.hash[0] == '#' ? $l.hash.substring(1) : $l.hash);
+                    _invokeHashChange();
                 }
-            } else if ($COMMIT.hash) {
-                if (noHistory) {
-                    var hash = $COMMIT.hash[0] == '#' ? $COMMIT.hash : "#" + $COMMIT.hash
-                    $l.replace($COMMIT.hash);
-                } else {
-                $l.hash = $COMMIT.hash;
-                }
-                $COOKIE("CRAYDENTHASH", $l.hash[0] == '#' ? $l.hash.substring(1) : $l.hash);
-                _invokeHashChange();
+                $ROLLBACK();
             }
-            $ROLLBACK();
+        } catch (e) {
+            error('$COMMIT', e);
         }
     }
     function $ROLLBACK() {
-        delete $COMMIT.update;
-        delete $COMMIT.noHistory;
-        delete $COMMIT.search;
-        delete $COMMIT.hash;
-        delete $COMMIT.onhashchange;
+        try {
+            delete $COMMIT.update;
+            delete $COMMIT.noHistory;
+            delete $COMMIT.search;
+            delete $COMMIT.hash;
+            delete $COMMIT.onhashchange;
+        } catch (e) {
+            error('$ROLLBACK', e);
+        }
     }
     
     function ChromeVersion (){
@@ -1195,9 +1260,13 @@ if (__thisIsNewer) {
         }
     }   
     function cacheImages(imgs) {
-        for (var i = 0, len = imgs.length; i < len; i++) {
-            var img = $d.createElement('img');
-            img.src = imgs[i];	
+        try {
+            for (var i = 0, len = imgs.length; i < len; i++) {
+                var img = $d.createElement('img');
+                img.src = imgs[i];	
+            }
+        } catch (e) {
+            error('cacheImages', e);
         }
     }
     function cout(){
@@ -1212,30 +1281,15 @@ if (__thisIsNewer) {
         }
     }
     function cuid(){
-        //thanks broofa
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-            return v.toString(16);
-        });
-    /*
-                    function GUID()
-    {
-        var S4 = function ()
-        {
-            return Math.floor(
-                    Math.random() * 0x10000
-                ).toString(16);
-        };
-
-        return (
-                S4() + S4() + "-" +
-                S4() + "-" +
-                S4() + "-" +
-                S4() + "-" +
-                S4() + S4() + S4()
-            );
-    }
-    */
+        try {
+            //thanks broofa
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                return v.toString(16);
+            });
+        } catch (e) {
+            error('cuid', e);
+        }
     }
     function error(fname, e) {
         try {
@@ -1244,8 +1298,13 @@ if (__thisIsNewer) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
     }
-    function fillTemplate (htmlTemplate, objs, max) {
+    function fillTemplate (htmlTemplate, objs, offset, max) {
         try {
+            if (offset !== undefined && max == undefined) {
+                max = offset;
+                offset = 0;
+            }
+            
             htmlTemplate = htmlTemplate || "";
             $c.isDomElement(htmlTemplate) && (htmlTemplate = htmlTemplate.toString());
             if (htmlTemplate.trim() == "") {
@@ -1272,8 +1331,8 @@ if (__thisIsNewer) {
             }
             
             max = max || objs.length
-            
-            for (var i = 0; i < max; i++) {
+            offset = offset || 0;
+            for (var i = offset; i < max; i++) {
                 var obj = objs[i], regex, template = "";
                 template = htmlTemplate.replace_all("${this}",
                     ($c.isObject(obj) && parseRaw(obj,true).replace_all(';', ';\\').replace_all('[','\\[').replace_all(']','\\]') || obj)).replace_all("${index}", i);
@@ -1455,6 +1514,13 @@ if (__thisIsNewer) {
             error('isMac', e);
         }
     }
+    function isMobile(){
+        try{
+            return isAndroid() || isBlackBerry() || isIPad() || isIPhone() || isIPod() || isPalmOS() || isSymbian() || isWindowsMobile();
+        } catch (e) {
+            error('isMobile', e);
+        }
+    }
     function isNull(thiss, value) {//used to determine if thiss is undefined->if undefined, return value
         try {
             if (value == null || value == undefined) {
@@ -1565,11 +1631,15 @@ if (__thisIsNewer) {
         }
     }
     function logit(){
-        var location = "\t\t\t\t    " + (new Error()).stack.split('\n')[2];
-        for (var i = 0, len = arguments.length; i < len; i++) {
-            arguments[i] = arguments[i] + location;
+        try {
+            var location = "\t\t\t\t    " + (new Error()).stack.split('\n')[2];
+            for (var i = 0, len = arguments.length; i < len; i++) {
+                arguments[i] = arguments[i] + location;
+            }
+            cout.apply(this, arguments);
+        } catch (e) {
+            error('logit', e);
         }
-        cout.apply(this, arguments);
     }
     function parseBoolean(obj) {
         try {
@@ -1587,67 +1657,75 @@ if (__thisIsNewer) {
         }
     }
     function parseRaw(value, skipQuotes/*, removeCircular*/, __windowVars, __windowVarNames) {
-        if (value === null || value === undefined) {
-            return value + "";
-        } 
-        var raw = "";
-        if ($c.isString(value)) {
-            !skipQuotes && (raw = "\"" + value + "\"") || (raw = value);
-        }
-        else if ($c.isArray(value)) {
-            var tmp = [];
-            for (var i = 0, len = value.length; i < len; i++) {
-                tmp[i] = parseRaw(value[i]);
+        try {
+            if (value === null || value === undefined) {
+                return value + "";
+            } 
+            var raw = "";
+            if ($c.isString(value)) {
+                !skipQuotes && (raw = "\"" + value + "\"") || (raw = value);
             }
-            raw = "[" + tmp.join(',') + "]";
-        }
-        else if (value instanceof Object && !$c.isFunction(value)) {
-            if (!__windowVars) {
-                __windowVars = [];
-                __windowVarNames = [];
-                for (var prop in $w) {
-                    if (value.hasOwnProperty(prop)) {
-                        __windowVars.push($w[prop]);
-                        __windowVarNames.push(prop);
+            else if ($c.isArray(value)) {
+                var tmp = [];
+                for (var i = 0, len = value.length; i < len; i++) {
+                    tmp[i] = parseRaw(value[i]);
+                }
+                raw = "[" + tmp.join(',') + "]";
+            }
+            else if (value instanceof Object && !$c.isFunction(value)) {
+                if (!__windowVars) {
+                    __windowVars = [];
+                    __windowVarNames = [];
+                    for (var prop in $w) {
+                        if (value.hasOwnProperty(prop)) {
+                            __windowVars.push($w[prop]);
+                            __windowVarNames.push(prop);
+                        }
                     }
                 }
-            }
-            var index = __windowVars.indexOf(value);
-            if (index == -1) {
-                var name = cuid();
-                __windowVars.push(value);
-                __windowVarNames.push(name);
-                raw = "{";
-                for (var prop in value) {
-                    if (value.hasOwnProperty(prop)) {
-                        raw += "'" + prop + "': " + parseRaw(value[prop], skipQuotes/*, removeCircular*/, __windowVars, __windowVarNames) + ",";
+                var index = __windowVars.indexOf(value);
+                if (index == -1) {
+                    var name = cuid();
+                    __windowVars.push(value);
+                    __windowVarNames.push(name);
+                    raw = "{";
+                    for (var prop in value) {
+                        if (value.hasOwnProperty(prop)) {
+                            raw += "'" + prop + "': " + parseRaw(value[prop], skipQuotes/*, removeCircular*/, __windowVars, __windowVarNames) + ",";
+                        }
                     }
+                    raw = raw.slice(0,-1) + "}";
+                } else {
+    //                if (removeCircular) {
+    //                    raw = "{}";
+    //                } else {
+                        raw = "$w['" + __windowVarNames[index ] +"']";
+    //                }
                 }
-                raw = raw.slice(0,-1) + "}";
-            } else {
-//                if (removeCircular) {
-//                    raw = "{}";
-//                } else {
-                    raw = "$w['" + __windowVarNames[index ] +"']";
-//                }
             }
+            else {
+                raw = value.toString();
+            }
+            return raw;
+        } catch (e) {
+            error('parseRaw', e);
         }
-        else {
-            raw = value.toString();
-        }
-        return raw;
     }
     function rand(num1, num2, inclusive) {
-        if (inclusive) {
-            if (num1 < num2) {
-                num1 -= 0.1;
-                num2 += 0.1;
-            } else if (num1 > num2) {
-                num1 += 0.1;
-                num2 -= 0.1;            
+        try {
+            if (inclusive) {
+                if (num1 < num2) {
+                    num1 -= 0.1;
+                    num2 += 0.1;
+                } else if (num1 > num2) {
+                    num1 += 0.1;
+                    num2 -= 0.1;            
+                }
             }
+            return (num2 - num1)*Math.random() + num1;
+        } catch (e) {
+            error('rand', e);
         }
-        return (num2 - num1)*Math.random() + num1;
     }
     function tryEval(expression) {
         try {
@@ -1662,134 +1740,146 @@ if (__thisIsNewer) {
     }
     /*timing functions*/
     function wait() {
-        var args = arguments.callee.caller.arguments,
-        funcOriginal = arguments.callee.caller.toString().
-        replace(/\/\/.*?[\r\n]/gi,'').
-        replace(/[\t\r\n]*/gi, '').
-        replace(/\/\*.*?\*\//gi, ''),
-        func = funcOriginal,
-        funcArgNames = func.trim().replace(/^function\s*?\((.*?)\).*/, '$1').replace(/\s*/gi,'').split(','),
-        fname = func.replace(/function\s*?(.*?)\s*?\(.*/,'$1'),
-        fnBefore = func.substr(0, func.indexOf('return wait')),
-        variableGroups = fnBefore.match(/var .*?;/gi),
-        condition = func.replace(/.*?(return)*\s*?wait\((.*?)\);.*/, '$2'),
-        fregex = /\s*?function\s*?\(\s*?\)\s*?\{/;
-        func = func.replace(fname, '').replace(/(function\s*?\(.*?\)\s*?\{).*?(return)*\s*?wait\((.*?)\);/, '$1');
-        for (var a = 0, alen = funcArgNames.length; a < alen; a++) {
-            if (funcArgNames[a]) {
-                func = func.replace(fregex, 'function(){var ' + funcArgNames[a] + '=' + parseRaw(args[a]) + ';');
-            }
-        }
-        for (var i = 0, len = variableGroups.length; i < len; i++) {
-            variableGroups[i] = variableGroups[i].replace(/^var\s(.*)?;/,'$1');
-            var variables = variableGroups[i].split(/^(?!.*\{.*,).*$/g);
-            if (!variables[0]) {
-                variables = variableGroups[i].split(',');
-            }
-            for (var j = 0, jlen = variables.length; j < jlen; j++) {
-                var variable = variables[j], regex, values;
-                if (variable.indexOf('=') != -1) {
-                    variable = variable.split('=')[0].trim();
+        try {
+            var args = arguments.callee.caller.arguments,
+            funcOriginal = arguments.callee.caller.toString().
+            replace(/\/\/.*?[\r\n]/gi,'').
+            replace(/[\t\r\n]*/gi, '').
+            replace(/\/\*.*?\*\//gi, ''),
+            func = funcOriginal,
+            funcArgNames = func.trim().replace(/^function\s*?\((.*?)\).*/, '$1').replace(/\s*/gi,'').split(','),
+            fname = func.replace(/function\s*?(.*?)\s*?\(.*/,'$1'),
+            fnBefore = func.substr(0, func.indexOf('return wait')),
+            variableGroups = fnBefore.match(/var .*?;/gi),
+            condition = func.replace(/.*?(return)*\s*?wait\((.*?)\);.*/, '$2'),
+            fregex = /\s*?function\s*?\(\s*?\)\s*?\{/;
+            func = func.replace(fname, '').replace(/(function\s*?\(.*?\)\s*?\{).*?(return)*\s*?wait\((.*?)\);/, '$1');
+            for (var a = 0, alen = funcArgNames.length; a < alen; a++) {
+                if (funcArgNames[a]) {
+                    func = func.replace(fregex, 'function(){var ' + funcArgNames[a] + '=' + parseRaw(args[a]) + ';');
                 }
-                regex = new RegExp(variable + '\\s*?=\\s*?.*?\\s*?[,;]', 'gi');
-                values = fnBefore.match(regex) || [];
-                for (var k = values.length - 1; k >= 0; k--){
-                    try {
-                        var value = eval(values[k].replace(/.*?=\s*?(.*?)\s*?;/, '$1').trim());
-                        func = func.replace(fregex, 'function(){var ' + variable + '=' + parseRaw(value) + ';');
-                    } catch (e) {
-                        error("wait.eval-value", e)
+            }
+            for (var i = 0, len = variableGroups.length; i < len; i++) {
+                variableGroups[i] = variableGroups[i].replace(/^var\s(.*)?;/,'$1');
+                var variables = variableGroups[i].split(/^(?!.*\{.*,).*$/g);
+                if (!variables[0]) {
+                    variables = variableGroups[i].split(',');
+                }
+                for (var j = 0, jlen = variables.length; j < jlen; j++) {
+                    var variable = variables[j], regex, values;
+                    if (variable.indexOf('=') != -1) {
+                        variable = variable.split('=')[0].trim();
+                    }
+                    regex = new RegExp(variable + '\\s*?=\\s*?.*?\\s*?[,;]', 'gi');
+                    values = fnBefore.match(regex) || [];
+                    for (var k = values.length - 1; k >= 0; k--){
+                        try {
+                            var value = eval(values[k].replace(/.*?=\s*?(.*?)\s*?;/, '$1').trim());
+                            func = func.replace(fregex, 'function(){var ' + variable + '=' + parseRaw(value) + ';');
+                        } catch (e) {
+                            error("wait.eval-value", e)
+                        }
                     }
                 }
             }
-        }
 
-        if ($c.isNumber(condition)) {
-            setTimeout(eval(func), condition);
-        } else {
-            var delayFunc = function(){
-                if (eval(condition)) {
-                    (eval("(" + func + ")"))();
-                } else {
-                    setTimeout(delayFunc, 1);
+            if ($c.isNumber(condition)) {
+                setTimeout(eval(func), condition);
+            } else {
+                var delayFunc = function(){
+                    if (eval(condition)) {
+                        (eval("(" + func + ")"))();
+                    } else {
+                        setTimeout(delayFunc, 1);
+                    }
                 }
+                setTimeout(delayFunc, 1);
             }
-            setTimeout(delayFunc, 1);
+        } catch (e) {
+            error('wait', e);
         }
     }
     function foo () {}
     // Changes XML to JSON
-    function xmlToJson(xml, ignoreAttributes) {  
-        // Create the return object
-        var obj = {};
-        if ($c.isString(xml)) {
-            xml = xml.replace(/&(?!amp;)/gi, '&amp;');
-            if ($w.DOMParser) {
-                xml = (new DOMParser()).parseFromString(xml, 'text/xml');
-            } else {
-                var doc;
-                doc = new ActiveXObject('Microsoft.XMLDOM');
-                doc.async='false';
-                xml = doc.loadXML(xml) && doc;
-            }
-        }
-
-        if (xml.nodeType == 1 && !ignoreAttributes) { // element
-            // do attributes
-            if (xml.attributes.length > 0) {
-                obj["@attributes"] = {};
-                for (var j = 0; j < xml.attributes.length; j++) {
-                    var attribute = xml.attributes.item(j);
-                    obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
-                }
-            }
-        } else if (xml.nodeType == 3) { // text
-            obj = xml.nodeValue;
-        }
-
-        // do children
-        if (xml.hasChildNodes()) {
-            for(var i = 0; i < xml.childNodes.length; i++) {
-                var item = xml.childNodes.item(i);
-                var nodeName = item.nodeName;
-                if (typeof(obj[nodeName]) == "undefined") {
-                    if (nodeName != "#text" || !ignoreAttributes) {
-                        obj[nodeName] = xmlToJson(item, ignoreAttributes);
-                    } else if (xml.childNodes.length == 1) {
-                        obj = xmlToJson(item, ignoreAttributes);
-                    }
+    function xmlToJson(xml, ignoreAttributes) {
+        try {
+            // Create the return object
+            var obj = {};
+            if ($c.isString(xml)) {
+                xml = xml.replace(/&(?!amp;)/gi, '&amp;');
+                if ($w.DOMParser) {
+                    xml = (new DOMParser()).parseFromString(xml, 'text/xml');
                 } else {
-                    if (!$c.isArray(obj[nodeName]) || typeof(obj[nodeName].length) == "undefined") {
-                        var old = obj[nodeName];
-                        obj[nodeName] = [];
-                        obj[nodeName].push(old);
-                    }
-                    obj[nodeName].push(xmlToJson(item, ignoreAttributes));
+                    var doc;
+                    doc = new ActiveXObject('Microsoft.XMLDOM');
+                    doc.async='false';
+                    xml = doc.loadXML(xml) && doc;
                 }
             }
+
+            if (xml.nodeType == 1 && !ignoreAttributes) { // element
+                // do attributes
+                if (xml.attributes.length > 0) {
+                    obj["@attributes"] = {};
+                    for (var j = 0; j < xml.attributes.length; j++) {
+                        var attribute = xml.attributes.item(j);
+                        obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+                    }
+                }
+            } else if (xml.nodeType == 3) { // text
+                obj = xml.nodeValue;
+            }
+
+            // do children
+            if (xml.hasChildNodes()) {
+                for(var i = 0; i < xml.childNodes.length; i++) {
+                    var item = xml.childNodes.item(i);
+                    var nodeName = item.nodeName;
+                    if (typeof(obj[nodeName]) == "undefined") {
+                        if (nodeName != "#text" || !ignoreAttributes) {
+                            obj[nodeName] = xmlToJson(item, ignoreAttributes);
+                        } else if (xml.childNodes.length == 1) {
+                            obj = xmlToJson(item, ignoreAttributes);
+                        }
+                    } else {
+                        if (!$c.isArray(obj[nodeName]) || typeof(obj[nodeName].length) == "undefined") {
+                            var old = obj[nodeName];
+                            obj[nodeName] = [];
+                            obj[nodeName].push(old);
+                        }
+                        obj[nodeName].push(xmlToJson(item, ignoreAttributes));
+                    }
+                }
+            }
+            return obj;
+        } catch (e) {
+            error('xmlToJson', e);
         }
-        return obj;
     }
 
     function zipit(files, content/*=NULL*/) {
-        files = (content && $c.isString(files) && [{
-            name:files,
-            content:content
-        }]) || $c.isObject(files) && [files] || $c.isArray(files) && files;
-        var zip = new JSZip();
-        for (var i = 0, len = files.length; i < len; i++) {
-            var file = files[i];
-            content = file.content;
-            if ($c.isObject(content)) {
-                file.content = JSON.stringify(content,null,"\t");
+        try {
+            files = (content && $c.isString(files) && [{
+                name:files,
+                content:content
+            }]) || $c.isObject(files) && [files] || $c.isArray(files) && files;
+            var zip = new JSZip();
+            for (var i = 0, len = files.length; i < len; i++) {
+                var file = files[i];
+                content = file.content;
+                if ($c.isObject(content)) {
+                    file.content = JSON.stringify(content,null,"\t");
+                }
+
+                zip.add(file.name, (file.pretext || "") + file.content + (file.posttext || ""));
             }
 
-            zip.add(file.name, (file.pretext || "") + file.content + (file.posttext || ""));
+            content = zip.generate();
+
+            location.href="data:application/zip;base64," + content;
+        } catch (e) {
+            error('zipit', e);
         }
-
-        content = zip.generate();
-
-        location.href="data:application/zip;base64," + content;
     }
     
     
@@ -2004,26 +2094,34 @@ if (__thisIsNewer) {
             }
             return wordArray.join(' ');
         } catch (e) {
-            error("capitalize", e);
+            error("String.capitalize", e);
         }
     }, true);
     _ext(String, 'convertUTCDate', function (delimiter) {
-        var dateAsString = this;
-        if (dateAsString.substring(dateAsString.length - 2) == ".0") {
-            dateAsString = dateAsString.substring(0, dateAsString.length - 2);
-        }
-        var pattern = new RegExp( "(\\d{4})" + delimiter + "(\\d{2})" + delimiter + "(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})" );
-        var parts = dateAsString.match( pattern );
+        try {
+            var dateAsString = this;
+            if (dateAsString.substring(dateAsString.length - 2) == ".0") {
+                dateAsString = dateAsString.substring(0, dateAsString.length - 2);
+            }
+            var pattern = new RegExp( "(\\d{4})" + delimiter + "(\\d{2})" + delimiter + "(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})" );
+            var parts = dateAsString.match( pattern );
 
-        return parts ? parts[2] + "/" + parts[3] + "/" + parts[1] + " " + parts[4] + ":" + parts[5] + ":" + parts [6] : dateAsString;
+            return parts ? parts[2] + "/" + parts[3] + "/" + parts[1] + " " + parts[4] + ":" + parts[5] + ":" + parts [6] : dateAsString;
+        } catch (e) {
+            error('String.convertUTCDate', e);
+        }
     }, true);
      _ext(String, 'endsWith', function (str) {
-         for (var i = 0, len = arguments.length; i < len; i++) {
-             if (arguments[i] == this.slice(-arguments[i].length)) {
-                 return arguments[i];
-             }
-         }
-         return false;
+         try {
+            for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this.slice(-arguments[i].length)) {
+                    return arguments[i];
+                }
+            }
+            return false;
+        } catch (e) {
+            error('String.endsWith', e);
+        }
      });
     _ext(String, 'indexOfAlt', function(regex, pos) {
         try {
@@ -2031,14 +2129,14 @@ if (__thisIsNewer) {
             var index = this.substring(pos).search(regex);
             return (index >= 0) ? (index + pos) : index;
         } catch (e) {
-            error("indexOfAlt", e);
+            error("String.indexOfAlt", e);
         }
     }, true);
     _ext(String, 'ireplace_all', function(replace, subject) {
         try {
             return _replace_all.call(this, replace, subject, "gi")
         } catch (e) {
-            error("ireplace_all", e);
+            error("String.ireplace_all", e);
         }
     }, true);
     _ext(String, 'isBlank', function () {
@@ -2046,7 +2144,7 @@ if (__thisIsNewer) {
             return !this.length;
         //return (this === "");
         } catch (e) {
-            error("isBlank", e);
+            error("String.isBlank", e);
         }
     }, true);
     _ext(String, 'isValidEmail', function () {
@@ -2057,7 +2155,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("isValidEmail", e);
+            error("String.isValidEmail", e);
         }
     }, true);
     _ext(String, 'lastIndexOfAlt', function(regex, pos) {
@@ -2078,7 +2176,7 @@ if (__thisIsNewer) {
             }
             return lindex;
         } catch (e) {
-            error("lastIndexOfAlt", e);
+            error("String.lastIndexOfAlt", e);
         }
     }, true);
     _ext(String, 'ltrim', function (character) {
@@ -2092,14 +2190,14 @@ if (__thisIsNewer) {
         try {
             return _replace_all.call(this, replace, subject, "g")
         } catch (e) {
-            error("", e);
+            error("String.replace_all", e);
         }
     }, true);
     _ext(String, 'reverse', function () {
         try {
             return this.split('').reverse().join('');
         } catch (e) {
-            error("", e);
+            error("String.reverse", e);
         }
     }, true);
     _ext(String, 'rtrim', function (character) {
@@ -2126,23 +2224,34 @@ if (__thisIsNewer) {
 
             return thiss;
         } catch (e) {
-            error("XSSCleaner", e);
+            error("String.sanitize", e);
         }
     }, true);
     _ext(String, 'startsWith', function (/*str, str1*/) {
-         for (var i = 0, len = arguments.length; i < len; i++) {
-             if (arguments[i] == this.slice(0, arguments[i].length)) {
-                 return arguments[i];
-             }
-         }
-         return false;
-     });
+        try {
+            for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this.slice(0, arguments[i].length)) {
+                    return arguments[i];
+                }
+            }
+            return false;
+        } catch (e) {
+            error('String.startsWith', e);
+        }
+    });
+    _ext(String, 'strip', function(character) {
+       try {
+           return _trim(this, undefined, character);
+       } catch (e) {
+           error("String.strip", e);
+       }
+   }, true);
     _ext(String, 'toCurrencyNotation', function (separator) {
         try {
             separator = separator || ",";
             return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
         } catch (e) {
-            error("", e);
+            error("String.toCurrencyNotation", e);
         }
     }, true);   
     _ext(String, 'toDateTime', function (options) {
@@ -2197,7 +2306,7 @@ if (__thisIsNewer) {
             }
             return options.format ? dt.format(options.format) : dt;
         } catch (e) {
-            error("", e);
+            error("String.toDateTime", e);
         }
     }, true);
     _ext(String, 'toDomElement', function () {
@@ -2212,7 +2321,7 @@ if (__thisIsNewer) {
             }
             return children;
         } catch (e) {
-            error("toDomElement", e);
+            error("String.toDomElement", e);
         }
     }, true);
     _ext(String, 'trim', function(character) {
@@ -2227,46 +2336,50 @@ if (__thisIsNewer) {
     /-	Array class Extensions
     /---------------------------------------------------------------------------------------------------------------*/
     _ext(Array, 'complexSort', function(specs){
-        specs = specs || {};
-        var defunc = function(v){return v;},
-        props = specs.props,
-        rev = specs.rev,
-        lprimer = specs.lookupprimer || defunc
-        pprimer = specs.propprimer || defunc,
-        lookup = specs.lookup,
-        lookupfunc = specs.lookupfunc || function(id){
-            if(lookup){return lookup[id];}
-            return id;
-        };
+        try {
+            specs = specs || {};
+            var defunc = function(v){return v;},
+            props = specs.props,
+            rev = specs.rev,
+            lprimer = specs.lookupprimer || defunc
+            pprimer = specs.propprimer || defunc,
+            lookup = specs.lookup,
+            lookupfunc = specs.lookupfunc || function(id){
+                if(lookup){return lookup[id];}
+                return id;
+            };
 
-        if(props.isString()){props=[props];}
-        var craftVal = function(v,prop){
-            var val = 
-            pprimer(
-                (lookup && lookup[lprimer(v)][prop]) || 
-                (lookupfunc && lookupfunc(lprimer(v))[prop]) || 
-                v[prop]
-            )
-            return val;
-        }
-        prop_sort = function (a,b,p) {
-        p = p||0,
-        prop = props[p];
-
-        if(!prop){return -1;}
-
-            var aVal = craftVal(a,prop),//pprimer((lookup && lookup[lprimer(a)][prop]) || a[prop]),
-            bVal = craftVal(b,prop);//pprimer((lookup && lookup[lprimer(b)][prop]) || b[prop]);
-
-            if (aVal == bVal) {
-                return prop_sort(a,b,p+1);
+            if(props.isString()){props=[props];}
+            var craftVal = function(v,prop){
+                var val = 
+                pprimer(
+                    (lookup && lookup[lprimer(v)][prop]) || 
+                    (lookupfunc && lookupfunc(lprimer(v))[prop]) || 
+                    v[prop]
+                )
+                return val;
             }
+            prop_sort = function (a,b,p) {
+            p = p||0,
+            prop = props[p];
 
-            if (aVal > bVal) {return 1;}
-            return -1;
-       };
+            if(!prop){return -1;}
 
-        return this.sort(prop_sort);
+                var aVal = craftVal(a,prop),//pprimer((lookup && lookup[lprimer(a)][prop]) || a[prop]),
+                bVal = craftVal(b,prop);//pprimer((lookup && lookup[lprimer(b)][prop]) || b[prop]);
+
+                if (aVal == bVal) {
+                    return prop_sort(a,b,p+1);
+                }
+
+                if (aVal > bVal) {return 1;}
+                return -1;
+           };
+
+            return this.sort(prop_sort);
+        } catch (e) {
+            error('Array.complexSort', e);
+        }
     },true);
     _ext(Array, 'condense', function (check_values, alter) {
         try {
@@ -2325,6 +2438,7 @@ if (__thisIsNewer) {
 
             return filtered;
         } catch (e) {
+            error('Array.filter', e);
             return false;
         }
     }, true);
@@ -2353,7 +2467,7 @@ if (__thisIsNewer) {
             }
             return -1;
         } catch (e) {
-            error("Array.indexOf", e);
+            error("Array.indexOfAlt", e);
         }  
     }, true);
 
@@ -2450,75 +2564,83 @@ if (__thisIsNewer) {
     }, true);
     //ARRAY SORTING
     _ext(Array, 'sortBy', function(props, rev, primer, lookup, options){
-        options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
-        if($c.isString(props)){props=[props];}
-        var key = function (x) {return primer ? primer(x[prop]) : x[prop]};
-            primer = primer || function(x){return x;}
-        var tmpVal;
-        var prop_sort = function (a,b,p) {
-            p = p||0,
-            prop = props[p];
+        try {
+            options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
+            if($c.isString(props)){props=[props];}
+            var key = function (x) {return primer ? primer(x[prop]) : x[prop]};
+                primer = primer || function(x){return x;}
+            var tmpVal;
+            var prop_sort = function (a,b,p) {
+                p = p||0,
+                prop = props[p];
 
-            if(!prop){return -1;}
+                if(!prop){return -1;}
 
-            var aVal = primer((lookup && lookup[a][prop]) || a[prop]),
-            bVal =primer( (lookup && lookup[b][prop]) || b[prop] );
+                var aVal = primer((lookup && lookup[a][prop]) || a[prop]),
+                bVal =primer( (lookup && lookup[b][prop]) || b[prop] );
 
-            if (options.i && aVal && bVal) {
-                aVal = aVal.toLowerCase();
-                bVal = bVal.toLowerCase();
-            }
-//            tmpVal = aVal;
-//            aVal = (parseInt(aVal) && aVal.toString() == tmpVal && tmpVal) || tmpVal;
-//            tmpVal = bVal;                    
-//            bVal = (parseInt(bVal) && bVal.toString() == tmpVal && tmpVal) || tmpVal;
-            tmpVal = aVal;
-            aVal = (parseInt(aVal) && aVal.toString() == tmpVal && parseInt(tmpVal)) || tmpVal;
-            tmpVal = bVal;                    
-            bVal = (parseInt(bVal) && bVal.toString() == tmpVal && parseInt(tmpVal)) || tmpVal;
-                    
-                    
+                if (options.i && aVal && bVal) {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+    //            tmpVal = aVal;
+    //            aVal = (parseInt(aVal) && aVal.toString() == tmpVal && tmpVal) || tmpVal;
+    //            tmpVal = bVal;                    
+    //            bVal = (parseInt(bVal) && bVal.toString() == tmpVal && tmpVal) || tmpVal;
+                tmpVal = aVal;
+                aVal = (parseInt(aVal) && aVal.toString() == tmpVal && parseInt(tmpVal)) || tmpVal;
+                tmpVal = bVal;                    
+                bVal = (parseInt(bVal) && bVal.toString() == tmpVal && parseInt(tmpVal)) || tmpVal;
 
-            if (aVal == bVal) {
-                return prop_sort(a,b,p+1);
-            }
 
-            if (aVal > bVal) {return 1;}
-            return -1;
-       };
-       this.sort(prop_sort);
-       if (rev) {
-            this.reverse();
-       }
 
-        return this;
+                if (aVal == bVal) {
+                    return prop_sort(a,b,p+1);
+                }
+
+                if (aVal > bVal) {return 1;}
+                return -1;
+           };
+           this.sort(prop_sort);
+           if (rev) {
+                this.reverse();
+           }
+
+           return this;
+        } catch (e) {
+            error('Array.sortBy', e);
+        }
     }, true);
 
     _ext(Array, 'sortByLookup', function(prop,lookup,rev,primer,options){
-        options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
-        //prop="TABLE_SORT";
-        function orderByTable(a, b) {
-            var aVal = a[prop],
-            bVal = b[prop];
-            if (lookup) {
-                aVal = lookup[a][prop];
-                bVal = lookup[b][prop];
+        try {
+            options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
+            //prop="TABLE_SORT";
+            function orderByTable(a, b) {
+                var aVal = a[prop],
+                bVal = b[prop];
+                if (lookup) {
+                    aVal = lookup[a][prop];
+                    bVal = lookup[b][prop];
+                }
+                if (options.i) {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                aVal = parseFloat(aVal);
+                bVal = parseFloat(bVal);
+                if (aVal == bVal) {return 0;}
+                if (aVal > bVal) {return 1;}
+                return -1;
             }
-            if (options.i) {
-                aVal = aVal.toLowerCase();
-                bVal = bVal.toLowerCase();
+            this.sort(orderByTable);
+            if(rev){
+                this.reverse();
             }
-            aVal = parseFloat(aVal);
-            bVal = parseFloat(bVal);
-            if (aVal == bVal) {return 0;}
-            if (aVal > bVal) {return 1;}
-            return -1;
+            return this;
+        } catch (e) {
+            error('Array.sortByLookup', e);
         }
-        this.sort(orderByTable);
-        if(rev){
-            this.reverse();
-        }
-        return this;
     }, true);
     
     _ext(Array, 'trim', function(chars) {
@@ -2541,96 +2663,103 @@ if (__thisIsNewer) {
     }, true);
     
     function _makePrecidenceBlocks(condition) {
-        var index = condition.indexOf('('),
-            parts = {before:'',after:'',block:{}};
-        if (index != -1) {
-            var lindex = condition.lastIndexOf('(');
-            parts.before = condition.substring(0,index).trim();
-            parts.after = condition.substring(lindex).trim();
-//            var block = {before:'',after:'',block:{}};
-            parts.block = _makePrecidenceBlocks(condition.substring(index+1,lindex-1));
+        try {
+            var index = condition.indexOf('('),
+                parts = {before:'',after:'',block:{}};
+            if (index != -1) {
+                var lindex = condition.lastIndexOf('(');
+                parts.before = condition.substring(0,index).trim();
+                parts.after = condition.substring(lindex).trim();
+    //            var block = {before:'',after:'',block:{}};
+                parts.block = _makePrecidenceBlocks(condition.substring(index+1,lindex-1));
+                return parts;
+            }
+            parts.block = condition;
             return parts;
+        } catch (e) {
+            error('_makePrecidenceBlocks', e);
         }
-        parts.block = condition;
-        return parts;
     }
     function _processClause (clause) {
-        var index = clause.indexOfAlt(/between/i);
-        if (index != -1) { // contains between predicate
-            //replace AND in the between to prevent confusion for AND clause separator
-            clause.replace(/between( .*? )and( .*?)( |$)/gi,'between$1&and$2$3');
-        }
-        
-        
-        var ORs = clause.split(/ or /i), query = {"$or":[]};
-        
-        for (var i = 0, len = ORs.length; i < len; i++) {
-            var ANDs = ORs[i].split(/ and /i),
-                aquery = {'$and':[]};
-            for (var j = 0, jlen = ANDs.length; j < jlen; j++) {
-                var predicateClause = ANDs[j],
-                    cond = {};
-                
-                //=, <>, >, >=, <, <=, IN, BETWEEN, LIKE, IS NULL or IS NOT NULL
-                switch (true) {
-                    case (index = predicateClause.indexOf('=')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$equals':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push(cond);
-                    break;
-                    case (index = predicateClause.indexOf('<>')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$ne':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push(cond);
-                    break;
-                    case (index = predicateClause.indexOf('>')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$gt':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push(cond);
-                    break;
-                    case (index = predicateClause.indexOf('>=')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$gte':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push({'$gte':cond});
-                    break;
-                    case (index = predicateClause.indexOf('<')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$lt':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push(cond);
-                    break;
-                    case (index = predicateClause.indexOf('<=')) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = {'$lte':tryEval(predicateClause.substring(index + 1).trim())};
-                        aquery['$and'].push(cond);
-                    break;
-                    case predicateClause.indexOfAlt(/between/i) == 0 :
-                        var nums = predicateClause.replace(/between (.*?) &and (.*?) ( |$)/i,'$1,$2').split(',');
-                        aquery['$and'].push({'$gte':tryEval(nums[0])});
-                        aquery['$and'].push({'$lte':tryEval(nums[1])});
-                    break;
-                    case (index = predicateClause.indexOfAlt(/ in /i)) != -1 :
-                        var _in = tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
-                        if (!_in) {
-                            throw "Invalid syntax near 'in'";
-                        }
-                        cond[predicateClause.substring(0, index).trim()] = _in;
-                        aquery['$and'].push({'$in':cond});
-                    break;
-                    case (index = predicateClause.indexOfAlt(/is null/i)) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = null;
-                        aquery['$and'].push({'$equals':cond});
-                    break;
-                    case (index = predicateClause.indexOfAlt(/is not null/i)) != -1 :
-                        cond[predicateClause.substring(0, index).trim()] = null;
-                        aquery['$and'].push({'$ne':cond});
-                    break;
-                    case (index = predicateClause.indexOfAlt(/ like /i)) != -1 :
-                        _trim(" 'lol' ", null, [' ',"'"])
-                        var likeVal = "^" + _trim(predicateClause.substring(index + 6),null,[' ', "'", '"']).replace_all("%",".*?") + "$";
-                        cond[predicateClause.substring(0, index).trim()] = {'$regex': new RegExp(likeVal,'i')};
-                        aquery['$and'].push(cond);
-                    break;
-                }
+        try {
+            var index = clause.indexOfAlt(/between/i);
+            if (index != -1) { // contains between predicate
+                //replace AND in the between to prevent confusion for AND clause separator
+                clause.replace(/between( .*? )and( .*?)( |$)/gi,'between$1&and$2$3');
             }
-            query['$or'].push(aquery);
+
+
+            var ORs = clause.split(/ or /i), query = {"$or":[]};
+
+            for (var i = 0, len = ORs.length; i < len; i++) {
+                var ANDs = ORs[i].split(/ and /i),
+                    aquery = {'$and':[]};
+                for (var j = 0, jlen = ANDs.length; j < jlen; j++) {
+                    var predicateClause = ANDs[j],
+                        cond = {};
+
+                    //=, <>, >, >=, <, <=, IN, BETWEEN, LIKE, IS NULL or IS NOT NULL
+                    switch (true) {
+                        case (index = predicateClause.indexOf('=')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$equals':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push(cond);
+                        break;
+                        case (index = predicateClause.indexOf('<>')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$ne':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push(cond);
+                        break;
+                        case (index = predicateClause.indexOf('>')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$gt':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push(cond);
+                        break;
+                        case (index = predicateClause.indexOf('>=')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$gte':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push({'$gte':cond});
+                        break;
+                        case (index = predicateClause.indexOf('<')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$lt':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push(cond);
+                        break;
+                        case (index = predicateClause.indexOf('<=')) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = {'$lte':tryEval(predicateClause.substring(index + 1).trim())};
+                            aquery['$and'].push(cond);
+                        break;
+                        case predicateClause.indexOfAlt(/between/i) == 0 :
+                            var nums = predicateClause.replace(/between (.*?) &and (.*?) ( |$)/i,'$1,$2').split(',');
+                            aquery['$and'].push({'$gte':tryEval(nums[0])});
+                            aquery['$and'].push({'$lte':tryEval(nums[1])});
+                        break;
+                        case (index = predicateClause.indexOfAlt(/ in /i)) != -1 :
+                            var _in = tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
+                            if (!_in) {
+                                throw "Invalid syntax near 'in'";
+                            }
+                            cond[predicateClause.substring(0, index).trim()] = _in;
+                            aquery['$and'].push({'$in':cond});
+                        break;
+                        case (index = predicateClause.indexOfAlt(/is null/i)) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = null;
+                            aquery['$and'].push({'$equals':cond});
+                        break;
+                        case (index = predicateClause.indexOfAlt(/is not null/i)) != -1 :
+                            cond[predicateClause.substring(0, index).trim()] = null;
+                            aquery['$and'].push({'$ne':cond});
+                        break;
+                        case (index = predicateClause.indexOfAlt(/ like /i)) != -1 :
+                            _trim(" 'lol' ", null, [' ',"'"])
+                            var likeVal = "^" + _trim(predicateClause.substring(index + 6),null,[' ', "'", '"']).replace_all("%",".*?") + "$";
+                            cond[predicateClause.substring(0, index).trim()] = {'$regex': new RegExp(likeVal,'i')};
+                            aquery['$and'].push(cond);
+                        break;
+                    }
+                }
+                query['$or'].push(aquery);
+            }
+
+            return query;
+        } catch (e) {
+            error('where.processClause', e);
         }
-        
-        return query;
-        
         
         
     }
@@ -2740,244 +2869,259 @@ if (__thisIsNewer) {
     //    return new Date(dt.toUTCString());
     //});
     _ext(Date, 'format', function (format, options) {
-        options = options || {offset:0};
-        /*
-         *  options properties:
-         *  gmt:true - convert to GMT
-         *  offset:offset from GMT
-         **/        
-        var localTimeZoneOffset = _getGMTOffset.call(this),
-        datetime = options.offset ? new Date(this.valueOf() - (options.offset + (options.offset ? -1 : 1) * localTimeZoneOffset)*60*60000) : this,
-    //    date = datetime.getDate(),
-    //    day = datetime.getDay(),
-    //    month = datetime.getMonth() + 1,
-    //    year = datetime.getFullYear(),
-    //    firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000)),
-    //    week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000)),
-    //    hour = datetime.getHours(),
-        minute = datetime.getMinutes(),
-        second = datetime.getSeconds(),
-        GMTDiff = options.offset || datetime.getHours() - 24 - datetime.getUTCHours(),
-    //    GMTDiffFormatted = (GMTDiff > 0 ? "+" : "-") + (Math.abs(GMTDiff) < 100 ? "00" : (Math.abs(GMTDiff) < 1000 ? "0" : "")),
-        epoch = datetime.getTime(),
-        timezones = {
-            'Afghanistan Time':'AFT',
-            'AIX specific equivalent of Central European Time':'DFT',
-            'Alaska Daylight Time':'AKDT',
-            'Alaska Standard Time':'AKST',
-            'Arab Standard Time (Kuwait, Riyadh)':'AST',
-            'Arabian Standard Time (Abu Dhabi, Muscat)':'AST',
-            'Arabic Standard Time (Baghdad)':'AST',
-            'Argentina Time':'ART',
-            'Armenia Summer Time':'AMST',
-            'Armenia Time':'AMT',
-            'ASEAN Common Time':'ACT',
-            'Atlantic Daylight Time':'ADT',
-            'Atlantic Standard Time':'AST',
-            'Australian Central Daylight Time':'ACDT',
-            'Australian Central Standard Time':'ACST',
-            'Australian Eastern Daylight Time':'AEDT',
-            'Australian Eastern Standard Time':'AEST',
-            'Australian Western Daylight Time':'AWDT',
-            'Australian Western Standard Time':'AWST',
-            'Azerbaijan Time':'AZT',
-            'Azores Standard Time':'AZOST',
-            'Baker Island Time':'BIT',
-            'Bangladesh Standard Time':'BST',
-            'Bhutan Time':'BTT',
-            'Bolivia Time':'BOT',
-            'Brasilia Time':'BRT',
-            'British Indian Ocean Time':'BIOT',
-            'British Summer Time (British Standard Time from Feb 1968 to Oct 1971)':'BST',
-            'Brunei Time':'BDT',
-            'Cape Verde Time':'CVT',
-            'Central Africa Time':'CAT',
-            'Central Daylight Time (North America)':'CDT',
-            'Central European Daylight Time':'CEDT',
-            'Central European Summer Time (Cf. HAEC)':'CEST',
-            'Central European Time':'CET',
-            'Central Standard Time (Australia)':'CST',
-            'Central Standard Time (North America)':'CST',
-            'Chamorro Standard Time':'CHST',
-            'Chatham Daylight Time':'CHADT',
-            'Chatham Standard Time':'CHAST',
-            'Chile Standard Time':'CLT',
-            'Chile Summer Time':'CLST',
-            'China Standard Time':'CST',
-            'China Time':'CT',
-            'Christmas Island Time':'CXT',
-            'Clipperton Island Standard Time':'CIST',
-            'Cocos Islands Time':'CCT',
-            'Colombia Summer Time':'COST',
-            'Colombia Time':'COT',
-            'Cook Island Time':'CKT',
-            'Coordinated Universal Time':'UTC',
-            'East Africa Time':'EAT',
-            'Easter Island Standard Time':'EAST',
-            'Eastern Caribbean Time (does not recognise DST)':'ECT',
-            'Eastern Daylight Time (North America)':'EDT',
-            'Eastern European Daylight Time':'EEDT',
-            'Eastern European Summer Time':'EEST',
-            'Eastern European Time':'EET',
-            'Eastern Standard Time (North America)':'EST',
-            'Ecuador Time':'ECT',
-            'Falkland Islands Summer Time':'FKST',
-            'Falkland Islands Time':'FKT',
-            'Fiji Time':'FJT',
-            'French Guiana Time':'GFT',
-            'Further-eastern_European_Time':'FET',
-            'Galapagos Time':'GALT',
-            'Gambier Island Time':'GIT',
-            'Georgia Standard Time':'GET',
-            'Gilbert Island Time':'GILT',
-            'Greenwich Mean Time':'GMT',
-            'Gulf Standard Time':'GST',
-            'Guyana Time':'GYT',
-            'Hawaii Standard Time':'HST',
-            'Hawaii-Aleutian Daylight Time':'HADT',
-            'Hawaii-Aleutian Standard Time':'HAST',
-            'Heard and McDonald Islands Time':'HMT',
-            'Heure AvancÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e d\'Europe Centrale francised name for CEST':'HAEC',
-            'Hong Kong Time':'HKT',
-            'Indian Standard Time':'IST',
-            'Indochina Time':'ICT',
-            'Iran Standard Time':'IRST',
-            'Irish Summer Time':'IST',
-            'Irkutsk Time':'IRKT',
-            'Israel Standard Time':'IST',
-            'Israeli Daylight Time':'IDT',
-            'Japan Standard Time':'JST',
-            'Kamchatka Time':'PETT',
-            'Korea Standard Time':'KST',
-            'Krasnoyarsk Time':'KRAT',
-            'Line Islands Time':'LINT',
-            'Lord Howe Standard Time':'LHST',
-            'Magadan Time':'MAGT',
-            'Malaysia Time':'MYT',
-            'Malaysian Standard Time':'MST',
-            'Marquesas Islands Time':'MIT',
-            'Mauritius Time':'MUT',
-            'Middle European Saving Time Same zone as CEST':'MEST',
-            'Middle European Time Same zone as CET':'MET',
-            'Moscow Standard Time':'MSK',
-            'Moscow Summer Time':'MSD',
-            'Mountain Daylight Time (North America)':'MDT',
-            'Mountain Standard Time (North America)':'MST',
-            'Myanmar Standard Time':'MST',
-            'Nepal Time':'NPT',
-            'New Zealand Daylight Time':'NZDT',
-            'New Zealand Standard Time':'NZST',
-            'Newfoundland Daylight Time':'NDT',
-            'Newfoundland Standard Time':'NST',
-            'Newfoundland Time':'NT',
-            'Norfolk Time<sup id="cite_ref-0" class="reference"><span>[</span>1<span>]</span></sup>':'NFT',
-            'Omsk Time':'OMST',
-            'Pacific Daylight Time (North America)':'PDT',
-            'Pacific Standard Time (North America)':'PST',
-            'Pakistan Standard Time':'PKT',
-            'Philippine Standard Time':'PST',
-            'Phoenix Island Time':'PHOT',
-            'RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©union Time':'RET',
-            'Samara Time':'SAMT',
-            'Samoa Standard Time':'SST',
-            'Seychelles Time':'SCT',
-            'Singapore Standard Time':'SST',
-            'Singapore Time':'SGT',
-            'Solomon Islands Time':'SBT',
-            'South African Standard Time':'SAST',
-            'South Georgia and the South Sandwich Islands':'GST',
-            'Sri Lanka Time':'SLT',
-            'Tahiti Time':'TAHT',
-            'Thailand Standard Time':'THA',
-            'Uruguay Standard Time':'UYT',
-            'Uruguay Summer Time':'UYST',
-            'Venezuelan Standard Time':'VET',
-            'Vladivostok Time':'VLAT',
-            'West Africa Time':'WAT',
-            'Western European Daylight Time':'WEDT',
-            'Western European Summer Time':'WEST',
-            'Western European Time':'WET',
-            'Western Standard Time':'WST',
-            'Yakutsk Time':'YAKT',
-            'Yekaterinburg Time':'YEKT'
-        },
-        currentTimezone = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
-    //    dateWithZero = (date < 10 ? "0" + date : date),
-    //    threeLetterDay = ['\\S\\u\\n','\\M\\o\\n','\\T\\u\\e\\s','\\W\\e\\d','\\T\\h\\u','\\F\\r\\i', '\\S\\a\\t'][day],
-    //    threeLetterMonth = ['\\J\\a\\n','\\F\\e\\b','\\M\\a\\r','\\A\\p\\r','\\M\\a\\y','\\J\\u\\n','\\J\\u\\l','\\A\\u\\g','\\S\\e\\p','\\O\\c\\t','\\N\\o\\v','\\D\\e\\c'][month - 1],
-    //    hour24 = (hour < 10 ? "0" + hour : hour),
-        minuteWithZero = (minute < 10 ? "0" + minute : minute),
-        secondsWithZero = (second < 10 ? "0" + second : second);
+        try {
+            if(!$c.isValidDate(this)) {
+                return;
+            }
+            options = options || {offset:0};
+            /*
+             *  options properties:
+             *  gmt:true - convert to GMT
+             *  offset:offset from GMT
+             **/        
+            var localTimeZoneOffset = _getGMTOffset.call(this),
+            datetime = options.offset ? new Date(this.valueOf() - (options.offset + (options.offset ? -1 : 1) * localTimeZoneOffset)*60*60000) : this,
+        //    date = datetime.getDate(),
+        //    day = datetime.getDay(),
+        //    month = datetime.getMonth() + 1,
+        //    year = datetime.getFullYear(),
+        //    firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000)),
+        //    week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000)),
+        //    hour = datetime.getHours(),
+            minute = datetime.getMinutes(),
+            second = datetime.getSeconds(),
+            GMTDiff = options.offset || datetime.getHours() - 24 - datetime.getUTCHours(),
+        //    GMTDiffFormatted = (GMTDiff > 0 ? "+" : "-") + (Math.abs(GMTDiff) < 100 ? "00" : (Math.abs(GMTDiff) < 1000 ? "0" : "")),
+            epoch = datetime.getTime(),
+            timezones = {
+                'Afghanistan Time':'AFT',
+                'AIX specific equivalent of Central European Time':'DFT',
+                'Alaska Daylight Time':'AKDT',
+                'Alaska Standard Time':'AKST',
+                'Arab Standard Time (Kuwait, Riyadh)':'AST',
+                'Arabian Standard Time (Abu Dhabi, Muscat)':'AST',
+                'Arabic Standard Time (Baghdad)':'AST',
+                'Argentina Time':'ART',
+                'Armenia Summer Time':'AMST',
+                'Armenia Time':'AMT',
+                'ASEAN Common Time':'ACT',
+                'Atlantic Daylight Time':'ADT',
+                'Atlantic Standard Time':'AST',
+                'Australian Central Daylight Time':'ACDT',
+                'Australian Central Standard Time':'ACST',
+                'Australian Eastern Daylight Time':'AEDT',
+                'Australian Eastern Standard Time':'AEST',
+                'Australian Western Daylight Time':'AWDT',
+                'Australian Western Standard Time':'AWST',
+                'Azerbaijan Time':'AZT',
+                'Azores Standard Time':'AZOST',
+                'Baker Island Time':'BIT',
+                'Bangladesh Standard Time':'BST',
+                'Bhutan Time':'BTT',
+                'Bolivia Time':'BOT',
+                'Brasilia Time':'BRT',
+                'British Indian Ocean Time':'BIOT',
+                'British Summer Time (British Standard Time from Feb 1968 to Oct 1971)':'BST',
+                'Brunei Time':'BDT',
+                'Cape Verde Time':'CVT',
+                'Central Africa Time':'CAT',
+                'Central Daylight Time (North America)':'CDT',
+                'Central European Daylight Time':'CEDT',
+                'Central European Summer Time (Cf. HAEC)':'CEST',
+                'Central European Time':'CET',
+                'Central Standard Time (Australia)':'CST',
+                'Central Standard Time (North America)':'CST',
+                'Chamorro Standard Time':'CHST',
+                'Chatham Daylight Time':'CHADT',
+                'Chatham Standard Time':'CHAST',
+                'Chile Standard Time':'CLT',
+                'Chile Summer Time':'CLST',
+                'China Standard Time':'CST',
+                'China Time':'CT',
+                'Christmas Island Time':'CXT',
+                'Clipperton Island Standard Time':'CIST',
+                'Cocos Islands Time':'CCT',
+                'Colombia Summer Time':'COST',
+                'Colombia Time':'COT',
+                'Cook Island Time':'CKT',
+                'Coordinated Universal Time':'UTC',
+                'East Africa Time':'EAT',
+                'Easter Island Standard Time':'EAST',
+                'Eastern Caribbean Time (does not recognise DST)':'ECT',
+                'Eastern Daylight Time (North America)':'EDT',
+                'Eastern European Daylight Time':'EEDT',
+                'Eastern European Summer Time':'EEST',
+                'Eastern European Time':'EET',
+                'Eastern Standard Time (North America)':'EST',
+                'Ecuador Time':'ECT',
+                'Falkland Islands Summer Time':'FKST',
+                'Falkland Islands Time':'FKT',
+                'Fiji Time':'FJT',
+                'French Guiana Time':'GFT',
+                'Further-eastern_European_Time':'FET',
+                'Galapagos Time':'GALT',
+                'Gambier Island Time':'GIT',
+                'Georgia Standard Time':'GET',
+                'Gilbert Island Time':'GILT',
+                'Greenwich Mean Time':'GMT',
+                'Gulf Standard Time':'GST',
+                'Guyana Time':'GYT',
+                'Hawaii Standard Time':'HST',
+                'Hawaii-Aleutian Daylight Time':'HADT',
+                'Hawaii-Aleutian Standard Time':'HAST',
+                'Heard and McDonald Islands Time':'HMT',
+                'Heure AvancÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e d\'Europe Centrale francised name for CEST':'HAEC',
+                'Hong Kong Time':'HKT',
+                'Indian Standard Time':'IST',
+                'Indochina Time':'ICT',
+                'Iran Standard Time':'IRST',
+                'Irish Summer Time':'IST',
+                'Irkutsk Time':'IRKT',
+                'Israel Standard Time':'IST',
+                'Israeli Daylight Time':'IDT',
+                'Japan Standard Time':'JST',
+                'Kamchatka Time':'PETT',
+                'Korea Standard Time':'KST',
+                'Krasnoyarsk Time':'KRAT',
+                'Line Islands Time':'LINT',
+                'Lord Howe Standard Time':'LHST',
+                'Magadan Time':'MAGT',
+                'Malaysia Time':'MYT',
+                'Malaysian Standard Time':'MST',
+                'Marquesas Islands Time':'MIT',
+                'Mauritius Time':'MUT',
+                'Middle European Saving Time Same zone as CEST':'MEST',
+                'Middle European Time Same zone as CET':'MET',
+                'Moscow Standard Time':'MSK',
+                'Moscow Summer Time':'MSD',
+                'Mountain Daylight Time (North America)':'MDT',
+                'Mountain Standard Time (North America)':'MST',
+                'Myanmar Standard Time':'MST',
+                'Nepal Time':'NPT',
+                'New Zealand Daylight Time':'NZDT',
+                'New Zealand Standard Time':'NZST',
+                'Newfoundland Daylight Time':'NDT',
+                'Newfoundland Standard Time':'NST',
+                'Newfoundland Time':'NT',
+                'Norfolk Time<sup id="cite_ref-0" class="reference"><span>[</span>1<span>]</span></sup>':'NFT',
+                'Omsk Time':'OMST',
+                'Pacific Daylight Time (North America)':'PDT',
+                'Pacific Standard Time (North America)':'PST',
+                'Pakistan Standard Time':'PKT',
+                'Philippine Standard Time':'PST',
+                'Phoenix Island Time':'PHOT',
+                'RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©union Time':'RET',
+                'Samara Time':'SAMT',
+                'Samoa Standard Time':'SST',
+                'Seychelles Time':'SCT',
+                'Singapore Standard Time':'SST',
+                'Singapore Time':'SGT',
+                'Solomon Islands Time':'SBT',
+                'South African Standard Time':'SAST',
+                'South Georgia and the South Sandwich Islands':'GST',
+                'Sri Lanka Time':'SLT',
+                'Tahiti Time':'TAHT',
+                'Thailand Standard Time':'THA',
+                'Uruguay Standard Time':'UYT',
+                'Uruguay Summer Time':'UYST',
+                'Venezuelan Standard Time':'VET',
+                'Vladivostok Time':'VLAT',
+                'West Africa Time':'WAT',
+                'Western European Daylight Time':'WEDT',
+                'Western European Summer Time':'WEST',
+                'Western European Time':'WET',
+                'Western Standard Time':'WST',
+                'Yakutsk Time':'YAKT',
+                'Yekaterinburg Time':'YEKT'
+            },
+            currentTimezone = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
+        //    dateWithZero = (date < 10 ? "0" + date : date),
+        //    threeLetterDay = ['\\S\\u\\n','\\M\\o\\n','\\T\\u\\e\\s','\\W\\e\\d','\\T\\h\\u','\\F\\r\\i', '\\S\\a\\t'][day],
+        //    threeLetterMonth = ['\\J\\a\\n','\\F\\e\\b','\\M\\a\\r','\\A\\p\\r','\\M\\a\\y','\\J\\u\\n','\\J\\u\\l','\\A\\u\\g','\\S\\e\\p','\\O\\c\\t','\\N\\o\\v','\\D\\e\\c'][month - 1],
+        //    hour24 = (hour < 10 ? "0" + hour : hour),
+            minuteWithZero = (minute < 10 ? "0" + minute : minute),
+            secondsWithZero = (second < 10 ? "0" + second : second);
 
-        if (options.gmt) {
-            datetime = new Date(datetime.valueOf() - localTimeZoneOffset*60*60000);
-            currentTimezone = "GMT";
-            GMTDiff = 0;
+            if (options.gmt) {
+                datetime = new Date(datetime.valueOf() - localTimeZoneOffset*60*60000);
+                currentTimezone = "GMT";
+                GMTDiff = 0;
+            }
+
+            var date = datetime.getDate(),
+            day = datetime.getDay();
+            month = datetime.getMonth() + 1;
+            year = datetime.getFullYear();
+            firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000));
+            week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000));
+            hour = datetime.getHours();
+
+            dateWithZero = (date < 10 ? "0" + date : date);
+            threeLetterDay = ['\\S\\u\\n','\\M\\o\\n','\\T\\u\\e\\s','\\W\\e\\d','\\T\\h\\u','\\F\\r\\i', '\\S\\a\\t'][day];
+            threeLetterMonth = ['\\J\\a\\n','\\F\\e\\b','\\M\\a\\r','\\A\\p\\r','\\M\\a\\y','\\J\\u\\n','\\J\\u\\l','\\A\\u\\g','\\S\\e\\p','\\O\\c\\t','\\N\\o\\v','\\D\\e\\c'][month - 1];
+            hour24 = (hour < 10 ? "0" + hour : hour),
+            GMTDiffFormatted = (GMTDiff > 0 ? "+" : "-") + (Math.abs(GMTDiff) < 10 ? "0" : "") + Math.abs(GMTDiff) + "00";
+
+
+
+            return /*option d*/format.replace(/([^\\])d|^d/g, '$1' + dateWithZero).// replace all d's with the 2 digit day leading 0
+            /*option D*/replace(/([^\\])D|^D/g, '$1' + threeLetterDay).// replace all D's with A textual representation of a day, three letters
+            /*option j*/replace(/([^\\])j|^j/g, '$1' + date).// replace all j's with the day without leading 0
+            /*option l*/replace(/([^\\])l|^l/g, '$1' + ['\\S\\u\\n\\d\\a\\y','\\M\\o\\n\\d\\a\\y','\\T\\u\\e\\s\\d\\a\\y','\\W\\e\\d\\n\\e\\s\\d\\a\\y','\\T\\h\\u\\r\\s\\d\\a\\y','\\F\\r\\i\\d\\a\\y', '\\S\\a\\t\\u\\r\\d\\a\\y'][day]).// replace all l's (lower case L) with A full textual representation of the day of the week
+            /*option N*/replace(/([^\\])N|^N/g, '$1' + (day == 0 ? 7 : day)).// replace all N's with ISO-8601 numeric representation of the day of the week
+            /*option S*/replace(/([^\\])S|^S/g, '$1' + (date > 3 ? '\\t\\h' : (date == 1 ? '\\s\\t' : (date == 2 ? '\\n\\d' : '\\r\\d')))).// replace all S's with English ordinal suffix for the day of the month, 2 characters
+            /*option w*/replace(/([^\\])w|^w/g, '$1' + day).// replace all w's with Numeric representation of the day of the week
+            /*option z*/replace(/([^\\])z|^z/g, '$1' + Math.ceil(Math.ceil(datetime - (new Date('12/31/' + (year - 1))))/(24*60*60*1000)) - 1).// replace all z's with The day of the year (starting from 0)
+
+            /*option W*/replace(/([^\\])W|^W/g, '$1' + (week > 0 ? week : 52)).// replace all W's with ISO-8601 week number of the year, weeks staring on Monday
+
+            /*option F*/replace(/([^\\])F|^F/g, '$1' + ['\\J\\a\\n\\u\\a\\r\\y','\\F\\e\\b\\r\\u\\a\\r\\y','\\M\\a\\r\\c\\h','\\A\\p\\r\\i\\l','\\M\\a\\y','\\J\\u\\n\\e','\\J\\u\\l\\y','\\A\\u\\g\\u\\s\\t','\\S\\e\\p\\t\\e\\m\\b\\e\\r','\\O\\c\\t\\o\\b\\e\\r','\\N\\o\\v\\e\\m\\b\\e\\r','\\D\\e\\c\\e\\m\\b\\e\\r'][month - 1]).// replace all F's with A full textual representation of a month, such as January or March
+            /*option m*/replace(/([^\\])m|^m/g, '$1' + (month < 10 ? "0" + month : month)).// replace all m's with Numeric representation of a month, with leading zeros
+            /*option M*/replace(/([^\\])M|^M/g, '$1' + threeLetterMonth).// replace all M's with A short textual representation of a month, three letters
+            /*option n*/replace(/([^\\])n|^n/g, '$1' + month).// replace all n's with Numeric representation of a month, without leading zeros
+            /*option t*/replace(/([^\\])t|^t/g, '$1' + (month == 2 && $c.isInt(year/4) ? 29 :[31,28,31,30,31,30,31,31,30,31,30,31][month - 1])).// replace all t's with Number of days in the given month
+
+            /*option L*/replace(/([^\\])L|^L/g, '$1' + $c.isInt(year/4) ? 0 : 1).//replace all t's with Whether it's a leap year
+            /*option o*/replace(/([^\\])o|^o/g, '$1' + (week > 0 ? year : year - 1)).//replace all o's with A full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.
+            /*option Y*/replace(/([^\\])Y|^Y/g, '$1' + year).//replace all t's with A full numeric representation of a year, 4 digits
+            /*option y*/replace(/([^\\])y|^y/g, '$1' + year.toString().substring(year.toString().length - 2)).//replace all t's with A two digit representation of a year
+
+            /*option a*/replace(/([^\\])a|^a/g, '$1' + (hour > 11 ? "\\p\\m" : "\\a\\m")).//replace all a's with Lowercase Ante meridiem and Post meridiem
+            /*option A*/replace(/([^\\])A|^A/g, '$1' + (hour > 11 ? "\\P\\M" : "\\A\\M")).//replace all A's with Uppercase Ante meridiem and Post meridiem
+            /*option B*/replace(/([^\\])B|^B/g, '$1' + Math.floor((((datetime.getUTCHours() + 1)%24) + datetime.getUTCMinutes()/60 + datetime.getUTCSeconds()/3600)*1000/24)).//replace all B's with Swatch Internet time
+            /*option g*/replace(/([^\\])g|^g/g, '$1' + (hour == 0 ? 12 : hour > 12 ? hour - 12 : hour)).//replace all g's with 12-hour format of an hour without leading zeros
+            /*option G*/replace(/([^\\])G|^G/g, '$1' + hour).//replace all G's with 24-hour format of an hour without leading zeros
+            /*option h*/replace(/([^\\])h|^h/g, '$1' + (hour < 10 ? "0" + hour : (hour > 12 && hour - 12 < 10) ? "0" + (hour - 12) : hour)).//replace all h's with 12-hour format of an hour with leading zeros
+            /*option H*/replace(/([^\\])H|^H/g, '$1' + hour24).//replace all H's with 24-hour format of an hour with leading zeros
+            /*option i*/replace(/([^\\])i|^i/g, '$1' + minuteWithZero).//replace all i's with Minutes with leading zeros
+            /*option s*/replace(/([^\\])s|^s/g, '$1' + secondsWithZero).//replace all s's with Seconds, with leading zeros
+            /*option u*/replace(/([^\\])u|^u/g, '$1' + epoch*1000).//replace all u's with Microseconds
+
+            /*option e*/replace(/([^\\])e|^e/g, '$1' + currentTimezone).//replace all e's with Timezone identifier
+            /*option I*/replace(/([^\\])I|^I/g, '$1' + Math.max((new Date(datetime.getFullYear(), 0, 1)).getTimezoneOffset(), (new Date(datetime.getFullYear(), 6, 1)).getTimezoneOffset()) > datetime.getTimezoneOffset() ? 1 : 0).//replace all I's with Whether or not the date is in daylight saving time
+
+            /*option O*/replace(/([^\\])O|^O/g, '$1' + GMTDiffFormatted).//replace all O's with Difference to Greenwich time (GMT) in hours	
+            /*option P*/replace(/([^\\])P|^P/g, '$1' + GMTDiffFormatted.substr(0, 3) + ":" + GMTDiffFormatted.substr(3,2)).//replace all P's with Difference to Greenwich time (GMT) with colon between hours and minutes
+            /*option T*/replace(/([^\\])T|^T/g, '$1' + timezones[currentTimezone]).//replace all T's with Timezone abbreviation
+            /*option Z*/replace(/([^\\])Z|^Z/g, '$1' + (-1 * GMTDiff * 60)).//replace all Z's with Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive
+
+
+            /*option c*/replace(/([^\\])c|^c/g, '$1' + (datetime.toISOString ? datetime.toISOString() : "")).//replace all c's with ISO 8601 date
+            /*option r*/replace(/([^\\])r|^r/g, '$1' + threeLetterDay + ', ' + dateWithZero + ' ' + threeLetterMonth + ' ' + year  + ' ' + hour24 + ':' + minuteWithZero + ':' + secondsWithZero + ' ' + GMTDiffFormatted).//replace all r's with RFC 2822 formatted date
+            /*option U*/replace(/([^\\])U|^U/g, '$1' + epoch / 1000).//replace all U's with Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
+            replace(/\\/gi, "");
+        } catch (e) {
+            error("Date.format", e);
         }
-
-        var date = datetime.getDate(),
-        day = datetime.getDay();
-        month = datetime.getMonth() + 1;
-        year = datetime.getFullYear();
-        firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000));
-        week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000));
-        hour = datetime.getHours();
-
-        dateWithZero = (date < 10 ? "0" + date : date);
-        threeLetterDay = ['\\S\\u\\n','\\M\\o\\n','\\T\\u\\e\\s','\\W\\e\\d','\\T\\h\\u','\\F\\r\\i', '\\S\\a\\t'][day];
-        threeLetterMonth = ['\\J\\a\\n','\\F\\e\\b','\\M\\a\\r','\\A\\p\\r','\\M\\a\\y','\\J\\u\\n','\\J\\u\\l','\\A\\u\\g','\\S\\e\\p','\\O\\c\\t','\\N\\o\\v','\\D\\e\\c'][month - 1];
-        hour24 = (hour < 10 ? "0" + hour : hour),
-        GMTDiffFormatted = (GMTDiff > 0 ? "+" : "-") + (Math.abs(GMTDiff) < 10 ? "0" : "") + Math.abs(GMTDiff) + "00";
-
-
-
-        return /*option d*/format.replace(/([^\\])d|^d/g, '$1' + dateWithZero).// replace all d's with the 2 digit day leading 0
-        /*option D*/replace(/([^\\])D|^D/g, '$1' + threeLetterDay).// replace all D's with A textual representation of a day, three letters
-        /*option j*/replace(/([^\\])j|^j/g, '$1' + date).// replace all j's with the day without leading 0
-        /*option l*/replace(/([^\\])l|^l/g, '$1' + ['\\S\\u\\n\\d\\a\\y','\\M\\o\\n\\d\\a\\y','\\T\\u\\e\\s\\d\\a\\y','\\W\\e\\d\\n\\e\\s\\d\\a\\y','\\T\\h\\u\\r\\s\\d\\a\\y','\\F\\r\\i\\d\\a\\y', '\\S\\a\\t\\u\\r\\d\\a\\y'][day]).// replace all l's (lower case L) with A full textual representation of the day of the week
-        /*option N*/replace(/([^\\])N|^N/g, '$1' + (day == 0 ? 7 : day)).// replace all N's with ISO-8601 numeric representation of the day of the week
-        /*option S*/replace(/([^\\])S|^S/g, '$1' + (date > 3 ? '\\t\\h' : (date == 1 ? '\\s\\t' : (date == 2 ? '\\n\\d' : '\\r\\d')))).// replace all S's with English ordinal suffix for the day of the month, 2 characters
-        /*option w*/replace(/([^\\])w|^w/g, '$1' + day).// replace all w's with Numeric representation of the day of the week
-        /*option z*/replace(/([^\\])z|^z/g, '$1' + Math.ceil(Math.ceil(datetime - (new Date('12/31/' + (year - 1))))/(24*60*60*1000)) - 1).// replace all z's with The day of the year (starting from 0)
-
-        /*option W*/replace(/([^\\])W|^W/g, '$1' + (week > 0 ? week : 52)).// replace all W's with ISO-8601 week number of the year, weeks staring on Monday
-
-        /*option F*/replace(/([^\\])F|^F/g, '$1' + ['\\J\\a\\n\\u\\a\\r\\y','\\F\\e\\b\\r\\u\\a\\r\\y','\\M\\a\\r\\c\\h','\\A\\p\\r\\i\\l','\\M\\a\\y','\\J\\u\\n\\e','\\J\\u\\l\\y','\\A\\u\\g\\u\\s\\t','\\S\\e\\p\\t\\e\\m\\b\\e\\r','\\O\\c\\t\\o\\b\\e\\r','\\N\\o\\v\\e\\m\\b\\e\\r','\\D\\e\\c\\e\\m\\b\\e\\r'][month - 1]).// replace all F's with A full textual representation of a month, such as January or March
-        /*option m*/replace(/([^\\])m|^m/g, '$1' + (month < 10 ? "0" + month : month)).// replace all m's with Numeric representation of a month, with leading zeros
-        /*option M*/replace(/([^\\])M|^M/g, '$1' + threeLetterMonth).// replace all M's with A short textual representation of a month, three letters
-        /*option n*/replace(/([^\\])n|^n/g, '$1' + month).// replace all n's with Numeric representation of a month, without leading zeros
-        /*option t*/replace(/([^\\])t|^t/g, '$1' + (month == 2 && $c.isInt(year/4) ? 29 :[31,28,31,30,31,30,31,31,30,31,30,31][month - 1])).// replace all t's with Number of days in the given month
-
-        /*option L*/replace(/([^\\])L|^L/g, '$1' + $c.isInt(year/4) ? 0 : 1).//replace all t's with Whether it's a leap year
-        /*option o*/replace(/([^\\])o|^o/g, '$1' + (week > 0 ? year : year - 1)).//replace all o's with A full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.
-        /*option Y*/replace(/([^\\])Y|^Y/g, '$1' + year).//replace all t's with A full numeric representation of a year, 4 digits
-        /*option y*/replace(/([^\\])y|^y/g, '$1' + year.toString().substring(year.toString().length - 2)).//replace all t's with A two digit representation of a year
-
-        /*option a*/replace(/([^\\])a|^a/g, '$1' + (hour > 11 ? "\\p\\m" : "\\a\\m")).//replace all a's with Lowercase Ante meridiem and Post meridiem
-        /*option A*/replace(/([^\\])A|^A/g, '$1' + (hour > 11 ? "\\P\\M" : "\\A\\M")).//replace all A's with Uppercase Ante meridiem and Post meridiem
-        /*option B*/replace(/([^\\])B|^B/g, '$1' + Math.floor((((datetime.getUTCHours() + 1)%24) + datetime.getUTCMinutes()/60 + datetime.getUTCSeconds()/3600)*1000/24)).//replace all B's with Swatch Internet time
-        /*option g*/replace(/([^\\])g|^g/g, '$1' + (hour == 0 ? 12 : hour > 12 ? hour - 12 : hour)).//replace all g's with 12-hour format of an hour without leading zeros
-        /*option G*/replace(/([^\\])G|^G/g, '$1' + hour).//replace all G's with 24-hour format of an hour without leading zeros
-        /*option h*/replace(/([^\\])h|^h/g, '$1' + (hour < 10 ? "0" + hour : (hour > 12 && hour - 12 < 10) ? "0" + (hour - 12) : hour)).//replace all h's with 12-hour format of an hour with leading zeros
-        /*option H*/replace(/([^\\])H|^H/g, '$1' + hour24).//replace all H's with 24-hour format of an hour with leading zeros
-        /*option i*/replace(/([^\\])i|^i/g, '$1' + minuteWithZero).//replace all i's with Minutes with leading zeros
-        /*option s*/replace(/([^\\])s|^s/g, '$1' + secondsWithZero).//replace all s's with Seconds, with leading zeros
-        /*option u*/replace(/([^\\])u|^u/g, '$1' + epoch*1000).//replace all u's with Microseconds
-
-        /*option e*/replace(/([^\\])e|^e/g, '$1' + currentTimezone).//replace all e's with Timezone identifier
-        /*option I*/replace(/([^\\])I|^I/g, '$1' + Math.max((new Date(datetime.getFullYear(), 0, 1)).getTimezoneOffset(), (new Date(datetime.getFullYear(), 6, 1)).getTimezoneOffset()) > datetime.getTimezoneOffset() ? 1 : 0).//replace all I's with Whether or not the date is in daylight saving time
-
-        /*option O*/replace(/([^\\])O|^O/g, '$1' + GMTDiffFormatted).//replace all O's with Difference to Greenwich time (GMT) in hours	
-        /*option P*/replace(/([^\\])P|^P/g, '$1' + GMTDiffFormatted.substr(0, 3) + ":" + GMTDiffFormatted.substr(3,2)).//replace all P's with Difference to Greenwich time (GMT) with colon between hours and minutes
-        /*option T*/replace(/([^\\])T|^T/g, '$1' + timezones[currentTimezone]).//replace all T's with Timezone abbreviation
-        /*option Z*/replace(/([^\\])Z|^Z/g, '$1' + (-1 * GMTDiff * 60)).//replace all Z's with Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive
-
-
-        /*option c*/replace(/([^\\])c|^c/g, '$1' + (datetime.toISOString ? datetime.toISOString() : "")).//replace all c's with ISO 8601 date
-        /*option r*/replace(/([^\\])r|^r/g, '$1' + threeLetterDay + ', ' + dateWithZero + ' ' + threeLetterMonth + ' ' + year  + ' ' + hour24 + ':' + minuteWithZero + ':' + secondsWithZero + ' ' + GMTDiffFormatted).//replace all r's with RFC 2822 formatted date
-        /*option U*/replace(/([^\\])U|^U/g, '$1' + epoch / 1000).//replace all U's with Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
-        replace(/\\/gi, "");
     }, true);
+    
+    _ext(Date, 'isValidDate', function () {
+        try {
+            return !isNaN(this.getTime());
+        } catch (e) {
+            error("Date.isValidDate", e);
+        }
+    });
 
 
     /*----------------------------------------------------------------------------------------------------------------
@@ -2987,7 +3131,7 @@ if (__thisIsNewer) {
         try {
             return $c.isBetween(this, compare - giveOrTake, compare + giveOrTake, true);
         } catch (e) {
-            error("aboutEqualTo", e);
+            error("Number.aboutEqualTo", e);
         }
     }, true);
 
@@ -2995,7 +3139,7 @@ if (__thisIsNewer) {
         try {
             return _even(this);
         } catch (e) {
-            error("isEven", e);
+            error("Number.isEven", e);
         }
     }, true);
     
@@ -3003,7 +3147,7 @@ if (__thisIsNewer) {
         try {
             return !_even(this);
         } catch (e) {
-            error("isOdd", e);
+            error("Number.isOdd", e);
         }
     }, true);
 
@@ -3011,7 +3155,7 @@ if (__thisIsNewer) {
         try {
             return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");
         } catch (e) {
-            error("toCurrencyNotation", e);
+            error("Number.toCurrencyNotation", e);
         }
     }, true);
 
@@ -3020,62 +3164,74 @@ if (__thisIsNewer) {
     /-	Object class Extensions
     /---------------------------------------------------------------------------------------------------------------*/
     _ao("changes", function(compare){
-        if (this.constructor != Object || compare.constructor != Object) {
-            throw new TypeError();
-            return;
-        }
-        var rtn = {$length:0};
-        // loop through each property of the original
-        for (var prop in this) {
-            if (this.hasOwnProperty(prop)) {
-                if (!compare.hasOwnProperty(prop)) {
-                    rtn[prop] = null;
-                    rtn.$length++;
-                } else if (!$c.equals(compare[prop], this[prop])) {
+        try {
+            if (this.constructor != Object || compare.constructor != Object) {
+                throw new TypeError();
+                return;
+            }
+            var rtn = {$length:0};
+            // loop through each property of the original
+            for (var prop in this) {
+                if (this.hasOwnProperty(prop)) {
+                    if (!compare.hasOwnProperty(prop)) {
+                        rtn[prop] = null;
+                        rtn.$length++;
+                    } else if (!$c.equals(compare[prop], this[prop])) {
+                        rtn[prop] = compare[prop];
+                        rtn.$length++;
+                    }
+                }
+            }
+            // loop through each property of the compare to make sure 
+            // there are no properties from compare missing from the original
+            for (var prop in compare) {
+                if (compare.hasOwnProperty(prop) && !this.hasOwnProperty(prop)) {
                     rtn[prop] = compare[prop];
                     rtn.$length++;
                 }
             }
-        }
-        // loop through each property of the compare to make sure 
-        // there are no properties from compare missing from the original
-        for (var prop in compare) {
-            if (compare.hasOwnProperty(prop) && !this.hasOwnProperty(prop)) {
-                rtn[prop] = compare[prop];
-                rtn.$length++;
-            }
-        }
-        return rtn;
+            return rtn;
         
+        } catch (e) {
+            error("Object.changes", e);
+        }
     });
     _ao("contains", function(val, func){
-        switch(true) {
-            case $c.isArray(this):
-                if (func) {
-                    return $c.indexOfAlt(this, func) != -1;
-                }
-                return this.indexOf(val) != -1;
-            case $c.isString(this):
-                return this.indexOf(val) != -1;
-            case $c.isObject(this):
-                for (var prop in this) {
-                    if ((func && func(this[prop])) || this[prop] == val) {
-                        return true;
+        try {
+            switch(true) {
+                case $c.isArray(this):
+                    if (func) {
+                        return $c.indexOfAlt(this, func) != -1;
                     }
-                }
-                break;
-            case $c.isNumber(this):
-                return this.toString().indexOf(val) != -1;
+                    return this.indexOf(val) != -1;
+                case $c.isString(this):
+                    return this.indexOf(val) != -1;
+                case $c.isObject(this):
+                    for (var prop in this) {
+                        if ((func && func(this[prop])) || this[prop] == val) {
+                            return true;
+                        }
+                    }
+                    break;
+                case $c.isNumber(this):
+                    return this.toString().indexOf(val) != -1;
+            }
+            return false;
+        } catch (e) {
+            error("Object.contains", e);
         }
-        return false;
     });
      _ao("copyObject", function () {
-        if (!this) {
-            return undefined;
+        try {
+            if (!this) {
+                return undefined;
+            }
+            var copyObject = typeof(this.constructor) == "function" ? new this.constructor() : {};
+            copyObject.duplicate ? copyObject.duplicate(this, true) : $c.duplicate(copyObject, this, true);
+            return copyObject;
+        } catch (e) {
+            error("Object.copyObject", e);
         }
-        var copyObject = typeof(this.constructor) == "function" ? new this.constructor() : {};
-        copyObject.duplicate ? copyObject.duplicate(this, true) : $c.duplicate(copyObject, this, true);
-        return copyObject;
     });
     _ao("duplicate", function (original, recursive/*, ref, current_path, exec*/) {
         try {
@@ -3142,7 +3298,7 @@ if (__thisIsNewer) {
 
             return this;
         } catch (e) {
-            error('duplicate', e);
+            error('Object.duplicate', e);
         }
     });
     _ao("equals", function (compare){
@@ -3169,7 +3325,7 @@ if (__thisIsNewer) {
                 return (this.toString() == compare.toString() && this.constructor == compare.constructor);
             }
         } catch (e) {
-            error('equals', e);
+            error('Object.equals', e);
         }
     });
     _ao("every", function(callback) {
@@ -3180,7 +3336,7 @@ if (__thisIsNewer) {
                 }
             }
         } catch (e) {
-            error('every', e)
+            error('Object.every', e)
         }
     });
     
@@ -3188,7 +3344,7 @@ if (__thisIsNewer) {
         try {
             return _getFuncName(this);
         } catch (e) {
-            error('getClass', e)
+            error('Object.getClass', e)
         }
     });
     _ao("innerJoin", function (right, options) {
@@ -3208,7 +3364,7 @@ if (__thisIsNewer) {
             }
             return rtn;
         } catch (e) {
-            error('innerJoin', e);
+            error('Object.innerJoin', e);
         }
     });
     _ao("isArray", function () {
@@ -3216,7 +3372,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == Array);
         } catch (e) {
-            error('isArray', e);
+            error('Object.isArray', e);
         }
     });
     _ao("isBetween", function(lowerBound, upperBound, inclusive) {
@@ -3228,7 +3384,7 @@ if (__thisIsNewer) {
                 return (this > lowerBound && this < upperBound);
             }
         } catch (e) {
-            error('isBetween', e);
+            error('Object.isBetween', e);
         }
     });
     _ao("isBoolean", function() {
@@ -3236,7 +3392,15 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == Boolean);
         } catch (e) {
-            error('isBoolean', e);
+            error('Object.isBoolean', e);
+        }
+    });
+    _ao("isDate", function() {
+        try {
+            if (this === undefined) {return false;}
+            return (this.constructor == Date);
+        } catch (e) {
+            error('Object.isDate', e);
         }
     });
     _ao("isDomElement", function() {
@@ -3244,7 +3408,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.nodeType == 1);
         } catch (e) {
-            error('isDomElement', e);
+            error('Object.isDomElement', e);
         }
     });
     _ao("isFloat", function() {
@@ -3252,7 +3416,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return ($c.isNumber(this) && (parseFloat(this) == this || parseFloat(this) === 0));
         } catch (e) {
-            error('isFloat', e);
+            error('Object.isFloat', e);
         }
     });
     _ao("isFunction", function() {
@@ -3260,7 +3424,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == Function);
         } catch (e) {
-            error('isFunction', e);
+            error('Object.isFunction', e);
         }
     });
     _ao("isGeolocation", function () {
@@ -3268,7 +3432,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor.toString().indexOf('function Geolocation()') == 0);
         } catch (e) {
-            error('isGeolocation', e);
+            error('Object.isGeolocation', e);
         }
     });
     _ao("isInt", function () {
@@ -3276,7 +3440,7 @@ if (__thisIsNewer) {
             if (this === undefined || $c.isArray(this)) {return false;}
             return (parseInt(this) == this || parseInt(this) === 0);
         } catch (e) {
-            error('isInt', e);
+            error('Object.isInt', e);
         }
     });
     _ao("isNumber", function() {
@@ -3284,7 +3448,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == Number);
         } catch (e) {
-            error('isNumber', e);
+            error('Object.isNumber', e);
         }
     });
     _ao("isObject", function (check_instance) {
@@ -3292,7 +3456,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == Object || (!!check_instance && this instanceof Object));
         } catch (e) {
-            error('isObject', e);
+            error('Object.isObject', e);
         }
     });
     _ao("isString", function () {
@@ -3300,7 +3464,7 @@ if (__thisIsNewer) {
             if (this === undefined) {return false;}
             return (this.constructor == String);
         } catch (e) {
-            error('isString', e);
+            error('Object.isString', e);
         }
     });
     _ao("isSubset", function (compare){
@@ -3321,7 +3485,7 @@ if (__thisIsNewer) {
                 return $c.contains(this.toString(), compare.toString()) && this.constructor == compare.constructor;
             }
         } catch (e) {
-            error('isSubset', e);
+            error('Object.isSubset', e);
         }
     });
     _ao("itemCount", function () {
@@ -3337,7 +3501,7 @@ if (__thisIsNewer) {
             }
             return undefined;
         } catch (e) {
-            error('itemCount', e);
+            error('Object.itemCount', e);
         }
     });
     _ao("joinLeft", function (right, overwrite) {
@@ -3354,7 +3518,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error('joinLeft', e);
+            error('Object.joinLeft', e);
         }
     });
     _ao("joinRight", function (right, overwrite) {
@@ -3371,7 +3535,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error('joinRight', e);
+            error('Object.joinRight', e);
         }
     });
     _ao("merge", function (secondary, condition) {//shareOnly) {
@@ -3414,18 +3578,20 @@ if (__thisIsNewer) {
                         args.push(arguments[aprop]);
                     } 
                 }
+                var noThis = false;
                 if (typeof obj != "undefined") {
+                    noThis = true;
                     removeCount = 2;
                 }
                 args.splice(0,removeCount,objtmp);
-                objtmp = $c.merge.apply($c, args);
+                objtmp = $c.merge.apply(noThis?obj:this, args);
             }
             return objtmp;
         } catch (e) {
-            error('merge', e);
+            error('Object.merge', e);
         }
     });
-    _ao("propertyValue", function(path, delimiter, options) {
+    var pv = function(path, delimiter, options) {
         try {
             options = options || {};
             delimiter = delimiter || ".";
@@ -3441,10 +3607,30 @@ if (__thisIsNewer) {
             options.validPath = 1;
             return value;
         } catch (e) {
-            error('propertyValue', e)
+            error('Object.pv', e)
+        }
+    };
+    _ao("propertyValue", pv);
+    _ao("getProperty", pv);
+    _ao("setProperty", function (path, value, delimiter, options) {
+        try {
+            options = options || {};
+            delimiter = delimiter || ".";
+            var props = path.split(delimiter);
+            var obj = this;
+            for (var i = 0, len = props.length; i < len; i++) {
+                var tmpVal = {};
+                if (i + 1 == len) {
+                    tmpVal = value;
+                }
+                obj[props[i]] = obj[props[i]] || tmpVal;
+                obj = obj[props[i]];
+            }
+            return obj;
+        } catch (e) {
+            error('Object.setProperty', e)
         }
     });
-    
     _ao("toStringAlt", function (delimiter, prefix, urlEncode) {
         try {
             delimiter = delimiter || '=';
@@ -3458,7 +3644,7 @@ if (__thisIsNewer) {
             }
             return str;
         } catch (e) {
-            error('toStringAlt', e);
+            error('Object.toStringAlt', e);
         }
     }, true);
     
@@ -3487,7 +3673,7 @@ if (__thisIsNewer) {
 
                 return _elem;
             } catch (e) {
-                error("getElementById", e);
+                error("DOM. getElementById", e);
             }
         };
 
@@ -3520,7 +3706,7 @@ if (__thisIsNewer) {
                     var scroll = $d.documentElement.scrollLeft ? $d.documentElement.scrollLeft : $d.body.scrollLeft;
                     return this.clientX + scroll;
                 } catch (e) {
-                    error("pageX", e);
+                    error("Event.pageX", e);
                 }
             };
             Event.prototype._getCurrentTarget = Event.prototype._getCurrentTarget || function(func){
@@ -3546,7 +3732,7 @@ if (__thisIsNewer) {
                     }
                     return undefined;
                 } catch (e) {
-                    error("_getCurrentTarget", e);
+                    error("Event._getCurrentTarget", e);
                 }
             };
         }
@@ -3566,7 +3752,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("_firstElementChild", e);
+            error("DOM._firstElementChild", e);
             return false;
         }
     });
@@ -3578,7 +3764,7 @@ if (__thisIsNewer) {
             }
             return next;
         } catch (e) {
-            error("_nextElementSibling", e);
+            error("DOM._nextElementSibling", e);
             return false;
         }
     });
@@ -3589,7 +3775,7 @@ if (__thisIsNewer) {
             this.className = arr.join(' ').trim();
             return true;
         } catch (e) {
-            error("addClass", e);
+            error("DOM.addClass", e);
             return false;
         }
     });
@@ -3603,7 +3789,7 @@ if (__thisIsNewer) {
             }
             return thiss;
         } catch (e) {
-            error("getContainer", e);
+            error("DOM.getContainer", e);
             return false;
         }
     });
@@ -3623,7 +3809,7 @@ if (__thisIsNewer) {
             }
             return matches;
         } catch (e) {
-            error("getElementsByClassName", e);
+            error("DOM.getElementsByClassName", e);
             return false;
         }
     });
@@ -3632,7 +3818,7 @@ if (__thisIsNewer) {
             var regex = new RegExp('((^)|(\\s+))' + name + '(\\s+|$)');
             return regex.test(this.className);
         } catch (e) {
-            error("addClass", e);
+            error("DOM.addClass", e);
             return false;
         }
     });
@@ -3640,7 +3826,7 @@ if (__thisIsNewer) {
         try {
             return _getDimension.call(this, isBody, 'height');
         } catch (e) {
-            error("height", e);
+            error("DOM.height", e);
             return false;
         }
     });
@@ -3658,7 +3844,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error("hide", e);
+            error("DOM.hide", e);
             return false;
         }
     });
@@ -3699,7 +3885,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("hookEvent", e);
+            error("DOM.hookEvent", e);
             return false;
         }
     });
@@ -3709,7 +3895,7 @@ if (__thisIsNewer) {
             next ? refElem.parentNode.insertBefore(this, next) : refElem.parentNode.appendChild(this);
             return true;
         } catch (e) {
-            error("insertAfter", e);
+            error("DOM.insertAfter", e);
             return false;
         } 
     });
@@ -3731,7 +3917,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error("insertAlphabetically", e);
+            error("DOM.insertAlphabetically", e);
             return false;
         } 
     });
@@ -3748,16 +3934,16 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("insertAt", e);
+            error("DOM.insertAt", e);
             return false;
         } 
     });
     _ah("left", function() {
         try {
-            return _getDimension.call(this, isBody, 'left');
+            return _getDimension.call(this, null, 'left');
             //return this.getClientRects && this.getClientRects()[0].left <= this.offsetLeft ? this.getClientRects()[0].left : this.offsetLeft;
         } catch (e) {
-            error("left", e);
+            error("DOM.left", e);
             return false;
         }
     });
@@ -3774,7 +3960,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("moveDown", e);
+            error("DOM.moveDown", e);
             return false;
         }
     });
@@ -3791,7 +3977,7 @@ if (__thisIsNewer) {
             }
             return false;
         } catch (e) {
-            error("moveUp", e);
+            error("DOM.moveUp", e);
             return false;
         }
     });
@@ -3800,7 +3986,7 @@ if (__thisIsNewer) {
         try {
             return this.parentNode.removeChild(this);
         } catch (e) {
-            error("remove", e);
+            error("DOM.remove", e);
             return false;
         }
     });
@@ -3814,7 +4000,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error("removeClass", e);
+            error("DOM.removeClass", e);
             return false;
         }
     });
@@ -3831,7 +4017,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error("show", e);
+            error("DOM.show", e);
             return false;
         }
     });
@@ -3861,16 +4047,16 @@ if (__thisIsNewer) {
             inheritedStyle ? this.show() : this.hide();
             return true;
         } catch (e) {
-            error("toggle", e);
+            error("DOM.toggle", e);
             return false;
         }
     });
     _ah("top", function() {
         try {
-            return _getDimension.call(this, isBody, 'top');
+            return _getDimension.call(this, null, 'top');
             //return this.getClientRects && this.getClientRects()[0].top <= this.offsetTop ? this.getClientRects()[0].top : this.offsetTop;
         } catch (e) {
-            error("top", e);
+            error("DOM.top", e);
             return false;
         }
     });
@@ -3880,7 +4066,7 @@ if (__thisIsNewer) {
             domElemContainer.appendChild(this.cloneNode(true));
             return domElemContainer.innerHTML; 
         } catch (e) {
-            error("toString", e);
+            error("DOM.toString", e);
             return false;
         }
     }, true);
@@ -3909,7 +4095,7 @@ if (__thisIsNewer) {
             }
             return true;
         } catch (e) {
-            error("unhookEvent", e);
+            error("DOM.unhookEvent", e);
             return false;
         }
     });
@@ -3917,7 +4103,7 @@ if (__thisIsNewer) {
         try {
             return _getDimension.call(this, isBody, 'width');
         } catch (e) {
-            error("width", e);
+            error("DOM.width", e);
             return false;
         }
     });
@@ -3936,7 +4122,7 @@ if (__thisIsNewer) {
                 }
                 return eval(ds);
             } catch (e) {
-                error("_dataset", e);
+                error("DOM._dataset", e);
             }
         });
     }
