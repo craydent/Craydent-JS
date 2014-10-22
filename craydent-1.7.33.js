@@ -1113,7 +1113,7 @@ if (__thisIsNewer) {
                     if(loc.hash[0] != "#") {
                         loc.hash = "#" + loc.hash;
                     }
-                    if (loc.search[0] != "?") {
+                    if (loc.search && loc.search[0] != "?") {
                         loc.search = "?" + loc.search;
                     }
                     $l.replace(loc.search + loc.hash);
