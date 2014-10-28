@@ -1364,7 +1364,7 @@ if (__thisIsNewer) {
                     rptmp = (tmp && "__or|"+tmp.replace_all('||', "|") || "");
                     template = template.replace_all(tmp, rptmp);
                 }
-                template = __run_replace (/\$\{(.+?\|?.+?)\}/, template, false,obj);
+                template = __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj);
 
                 html += template.replace_all('${dataproperties}', "").replace(/\$\{.*?\}/g,"").replace_all(';\\', ';');
             }
@@ -1640,6 +1640,11 @@ if (__thisIsNewer) {
         } catch (e) {
             error('logit', e);
         }
+    }
+    function now (format) {
+        try {
+        return format ? (new Date()).format(format) : new Date();
+        } catch (e) { }
     }
     function parseBoolean(obj) {
         try {
