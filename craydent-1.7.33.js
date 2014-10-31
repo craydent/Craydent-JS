@@ -2318,6 +2318,32 @@ if (__thisIsNewer) {
     _ext(String, 'toDomElement', function () {
         try {
             var div = $d.createElement('div'), children;
+            
+            // ie special case when creating options
+            if ($c.browser.IE && $c.browser.IE_VERSION < 10 && this.startsWith("<option")) {
+                div = $d.createElement('select');
+                var parts = this.match(/<option(.*?)>(.*?)<\/option>/i),
+                    attrs = parts[1].trim(),
+                    arrAttr = [],
+                    value = '',
+                    text = parts[2];
+                    
+                if (attrs) {
+                    arrAttr = attrs.match(/.*?=['].*?[']|.*?=["].*?["]/g).map(function (attr) {
+                        var temp = attr.replace(/\s*(.*?)\s*?=\s*(.*?)\s*/,'$1=$2').split('=');
+                        if (temp[0] == 'value') {
+                            value = temp[1];
+                        }
+                        return temp;
+                    });
+                }
+                div.options[0] = new Option(text, value);
+                for (var i = 0, len = arrAttr.length; i < len; i++) {
+                    div.childNodes[0].setAttribute(arrAttr[i][0],arrAttr[i][1]);
+                }
+                return div.childNodes[0];
+                
+            }
             div.innerHTML = this;
             children = div.childNodes;
             if (children.length == 1) {
@@ -3909,15 +3935,17 @@ if (__thisIsNewer) {
         try {
             var childNodes = this.children,
             eid = elem.id.toLowerCase(),
-            arr = Array();
+            arr = Array(),
+            index = -1;
 
             for (var i = 0; i < childNodes.length; i++) {
                 arr[i] = childNodes[i].id.toLowerCase();
             }
             arr[arr.length] = eid;
             arr.sort();
-            if (arr.length > 1) {
-                this.insertBefore(elem, childNodes[arr.indexOf(eid)]);
+            index = arr.indexOf(eid);
+            if (arr.length > 1 && index != arr.length - 1) {
+                this.insertBefore(elem, childNodes[index]);
             } else {
                 this.appendChild(elem);
             }
