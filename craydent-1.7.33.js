@@ -999,7 +999,8 @@ if (__thisIsNewer) {
             for (var i = 0, len = arr.length; i < len; i++) {
                 var cookie = arr[i],            
                 parts = cookie.split(/=/, 2),
-                name = decodeURIComponent($c.ltrim(parts[0])),
+//                name = decodeURIComponent($c.ltrim(parts[0])),
+                name = decodeURIComponent(parts[0] && parts[0].ltrim && parts[0].ltrim() || ""),
                 value = parts.length > 1 ? decodeURIComponent($c.rtrim(parts[1])) : null;
                 cookies[name] = value;
                 if (key && key == name) {
