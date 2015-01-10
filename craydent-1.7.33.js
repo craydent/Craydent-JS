@@ -297,14 +297,14 @@ if (__thisIsNewer) {
     }
     function _getFuncName (func) {
         try {
-            return _trim(func.toString().replace(/\/\/.*?[\r\n]/gi,'').replace(/[\t\r\n]*/gi, '').replace(/\/\*.*?\*\//gi, '').replace(/function\s*?(.*?)\s*?\(.*/,'$1'));
+            return _trim(func.toString().replace(/\/\/.*?[\r\n]/gi,'').replace(/[\t\r\n]*/gi, '').replace(/\/\*.*?\*\//gi, '').replace(/.*?function\s*?(.*?)\s*?\(.*/,'$1'));
         } catch (e) {
             error('_getFuncName', e);
         }
     }
     function _getFuncArgs (func) {
         try {
-            return _trim(func.toString()).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(',');
+            return _trim(func.toString().strip('(')).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(',').condense();
         } catch (e) {
             error('_getFuncArgs', e);
         }
@@ -322,6 +322,25 @@ if (__thisIsNewer) {
             hc && $c.isFunction(hc) && hc();
         } catch (e) {
             error('_invokeHashChange', e);
+        }
+    }
+    function _pv(path, delimiter, options) {
+        try {
+            options = options || {};
+            delimiter = delimiter || ".";
+            var props = path.split(delimiter);
+            var value = this;
+            for (var i = 0, len = props.length; i < len; i++) {
+                if (value[props[i]] === undefined || value[props[i]] === null 
+                || (options.noInheritance && !value.hasOwnProperty(props[i]))) {
+                    return undefined;
+                }
+                value = value[props[i]];
+            }
+            options.validPath = 1;
+            return value;
+        } catch (e) {
+            error('_pv', e)
         }
     }
     function _replace_all(replace, subject, flag) {
@@ -642,6 +661,40 @@ if (__thisIsNewer) {
         } catch (e) {
             error('_subQuery', e);
         }
+    }
+    function _trigger(el, event, type) {
+        var options = $c.merge({
+            pointerX: 0,
+            pointerY: 0,
+            button: 0,
+            ctrlKey: false,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            bubbles: true,
+            cancelable: true
+        }, arguments[3] || {});
+        if ($d.createEvent) {
+            var evt = $d.createEvent(type || "MouseEvents");
+
+            if (type == 'HTMLEvents') {
+                evt.initEvent(event, options.bubbles, options.cancelable);
+            }
+            else {
+                evt.initMouseEvent(event, options.bubbles, options.cancelable, $d.defaultView,
+                options.button, options.pointerX, options.pointerY, options.pointerX, options.pointerY,
+                options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, options.button, el);
+            }
+            el.dispatchEvent(evt);
+        }
+        else {
+            options.clientX = options.pointerX;
+            options.clientY = options.pointerY;
+            var evtobj = $d.createEventObject();
+            evt = $c.merge(evtobj, options);
+            el.fireEvent('on' + event, evt);
+        }
+        return el;
     }
     function _trim(str, side, characters) {
         try {
@@ -2045,7 +2098,21 @@ if (__thisIsNewer) {
             length : 0
         };// Array();
         
-        
+        $w._onload = $w.onload || foo;
+        $w.onload = function () {
+            $c.browser.SCROLLBAR_WIDTH = (function(){
+                var sizer_element,sizer_child,width;
+                sizer_element = '<div style="width:50px;height:50px;overflow:auto"><div></div></div>'.toDomElement();
+                $d.body.appendChild(sizer_element);
+                sizer_child=sizer_element.firstChild;
+                width = sizer_child.width();
+                sizer_child.style.height='99px';
+                width -= sizer_child.width();
+                sizer_element.remove();
+                return width;
+            })();
+            $w._onload.apply(arguments);
+        };
         
         for (var i = 0, len = __$$.length; i < len; i++) {
             var __$ = __$$[i];
@@ -2120,6 +2187,9 @@ if (__thisIsNewer) {
      _ext(String, 'endsWith', function (str) {
          try {
             for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this) {
+                    continue;
+                }
                 if (arguments[i] == this.slice(-arguments[i].length)) {
                     return arguments[i];
                 }
@@ -2236,6 +2306,9 @@ if (__thisIsNewer) {
     _ext(String, 'startsWith', function (/*str, str1*/) {
         try {
             for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this) {
+                    continue;
+                }
                 if (arguments[i] == this.slice(0, arguments[i].length)) {
                     return arguments[i];
                 }
@@ -2543,6 +2616,28 @@ if (__thisIsNewer) {
         } catch (e) {
             error("Array.map", e);
         }  
+    }, true);
+    
+    _extend(Array, 'normalize', function () {
+        try {
+            var allProps = {}, arrObj = [], len = this.length, i;
+            for(i = 0; i < len; i++) {
+                var json = this[i];
+                if (!$c.isObject(json)) {
+                    error("normalize", {description:'index: ' + i + ' (skipped) is not an object'});
+                    continue;
+                }
+                for(var prop in json) {
+                    allProps[prop] = '';
+                }
+            }
+            for(i = 0; i < len; i++) {
+                arrObj.push($c.merge(allProps, this[i]));
+            }
+            return arrObj;
+        } catch(e) {
+
+        }
     }, true);
 
     _ext(Array, 'remove', function (value, indexOf) {
@@ -3623,27 +3718,8 @@ if (__thisIsNewer) {
             error('Object.merge', e);
         }
     });
-    var pv = function(path, delimiter, options) {
-        try {
-            options = options || {};
-            delimiter = delimiter || ".";
-            var props = path.split(delimiter);
-            var value = this;
-            for (var i = 0, len = props.length; i < len; i++) {
-                if (value[props[i]] === undefined || value[props[i]] === null 
-                || (options.noInheritance && !value.hasOwnProperty(props[i]))) {
-                    return undefined;
-                }
-                value = value[props[i]];
-            }
-            options.validPath = 1;
-            return value;
-        } catch (e) {
-            error('Object.pv', e)
-        }
-    };
-    _ao("propertyValue", pv);
-    _ao("getProperty", pv);
+    _ao("propertyValue", _pv);
+    _ao("getProperty", _pv);
     _ao("setProperty", function (path, value, delimiter, options) {
         try {
             options = options || {};
@@ -3811,6 +3887,51 @@ if (__thisIsNewer) {
             return false;
         }
     });
+    _ah("blur", function (callback) {
+        this.on("blur", callback);
+    });
+    _ah("change", function (callback) {
+        this.on("change", callback);
+    });
+    _ah("click", function (callback) {
+        this.on("click", callback);
+    });
+    _ah("contextmenu", function (callback) {
+        this.on("contextmenu", callback);
+    });
+    _ah("dblclick", function (callback) {
+        this.on("dblclick", callback);
+    });
+    _ah("drag", function (callback) {
+        this.on("drag", callback);
+    });
+    _ah("dragend", function (callback) {
+        this.on("dragend", callback);
+    });
+    _ah("dragenter", function (callback) {
+        this.on("dragenter", callback);
+    });
+    _ah("dragleave", function (callback) {
+        this.on("dragleave", callback);
+    });
+    _ah("dragover", function (callback) {
+        this.on("dragover", callback);
+    });
+    _ah("dragstart", function (callback) {
+        this.on("dragstart", callback);
+    });
+    _ah("drop", function (callback) {
+        this.on("drop", callback);
+    });
+    _ah("focus", function (callback) {
+        this.on("focus", callback);
+    });
+    _ah("formchange", function (callback) {
+        this.on("formchange", callback);
+    });
+    _ah("forminput", function (callback) {
+        this.on("forminput", callback);
+    });
     _ah("getContainer", function (tagName) {
         try {
             var thiss = this.parentNode;
@@ -3931,6 +4052,9 @@ if (__thisIsNewer) {
             return false;
         } 
     });
+    _ah("input", function (callback) {
+        this.on("input", callback);
+    });
     _ah("insertAlphabetically", function (elem){
         try {
             var childNodes = this.children,
@@ -3972,6 +4096,18 @@ if (__thisIsNewer) {
             return false;
         } 
     });
+    _ah("invalid", function (callback) {
+        this.on("invalid", callback);
+    });
+    _ah("keydown", function (callback) {
+        this.on("keydown", callback);
+    });
+    _ah("keypress", function (callback) {
+        this.on("keypress", callback);
+    });
+    _ah("keyup", function (callback) {
+        this.on("keyup", callback);
+    });
     _ah("left", function() {
         try {
             return _getDimension.call(this, null, 'left');
@@ -3980,6 +4116,24 @@ if (__thisIsNewer) {
             error("DOM.left", e);
             return false;
         }
+    });
+    _ah("mousedown", function (callback) {
+        this.on("mousedown", callback);
+    });
+    _ah("mousemove", function (callback) {
+        this.on("mousemove", callback);
+    });
+    _ah("mouseout", function (callback) {
+        this.on("mouseout", callback);
+    });
+    _ah("mouseover", function (callback) {
+        this.on("mouseover", callback);
+    });
+    _ah("mouseup", function (callback) {
+        this.on("mouseup", callback);
+    });
+    _ah("mousewheel", function (callback) {
+        this.on("mousewheel", callback);
     });
     _ah("moveDown", function (tagName) {
         try {
@@ -4015,7 +4169,14 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    
+    _ah("on", function (event, callback) {
+        if (!callback) {
+            return _trigger(this, event);
+        } else {
+            this.evts = this.evts || [];
+            this.evts.push({event:callback});
+        }
+    });
     _ah("remove", function () {
         try {
             return this.parentNode.removeChild(this);
@@ -4038,6 +4199,15 @@ if (__thisIsNewer) {
             return false;
         }
     });
+    _ah("reset", function (callback) {
+        this.on("reset", callback);
+    });
+    _ah("scroll", function (callback) {
+        this.on("scroll", callback);
+    });
+    _ah("select", function (callback) {
+        this.on("select", callback);
+    });
     _ah("show", function() {
         try {
             if (this.tagName.toLowerCase() == "object") {
@@ -4054,6 +4224,9 @@ if (__thisIsNewer) {
             error("DOM.show", e);
             return false;
         }
+    });
+    _ah("submit", function (callback) {
+        this.on("submit", callback);
     });
     _ah("toggle", function() {
         try {
@@ -4104,6 +4277,11 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
+    _ah("unbind", function (event, func) {
+        var index = this.events.indexOfAlt(func, function(obj, value){return(obj[event].toString()== value.toString());});
+        index != -1 && this.events.splice(index);
+        return this;
+    });
     _ah("unhookEvent", function(type, fn) {
         try {
             var fnString, sIndex, eIndex, fname = "", pos = {};

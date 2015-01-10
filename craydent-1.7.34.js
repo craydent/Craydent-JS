@@ -1,5 +1,5 @@
 /*/---------------------------------------------------------/*/
-/*/ Craydent LLC v1.8.0                                    /*/
+/*/ Craydent LLC v1.7.34                                    /*/
 /*/	Copyright 2011 (http://craydent.com/about)          /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
 /*/	(http://craydent.com/license)                       /*/
@@ -158,7 +158,7 @@ if (__thisIsNewer) {
                         return val;
                     });
                     template = template.replace(match[1], (match[1] = match[1].replace_all('\\[', '[').replace_all('\\]', ']')));
-                    template = template.replace_all("${" + pre + match[1] + post +"}", $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : "");
+                    template = template.replace_all("${" + pre + match[1] + post +"}", $w[func] ? $w[func].apply(obj, funcValue) : "");
                 }
             }
             return template;
@@ -499,16 +499,7 @@ if (__thisIsNewer) {
         } catch (e) {
             error("_replace_all", e);
         }
-    }
-    function _run_func_array(funcs, args) {
-        try {
-            for (var i = 0, len = funcs.length; i < len; i++) {
-                funcs[i].apply(this, args);
-            }
-        } catch (e) {
-            error("_run_func_array", e);
-        }   
-    }
+    } 
     function _set (variable, value, defer, options, loc){
         try {
             value = encodeURI(value);
@@ -542,7 +533,7 @@ if (__thisIsNewer) {
                 if (attr == 'hash') {
                     $COOKIE("CRAYDENTHASH", loc.hash[0] == '#' ? loc.hash.substring(1) : loc.hash);
                     _invokeHashChange();
-            }
+                }
             }
             return loc;
         } catch (e) {
@@ -870,13 +861,13 @@ if (__thisIsNewer) {
                 "\n":1
             };
             if (characters) {
-                if ($c.isArray(characters)) {
+                if (_isArray(characters)) {
                     var char = "", i = 0;
                     trimChars = {};
                     while (char = characters[i++]) {
                         trimChars[char] = 1;
                     }
-                } else if ($c.isString(characters)) {
+                } else if (_isString(characters)) {
                     trimChars = eval('({"'+characters+'":1})');
                 }
             }
@@ -962,18 +953,14 @@ if (__thisIsNewer) {
     /---------------------------------------------------------------------------------------------------------------*/
     function ajax(params){
         try {
-            var need_to_shard = false, browser_url_limit = 1500, query, rtn;
+            var need_to_shard = false, browser_url_limit = 1500, query;
             params.dataType = params.dataType || 'json';
             params.hitch = params.hitch || "";
-            params.oncomplete = ($c.isArray(params.oncomplete) ? params.oncomplete : params.oncomplete ? [params.oncomplete] : [function () {}]);
-            params.onbefore = ($c.isArray(params.onbefore) ? params.onbefore : params.onbefore ? [params.onbefore] : [function () {}]);
-            params.onerror = ($c.isArray(params.onerror) ? params.onerror : params.onerror ? [params.onerror] : [function () {}]);
-            params.onsuccess = ($c.isArray(params.onsuccess) ? params.onsuccess : params.onsuccess ? [params.onsuccess] : [function () {}]);
-    //        params.onbefore = ($c.isArray(params.onbefore) ? params.onbefore : [params.onbefore]) || [function (tag,thiss) {}];
-    //        params.onerror = ($c.isArray(params.onerror) ? params.onerror : [params.onerror]) || [function (data,hitch,thiss,context) {}];
-    //        params.onsuccess = ($c.isArray(params.onsuccess) ? params.onsuccess : [params.onsuccess]) || [function (data,hitch,thiss,context) {}];
+            params.oncomplete = params.oncomplete || function () {};
+            params.onbefore = params.onbefore || function (tag,thiss) {};
+            params.onerror = params.onerror || function (data,hitch,thiss,context) {};
+            params.onsuccess = params.onsuccess || function (data,hitch,thiss,context) {};
             params.query = params.query || "";
-            params.jsonp = params.jsonp || "callback";
             // commented line below is a valid parameter value
             /*params.shard_data = params.shard_data;
             params.context = params.context;
@@ -998,28 +985,27 @@ if (__thisIsNewer) {
                 tag = $d.createElement('script');
                 //if (!params.jsonpCallback) {
                     while (!params.jsonpCallback && $w[func]) {
-                    func = '_cjson' + Math.floor(Math.random() * 1000000);
-                }
-                params.jsonpCallback && (params.onsuccess = $w[func]);
-                $w[func] = function (data) {
-                    if (params.query) {
-                        var thiss = params.thiss;
-                        delete params.thiss;
-                        ajax.call(thiss, params);
-                    } else {
-                        (!data.hasErrors && 
-                            (_run_func_array.call((params.context||params.thiss),params.onsuccess, [data, params.hitch, params.thiss, params.context]) || true)) || 
-                            _run_func_array.call((params.context||params.thiss),params.onerror,[data, params.hitch, params.thiss, params.context]);
-
-                        _run_func_array(params.oncomplete);
-    //                    params.oncomplete();
-                        if (params.jsonpCallback) {
-                            $w[func] = params.onsuccess;
-                        } else {
-                            delete $w[func];
-                        }
+                        func = '_cjson' + Math.floor(Math.random() * 1000000);
                     }
-                };
+                    params.jsonpCallback && (params.onsuccess = $w[func]);
+                    $w[func] = function (data) {
+                        if (params.query) {
+                            var thiss = params.thiss;
+                            delete params.thiss;
+                            ajax.call(thiss, params);
+                        } else {
+                            (!data.hasErrors && 
+                                (params.onsuccess.call((params.context||params.thiss),data, params.hitch, params.thiss, params.context) || true)) || 
+                                params.onerror.call((params.context||params.thiss),data, params.hitch, params.thiss, params.context);
+                            params.oncomplete();
+                            if (params.jsonpCallback) {
+                                $w[func] = params.onsuccess;
+                            } else {
+                                delete $w[func];
+                            }
+                        }
+                    };
+                //}
                 if (params.shard_data && params.query && !$c.isObject(params.query) && params.query.length > browser_url_limit) {
                     need_to_shard = true;
                     var query_parts = params.query;
@@ -1098,9 +1084,8 @@ if (__thisIsNewer) {
                         error('ajax.tag.statechange', e);
                     }
                 };
-                _run_func_array(params.onbefore, [tag, this]);
+                params.onbefore(tag, this);
                 head[insert](tag, head.firstChild);
-                rtn = tag;
             } else {
                 var httpRequest = new Request(),
                 fileUpload = httpRequest.upload || {};
@@ -1124,20 +1109,20 @@ if (__thisIsNewer) {
                     params.url += params.query ? "?" + params.query : "";
                     params.query = undefined;
                 }
-                _run_func_array(params.onbefore, [httpRequest, this]);
+                params.onbefore(httpRequest, this);
                 httpRequest.onreadystatechange = function (xp) {
                     params.onstatechange(xp);
                     var data = _ajaxServerResponse(this);
                     if (data) {
-                        _run_func_array.call((params.context||this),params.onsuccess, [data, params.hitch, params.thiss, params.context, this.status]);
+                        params.onsuccess.call((params.context||this), data, params.hitch, params.thiss, params.context, this.status);
                     } else if (this.readyState == 4) {
                         try {
-                            _run_func_array.call((params.context||this),params.onerror, [eval(this.responseText), params.hitch, params.thiss, params.context, this.status]);
+                            params.onerror.call((params.context||this), eval(this.responseText), params.hitch, params.thiss, params.context, this.status);
                         } catch (e) {
-                            _run_func_array.call((params.context||this),params.onerror, [this.responseText, params.hitch, params.thiss, params.context, this.status]);
+                            params.onerror.call((params.context||this), this.responseText, params.hitch, params.thiss, params.context, this.status);
                         }
                     }
-                    _run_func_array(params.oncomplete);
+                    params.oncomplete();
                 };
                 httpRequest.open(params.method, params.url, true);
                 httpRequest.setRequestHeader("Content-type", params.contentType);
@@ -1147,21 +1132,7 @@ if (__thisIsNewer) {
                     httpRequest.setRequestHeader(header.type, header.value);
                 }
                 httpRequest.send(params.query);
-                rtn = httpRequest;
             }
-            rtn.then = function (callback) {
-                params.onsuccess.push(callback);
-                return this;
-            };
-            rtn.otherwise = function (callback) {
-                params.onerror.push(callback)
-                return this;
-            };
-            rtn['finally'] = function (callback) {
-                params.complete.push(callback)
-                return this;
-            };
-            return rtn
         } catch (e) {
             error("ajax", e);
         }
@@ -1189,84 +1160,7 @@ if (__thisIsNewer) {
             error("Request", e);
         }
     }   
-    /*Responsivizer*/
-    // Responsize actions for 3 tiers
-    // by Corey Hadden
-    //    var Responsive;
-    //$(document).ready(initLayout);
-    //
-    //function initLayout(){
-    //    initResponsive();	
-    //}
-    //
-    //function initResponsive(){
-    //    $c.Responsive = new Responsivizer();	
-    //    //updateDebug();
-    //    window.onresize = respond;
-    //}
-    //function respond(){
-    //    $c.Responsive.respond();
-    //    var rsize = ''
-    //    updateDebug();
-    //}
-
-    //function updateDebug(){
-    //    var html = 
-    //    "css: "+$('body')[0].className+
-    //    "["+"w"+$(window).width()+" | h"+$(window).height()+']';
-    //    $('#debug').html(html);
-    //}
-
-    function Responsivizer(){
-        this.Body = $d.getElementsByTagName('body')[0];
-        this.resp_class = 'responsive ';
-        this.respond = function(){
-            this.updateInfo();
-            var newBodyClass = this.resp_class;
-            //this.Body.className = this.resp_class;
-            //large screen mode	>1050
-            if(this.winW > 1049){
-                newBodyClass +="large-window ";
-            }
-            //middle screens, tablet
-            if(this.winW < 1050 && this.winW > 700){
-                newBodyClass +="medium-window ";
-                //check orientation
-                //landscape
-                if(this.winW > 800){
-                    newBodyClass +="landscape ";
-                }
-                //portrait
-                else{
-                    newBodyClass +="portrait ";
-                }
-
-            }
-            //small screen
-            if(this.winW <=700){
-                newBodyClass +="small-window ";
-                //check orientation
-                if(this.winW >420){
-                    newBodyClass +="landscape ";
-                }
-                //portrait
-                else{
-                    newBodyClass +="portrait ";
-                }
-            }
-            this.Body.className = newBodyClass;
-
-        }
-
-        this.updateInfo = function(){
-            this.winW = $(window).width();
-            this.winH = $(window).height();	
-        }
-
-        this.respond();
-        return this;
-    }
-
+    
     /*----------------------------------------------------------------------------------------------------------------
     /-	helper operations
     /---------------------------------------------------------------------------------------------------------------*/
@@ -1332,97 +1226,98 @@ if (__thisIsNewer) {
         }
     }
     function $GET(variable, options) {//used to retrieve variables in the url
-    try {
-        if (!variable) {
-            var allkeyvalues = {},
-            mapFunc = function(value){
-                if (value == "") {
-                    return;
-                }
-                var keyvalue = value.split('='),
-                len = keyvalue.length;
-                if (len > 2) {
-                    for (var i = 2; i < len; i++) {
-                        keyvalue[1] += keyvalue[i];
+        try {
+            if (!variable) {
+                var allkeyvalues = {},
+                mapFunc = function(value){
+                    if (value == "") {
+                        return;
                     }
-                }
-                return allkeyvalues[keyvalue[0]] = keyvalue[1];
-            };
-            
-            ($l.search[0] == "?" ? $l.search.substr(1) : $l.search).split('&').map(mapFunc);
-            ($l.hash[0] == "#" ? $l.hash.substr(1) : $l.hash).split('@').map(mapFunc);
-            return allkeyvalues;
-        }
-        options = options || {};
-        var ignoreCase = options.ignoreCase || options == "ignoreCase" ? "i" : "",
-        defer = !!$COMMIT.update && (options.defer || options == "defer"),
-        regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
-        attr = "search",
-        location = {};
-        location.hash = $l.hash;
-        location.search = $l.search;
-        
-        if (defer) {
-            location.hash = $COMMIT.hash || "";
-            location.search = $COMMIT.search || "";
-        } else if (options.url || $c && $c.isString && ($c.isString(options) && (options.indexOf("?") != -1 || options.indexOf("#") != -1))) {
-            var query = options.url || options,
-            hindex, qindex = query.indexOf("?");
-            
-            qindex != -1 && (query = query.substr(qindex));
-            
-            hindex = query.indexOf("#");
-            if (hindex != -1) {
-                location.hash = query.substr(hindex);
-                query = query.substr(0,hindex);
+                    var keyvalue = value.split('='),
+                    len = keyvalue.length;
+                    if (len > 2) {
+                        for (var i = 2; i < len; i++) {
+                            keyvalue[1] += keyvalue[i];
+                        }
+                    }
+                    return allkeyvalues[keyvalue[0]] = keyvalue[1];
+                };
+
+                ($l.search[0] == "?" ? $l.search.substr(1) : $l.search).split('&').map(mapFunc);
+                ($l.hash[0] == "#" ? $l.hash.substr(1) : $l.hash).split('@').map(mapFunc);
+                return allkeyvalues;
             }
-            location.search = query;
-        }
-		
+            options = options || {};
+            var ignoreCase = options.ignoreCase || options == "ignoreCase" ? "i" : "",
+            defer = !!$COMMIT.update && (options.defer || options == "defer"),
+            regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
+            attr = "search",
+            location = {};
+            location.hash = $l.hash;
+            location.search = $l.search;
+
+
+            if (defer) {
+                location.hash = $COMMIT.hash || "";
+                location.search = $COMMIT.search || "";
+            } else if (options.url || $c && $c.isString && ($c.isString(options) && (options.indexOf("?") != -1 || options.indexOf("#") != -1))) {
+                var query = options.url || options,
+                hindex, qindex = query.indexOf("?");
+
+                qindex != -1 && (query = query.substr(qindex));
+
+                hindex = query.indexOf("#");
+                if (hindex != -1) {
+                    location.hash = query.substr(hindex);
+                    query = query.substr(0,hindex);
+                }
+                location.search = query;
+            }
+
             var delimiter = "&";
-        if (regex.test(location.hash)) {
-            attr = 'hash';
+            if (regex.test(location.hash)) {
+                attr = 'hash';
                 delimiter = "@";
-        } else if (!regex.test(location.search)){
-            return false;
-        }
+            } else if (!regex.test(location.search)){
+                return false;
+            }
             regex = new RegExp('(.*)?(' + variable +'=)(.*?)(([' + delimiter + '])(.*)|$)', ignoreCase);
-        return decodeURI(location[attr].replace(regex, '$3'));
-    } catch (e) {
-        logit('$GET');
-        logit(e);
+            return decodeURI(location[attr].replace(regex, '$3'));
+        } catch (e) {
+            logit('$GET');
+            logit(e);
+        }
     }
-}
     function $SET(keyValuePairs, options) {
-    try {
-        if (arguments.length == 3 || $c.isString(keyValuePairs)) {
-            var variable = keyValuePairs;
-            keyValuePairs = {};
-            keyValuePairs[variable] = options;
-            options = arguments[2] || {};
-        } else if (!options) {
-            options = {};
-        }
-        var defer = !!(options.defer || options == "defer");
-        loc = {
-            'search' : $l.search, 
-            'hash' : $l.hash
-        };
-        if ($c.isArray(keyValuePairs)) {
-            for (var i = 0, len = keyValuePairs.length; i < len; i++) {
-                var keyValuePair = keyValuePairs[i];
-                loc = _set(keyValuePair.variable, keyValuePair.value, defer, options, loc);
+        try {
+            if (arguments.length == 3 || $c.isString(keyValuePairs)) {
+                var variable = keyValuePairs;
+                keyValuePairs = {};
+                keyValuePairs[variable] = options;
+                options = arguments[2] || {};
+            } else if (!options) {
+                options = {};
             }
-        } else if ($c.isObject(keyValuePairs)) {
-            for (variable in keyValuePairs) {
-                if (!keyValuePairs.hasOwnProperty(variable)) {
-                    continue;
+            var defer = options.defer || options == "defer" ? true : false,
+            loc = {
+                'search' : $l.search, 
+                'hash' : $l.hash
+            };
+            if ($c.isArray(keyValuePairs)) {
+                for (var i = 0, len = keyValuePairs.length; i < len; i++) {
+                    var keyValuePair = keyValuePairs[i];
+                    loc = _set(keyValuePair.variable, keyValuePair.value, defer, options, loc);
                 }
-                loc = _set(variable, keyValuePairs[variable], defer, options, loc);
+            } else if ($c.isObject(keyValuePairs)) {
+                for (variable in keyValuePairs) {
+                    if (!keyValuePairs.hasOwnProperty(variable)) {
+                        continue;
+                    }
+                    loc = _set(variable, keyValuePairs[variable], defer, options, loc);
+                }
             }
-        }
-        
-        if (!defer) {
+
+            if (!defer) {
                 var noHistory = options.noHistory || options == "noHistory" || options == "h";
                 if (noHistory) {
                     if(loc.hash[0] != "#") {
@@ -1434,15 +1329,15 @@ if (__thisIsNewer) {
                     $l.replace(loc.search + loc.hash);
                     return;
                 }
-            $l.hash = loc.hash;
-            if ($l.search.trim() != loc.search.trim()) {
-                $l.search = loc.search;
+                $l.hash = loc.hash;
+                if ($l.search.trim() != loc.search.trim()) {
+                    $l.search = loc.search;
+                }
             }
+        } catch (e) {
+            error("$SET", e);
         }
-    } catch (e) {
-        error("$SET", e);
     }
-}
     function $DEL(variables, options){
         try {
             if ($c.isString(variables)) {
@@ -1454,12 +1349,12 @@ if (__thisIsNewer) {
             regex, attr;
             for (var i = 0, len = variables.length; i < len; i++) {
                 var variable = variables[i];
-                    regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
-                    attr = "search";
+                regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
+                attr = "search";
                 if (regex.test($l.hash)) {
                     attr = 'hash';
                 } else if (!regex.test($l.search)){
-                        continue;
+                    continue;
                 }
 
                 $COMMIT[attr] = $COMMIT[attr] || "";
@@ -1468,9 +1363,9 @@ if (__thisIsNewer) {
 
                 if (!defer) {
                     $l[attr] = $l[attr].replace(regex, '');
-                        if (attr == 'hash') {
-                            _invokeHashChange();
-                        }
+                    if (attr == 'hash') {
+                        _invokeHashChange();
+                    }
                 } else {		
                     $COMMIT[attr] = ($COMMIT[attr] || $l[attr]);
                     $COMMIT[attr] = $COMMIT[attr].replace(regex, '');
@@ -1488,21 +1383,21 @@ if (__thisIsNewer) {
             var noHistory = options.noHistory || options == "noHistory" || options == "h";
             if ($COMMIT.update) {
                 if ($COMMIT.search) {
-                        if (noHistory) {
-                            $l.replace($COMMIT.search + ($COMMIT.hash || ""));
-                        } else {
+                    if (noHistory) {
+                        $l.replace($COMMIT.search + ($COMMIT.hash || ""));
+                    } else {
                     $l.href = $COMMIT.search + ($COMMIT.hash || "");
-                        }
-                } else if ($COMMIT.hash) {
-                        if (noHistory) {
-                            var hash = $COMMIT.hash[0] == '#' ? $COMMIT.hash : "#" + $COMMIT.hash
-                            $l.replace($COMMIT.hash);
-                        } else {
-                    $l.hash = $COMMIT.hash;
-                }
-                        $COOKIE("CRAYDENTHASH", $l.hash[0] == '#' ? $l.hash.substring(1) : $l.hash);
-                        _invokeHashChange();
                     }
+                } else if ($COMMIT.hash) {
+                    if (noHistory) {
+                        var hash = $COMMIT.hash[0] == '#' ? $COMMIT.hash : "#" + $COMMIT.hash
+                        $l.replace($COMMIT.hash);
+                    } else {
+                    $l.hash = $COMMIT.hash;
+                    }
+                    $COOKIE("CRAYDENTHASH", $l.hash[0] == '#' ? $l.hash.substring(1) : $l.hash);
+                    _invokeHashChange();
+                }
                 $ROLLBACK();
             }
         } catch (e) {
@@ -1511,14 +1406,14 @@ if (__thisIsNewer) {
     }
     function $ROLLBACK() {
         try {
-        delete $COMMIT.update;
+            delete $COMMIT.update;
             delete $COMMIT.noHistory;
-        delete $COMMIT.search;
-        delete $COMMIT.hash;
+            delete $COMMIT.search;
+            delete $COMMIT.hash;
             delete $COMMIT.onhashchange;
         } catch (e) {
             error('$ROLLBACK', e);
-    }
+        }
     }
     
     function ChromeVersion (){
@@ -1637,13 +1532,13 @@ if (__thisIsNewer) {
                 objs = [objs];
             }
             var html = "", variable, value, hasDataProps = htmlTemplate.indexOf('${dataproperties}') != -1;
-                for (var j = 0, jlen = $c.TEMPLATE_VARS.length; j < jlen; j++) {
+            for (var j = 0, jlen = $c.TEMPLATE_VARS.length; j < jlen; j++) {
                 variable = $c.TEMPLATE_VARS[j].variable;
-                    value = $c.TEMPLATE_VARS[j].variable;
-                    if (!variable) {continue;}
-                    value = $c.isFunction(value) ? value(obj,i):value;
+                value = $c.TEMPLATE_VARS[j].variable;
+                if (!variable) {continue;}
+                value = $c.isFunction(value) ? value(obj,i):value;
                 htmlTemplate = htmlTemplate.replace_all("${"+variable+"}", value);
-                }
+            }
             
             max = max || objs.length
             offset = offset || 0;
@@ -1654,20 +1549,20 @@ if (__thisIsNewer) {
                 while ((match=/\$\{this\.(.+?)\}/.exec(template))) {
                     value = parseRaw($c.propertyValue(obj, match[1]), true);
                     template= template.replace_all("${this."+match[1]+"}", value);
-                }
+                }            
                 var objval;
                 for (var property in obj) {
                     var expression = "${"+property+"}";
-                    if (template.contains(expression) && (objval = $c.propertyValue(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
+                    if (template.indexOf(expression) != -1 && (objval = $c.propertyValue(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
                         objval = parseRaw(objval, true).replace_all('\n','<br />').replace_all(';', ';\\').replace_all('[','\\[').replace_all(']','\\]');
                         template = template.replace_all(expression, objval)
 
                         if (hasDataProps) {
                                 template = template.replace_all('${dataproperties}', "data-" + property + "='" + 
                             (objval.indexOf('<') && "" || objval) + "' ${dataproperties}");
-                    }
                         }
                     }
+                }
                 template = template.replace_all('\n', '');
                 // special run sytax
                 template = template.replace(/\$\{COUNT\[(.*?)\]\}/g, '${RUN[__count;$1]}');
@@ -1983,17 +1878,17 @@ if (__thisIsNewer) {
             if (value === null || value === undefined) {
                 return value + "";
             } 
-        var raw = "";
-        if ($c.isString(value)) {
-            !skipQuotes && (raw = "\"" + value + "\"") || (raw = value);
-        }
-        else if ($c.isArray(value)) {
-            var tmp = [];
-            for (var i = 0, len = value.length; i < len; i++) {
-                tmp[i] = parseRaw(value[i]);
+            var raw = "";
+            if ($c.isString(value)) {
+                !skipQuotes && (raw = "\"" + value + "\"") || (raw = value);
             }
-            raw = "[" + tmp.join(',') + "]";
-        }
+            else if ($c.isArray(value)) {
+                var tmp = [];
+                for (var i = 0, len = value.length; i < len; i++) {
+                    tmp[i] = parseRaw(value[i]);
+                }
+                raw = "[" + tmp.join(',') + "]";
+            }
             else if (value instanceof Object && !$c.isFunction(value)) {
                 if (!__windowVars) {
                     __windowVars = [];
@@ -2002,7 +1897,7 @@ if (__thisIsNewer) {
                         if (value.hasOwnProperty(prop)) {
                             __windowVars.push($w[prop]);
                             __windowVarNames.push(prop);
-        }
+                        }
                     }
                 }
                 var index = __windowVars.indexOf(value);
@@ -2025,13 +1920,13 @@ if (__thisIsNewer) {
     //                }
                 }
             }
-        else {
-            raw = value.toString();
-        }
-        return raw;
+            else {
+                raw = value.toString();
+            }
+            return raw;
         } catch (e) {
             error('parseRaw', e);
-    }
+        }
     }
     function rand(num1, num2, inclusive) {
         try {
@@ -2063,63 +1958,63 @@ if (__thisIsNewer) {
     /*timing functions*/
     function wait() {
         try {
-        var args = arguments.callee.caller.arguments,
-        funcOriginal = arguments.callee.caller.toString().
-        replace(/\/\/.*?[\r\n]/gi,'').
-        replace(/[\t\r\n]*/gi, '').
-        replace(/\/\*.*?\*\//gi, ''),
-        func = funcOriginal,
-        funcArgNames = func.trim().replace(/^function\s*?\((.*?)\).*/, '$1').replace(/\s*/gi,'').split(','),
-        fname = func.replace(/function\s*?(.*?)\s*?\(.*/,'$1'),
-        fnBefore = func.substr(0, func.indexOf('return wait')),
-        variableGroups = fnBefore.match(/var .*?;/gi),
-        condition = func.replace(/.*?(return)*\s*?wait\((.*?)\);.*/, '$2'),
-        fregex = /\s*?function\s*?\(\s*?\)\s*?\{/;
-        func = func.replace(fname, '').replace(/(function\s*?\(.*?\)\s*?\{).*?(return)*\s*?wait\((.*?)\);/, '$1');
-        for (var a = 0, alen = funcArgNames.length; a < alen; a++) {
-            if (funcArgNames[a]) {
-                func = func.replace(fregex, 'function(){var ' + funcArgNames[a] + '=' + parseRaw(args[a]) + ';');
-            }
-        }
-        for (var i = 0, len = variableGroups.length; i < len; i++) {
-            variableGroups[i] = variableGroups[i].replace(/^var\s(.*)?;/,'$1');
-            var variables = variableGroups[i].split(/^(?!.*\{.*,).*$/g);
-            if (!variables[0]) {
-                variables = variableGroups[i].split(',');
-            }
-            for (var j = 0, jlen = variables.length; j < jlen; j++) {
-                var variable = variables[j], regex, values;
-                if (variable.indexOf('=') != -1) {
-                    variable = variable.split('=')[0].trim();
+            var args = arguments.callee.caller.arguments,
+            funcOriginal = arguments.callee.caller.toString().
+            replace(/\/\/.*?[\r\n]/gi,'').
+            replace(/[\t\r\n]*/gi, '').
+            replace(/\/\*.*?\*\//gi, ''),
+            func = funcOriginal,
+            funcArgNames = func.trim().replace(/^function\s*?\((.*?)\).*/, '$1').replace(/\s*/gi,'').split(','),
+            fname = func.replace(/function\s*?(.*?)\s*?\(.*/,'$1'),
+            fnBefore = func.substr(0, func.indexOf('return wait')),
+            variableGroups = fnBefore.match(/var .*?;/gi),
+            condition = func.replace(/.*?(return)*\s*?wait\((.*?)\);.*/, '$2'),
+            fregex = /\s*?function\s*?\(\s*?\)\s*?\{/;
+            func = func.replace(fname, '').replace(/(function\s*?\(.*?\)\s*?\{).*?(return)*\s*?wait\((.*?)\);/, '$1');
+            for (var a = 0, alen = funcArgNames.length; a < alen; a++) {
+                if (funcArgNames[a]) {
+                    func = func.replace(fregex, 'function(){var ' + funcArgNames[a] + '=' + parseRaw(args[a]) + ';');
                 }
-                regex = new RegExp(variable + '\\s*?=\\s*?.*?\\s*?[,;]', 'gi');
-                values = fnBefore.match(regex) || [];
-                for (var k = values.length - 1; k >= 0; k--){
-                    try {
-                        var value = eval(values[k].replace(/.*?=\s*?(.*?)\s*?;/, '$1').trim());
-                        func = func.replace(fregex, 'function(){var ' + variable + '=' + parseRaw(value) + ';');
-                    } catch (e) {
-                        error("wait.eval-value", e)
+            }
+            for (var i = 0, len = variableGroups.length; i < len; i++) {
+                variableGroups[i] = variableGroups[i].replace(/^var\s(.*)?;/,'$1');
+                var variables = variableGroups[i].split(/^(?!.*\{.*,).*$/g);
+                if (!variables[0]) {
+                    variables = variableGroups[i].split(',');
+                }
+                for (var j = 0, jlen = variables.length; j < jlen; j++) {
+                    var variable = variables[j], regex, values;
+                    if (variable.indexOf('=') != -1) {
+                        variable = variable.split('=')[0].trim();
+                    }
+                    regex = new RegExp(variable + '\\s*?=\\s*?.*?\\s*?[,;]', 'gi');
+                    values = fnBefore.match(regex) || [];
+                    for (var k = values.length - 1; k >= 0; k--){
+                        try {
+                            var value = eval(values[k].replace(/.*?=\s*?(.*?)\s*?;/, '$1').trim());
+                            func = func.replace(fregex, 'function(){var ' + variable + '=' + parseRaw(value) + ';');
+                        } catch (e) {
+                            error("wait.eval-value", e)
+                        }
                     }
                 }
             }
-        }
 
-        if ($c.isNumber(condition)) {
-            setTimeout(eval(func), condition);
-        } else {
-            var delayFunc = function(){
-                if (eval(condition)) {
-                    (eval("(" + func + ")"))();
-                } else {
-                    setTimeout(delayFunc, 1);
+            if ($c.isNumber(condition)) {
+                setTimeout(eval(func), condition);
+            } else {
+                var delayFunc = function(){
+                    if (eval(condition)) {
+                        (eval("(" + func + ")"))();
+                    } else {
+                        setTimeout(delayFunc, 1);
+                    }
                 }
+                setTimeout(delayFunc, 1);
             }
-            setTimeout(delayFunc, 1);
-        }
         } catch (e) {
             error('wait', e);
-    }
+        }
     }
     function foo () {}
     // Changes XML to JSON
@@ -2214,13 +2109,7 @@ if (__thisIsNewer) {
     _browser = (_ie != -1 && 'Internet Explorer') || (_chrm != -1 && 'Chrome') || (_ff != -1 && 'Firefox') || (_saf != -1 && 'Safari'),
     _os = (_droid && 'Android') || (_bbery && 'BlackBerry') || (_linx && 'Linux') || ((_ipad || _ifon || _ipod) && 'iOS') || (_mac && 'Mac') || (_palm && 'PalmOS') || (_symb && 'Symbian') || (_win && 'Windows') || (_winm && 'Windows Mobile'),
     _device = (_droid && 'Android') || (_bbery && 'BlackBerry') || (_ipad && 'iPad') || (_ifon && 'iPhone') || (_ipod && 'iPod') || (_linx && 'Linux') || (_mac && 'Mac') || (_palm && 'PalmOS') || (_symb && 'Symbian') || (_win && 'Windows') || (_winm && 'Windows Mobile'),
-    _engine = (_amay && 'Amaya') || (_gekk && 'Gekko') || (_khtm && 'KHTML') || (_pres && 'Presto') || (_prin && 'Prince') || (_trid && 'Trident') || (_webk && 'WebKit'),
-    _cors = (function () {
-        if ('withCredentials' in new XMLHttpRequest() || typeof XDomainRequest !== "undefined") {
-            return true;
-        }
-        return false;
-    })();
+    _engine = (_amay && 'Amaya') || (_gekk && 'Gekko') || (_khtm && 'KHTML') || (_pres && 'Presto') || (_prin && 'Prince') || (_trid && 'Trident') || (_webk && 'WebKit');
     
     if (!$w.__craydentLoaded) {
         var Craydent = {
@@ -2242,11 +2131,10 @@ if (__thisIsNewer) {
                 SAFARI_VERSION:_saf
             },
             client: {
-                BROWSER: _browser,
-                CORES_SUPPORT: _cors,
-                DEVICE: _device,
-                ENGINE: _engine,
-                OS:_os
+                browser: _browser,
+                device: _device,
+                engine: _engine,
+                os:_os
             },
             engine:{
                 CURRENT:_engine,
@@ -2290,7 +2178,6 @@ if (__thisIsNewer) {
             CHROME:isChrome(),
             CHROME_VERSION:_chrm,
             CLICK: "click",
-            CORES_SUPPORT: _cors,
             DEBUG_MODE: !!$GET("debug"),
             FIREFOX:isFirefox(),
             FIREFOX_VERSION:FirefoxVersion(),
@@ -2470,13 +2357,6 @@ if (__thisIsNewer) {
             error('String.endsWith', e);
         }
      });
-    _ext(String, 'fillTemplate', function (arr_objs, offset, max) {
-        try {
-            return fillTemplate(this, arr_objs, offset, max);
-        } catch (e) {
-            error('String.fillTemplate', e);
-        }
-    });
     _ext(String, 'indexOfAlt', function(regex, pos) {
         try {
             pos = pos || 0;
@@ -2596,7 +2476,13 @@ if (__thisIsNewer) {
             error('String.startsWith', e);
         }
     });
-    _ext(String, 'strip', function(character) {return _strip(this, character);}, true);
+    _ext(String, 'strip', function(character) {
+        try {
+            return _strip(this, character);
+        } catch (e) {
+            error("String.strip", e);
+        }
+    }, true);
     _ext(String, 'toCurrencyNotation', function (separator) {
         try {
             separator = separator || ",";
@@ -2758,7 +2644,16 @@ if (__thisIsNewer) {
             error('Array.complexSort', e);
         }
     },true);
-    _ext(Array, 'condense', function (check_values, alter) {return _condense(this, check_values, alter);}, true);
+    
+    _ext(Array, 'condense', function (check_values, alter) {
+        try {
+            return _condense(this, check_values, alter);
+        } catch (e) {
+            error("Array.condence", e);
+            return false;
+        }
+    }, true);
+
     _ext(Array, 'every', function(callback /*, thisObject*/) {
         try {
             var thisObject = arguments[1] || this;
@@ -2791,7 +2686,15 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'indexOf', function(value) {return _indexOf(this, value);}, true);
+
+    _ext(Array, 'indexOf', function(value) {
+        try {
+            return _indexOf(this, value);
+        } catch (e) {
+            error("Array.indexOf", e);
+        }  
+    }, true);
+
     _ext(Array, 'indexOfAlt', function(value, func) {
         try {
             var len = this.length,
@@ -2848,7 +2751,7 @@ if (__thisIsNewer) {
         }  
     }, true);
     
-    _extend(Array, 'normalize', function () {
+    _ext(Array, 'normalize', function () {
         try {
             var allProps = {}, arrObj = [], len = this.length, i;
             for(i = 0; i < len; i++) {
@@ -3602,7 +3505,6 @@ if (__thisIsNewer) {
             error('Object.getClass', e)
         }
     });
-    _ao("hop", Object.prototype.hasOwnProperty);
     _ao("innerJoin", function (right, options) {
         try {
             if (!$c.isObject(this) && !$c.isObject(right)) {
@@ -3623,7 +3525,13 @@ if (__thisIsNewer) {
             error('Object.innerJoin', e);
         }
     });
-    _ao("isArray", function () {return _isArray(this);});
+    _ao("isArray", function () {
+        try {
+            return _isArray(this);
+        } catch (e) {
+            error('Object.isArray', e);
+        }
+    });
     _ao("isBetween", function(lowerBound, upperBound, inclusive) {
         try {
             if (this === undefined) {return false;}
@@ -3708,7 +3616,13 @@ if (__thisIsNewer) {
             error('Object.isObject', e);
         }
     });
-    _ao("isString", function () {return _isString(this);});
+    _ao("isString", function () {
+        try {
+            return _isString(this);
+        } catch (e) {
+            error('Object.isString', e);
+        }
+    });
     _ao("isSubset", function (compare){
         try {
             if (($c.isObject(this) && $c.isObject(compare)) || ($c.isArray(this) && compare.isArray())) {
