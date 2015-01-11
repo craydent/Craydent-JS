@@ -54,7 +54,61 @@ $w.__craydentVersion = __version;
 
 if (__thisIsNewer) {
 
-    var _ao,_ah;
+    var _ao,_ah, _irregularNouns = {
+        "addendum":"addenda",
+        "alga":"algae",
+        "alumna":"alumnae",
+        "apparatus":"apparatuses",
+        "appendix":"appendices",
+        "bacillus":"bacilli",
+        "bacterium":"bacteria",
+        "beau":"beaux",
+        "bison":"bison",
+        "bureau":"bureaus",
+        "child":"children",
+        "corps":"corps",
+        "corpus":"corpora",
+        "curriculum":"curricula",
+        "datum":"data",
+        "deer":"deer",
+        "die":"dice",
+        "diagnosis":"diagnoses",
+        "erratum":"errata",
+        "fireman":"firemen",
+        "focus":"focuses",
+        "foot":"feet",
+        "genus":"genera",
+        "goose":"geese",
+        "index":"indices",
+        "louse":"lice",
+        "man":"men",
+        "matrix":"matrices",
+        "means":"means",
+        "medium":"media",
+        "memo":"memos",
+        "memorandum":"memoranda",
+        "moose":"moose",
+        "mouse":"mice",
+        "nebula":"nebulae",
+        "ovum":"ova",
+        "ox":"oxen",
+        "person":"people",
+        "radius":"radii",
+        "series":"series",
+        "sheep":"sheep",
+        "scissors":"scissors",
+        "species":"species",
+        "stratum":"strata",
+        "syllabus":"syllabi",
+        "tableau":"tableaux",
+        "that":"those",
+        "this":"these",
+        "tooth":"teeth",
+        "vertebra":"vertebrae",
+        "vita":"vitae",
+        "woman":"women",
+        "zero":"zeros"
+    };
 
     /*----------------------------------------------------------------------------------------------------------------
     /-	define functions preventing overwriting other framework functions
@@ -870,13 +924,13 @@ if (__thisIsNewer) {
                 "\n":1
             };
             if (characters) {
-                if ($c.isArray(characters)) {
+                if (_isArray(characters)) {
                     var char = "", i = 0;
                     trimChars = {};
                     while (char = characters[i++]) {
                         trimChars[char] = 1;
                     }
-                } else if ($c.isString(characters)) {
+                } else if (_isString(characters)) {
                     trimChars = eval('({"'+characters+'":1})');
                 }
             }
@@ -2455,6 +2509,16 @@ if (__thisIsNewer) {
             error('String.convertUTCDate', e);
         }
     }, true);
+    _ext(String, 'ellipsis', function (before, after) {
+         try {
+            if (before + after > this.length) {
+                return this;
+            }
+            return this.slice(0, before) + this.slice(-1*after);
+        } catch (e) {
+            error('String.ellipsis', e);
+        }
+     });
      _ext(String, 'endsWith', function (str) {
          try {
             for (var i = 0, len = arguments.length; i < len; i++) {
@@ -2540,6 +2604,32 @@ if (__thisIsNewer) {
             error("String.ltrim", e);
         }
     }, true);
+    _ext(String, 'pluralize', function () {
+         try {
+            var str = this;
+                
+            if (_irregularNouns[str]) {
+                str = _irregularNouns[str];
+            } else if (str.slice(-1) in {"s":1,"x":1,"o":1} || str.slice(-2) in {"ch":1,"sh":1,"is":1}) {
+                str += "es";
+            } else if (str.slice(-1) == "f") {
+                str = str.slice(0,-1) + "ves";
+            } else if (str.slice(-2) == "fe") {
+                str = str.slice(0,-2) + "ves";
+            } else if (str.slice(-1) == "y") {
+                str = str.slice(0,-1) + "ies";
+            } else if (str.slice(-2) == "us") {
+                str = str.slice(0,-2) + "i";
+            } else if (str.slice(-2) == "on") {
+                str = str.slice(0,-2) + "a";
+            } else { // regular nouns
+                str += "s";
+            }
+            return str;
+        } catch (e) {
+            error('String.pluralize', e);
+        }
+     });
     _ext(String, 'replace_all', function(replace, subject) {
         try {
             return _replace_all.call(this, replace, subject, "g")
@@ -2581,6 +2671,34 @@ if (__thisIsNewer) {
             error("String.sanitize", e);
         }
     }, true);
+    _ext(String, 'singularize', function () {
+         try {
+            var str = this, key;
+                
+            if (key = $c.keyOf(_irregularNouns, str)) {
+                str = key;
+            } else if (str.slice(-3) == "ves") {
+                if (str[str.length - 4] in {a:1,e:1,i:1,o:1,u:1}) {
+                    str = str.slice(0,-3) + "fe";
+                } else {
+                    str = str.slice(0,-3) + "f";
+                }
+            } else if (str.slice(-3) == "ies") {
+                str = str.slice(0,-3) + "y";
+            } else if (str.slice(-1) == "a") {
+                str = str.slice(0,-1) + "on"; 
+            } else if (str.slice(-1) == "i") {
+                str = str.slice(0,-1) + "us";
+            } else if (str.slice(-3) in {"ses":1,"xes":1,"oes":1} || str.slice(-4) in {"ches":1,"shes":1,"ises":1}) {
+                str = str.slice(0,-2);
+            } else { // regular nouns
+                str = str.slice(0,-1);
+            }
+            return str;
+        } catch (e) {
+            error('String.singularize', e);
+        }
+     });
     _ext(String, 'startsWith', function (/*str, str1*/) {
         try {
             for (var i = 0, len = arguments.length; i < len; i++) {
@@ -2848,7 +2966,7 @@ if (__thisIsNewer) {
         }  
     }, true);
     
-    _extend(Array, 'normalize', function () {
+    _ext(Array, 'normalize', function () {
         try {
             var allProps = {}, arrObj = [], len = this.length, i;
             for(i = 0; i < len; i++) {
@@ -3776,6 +3894,19 @@ if (__thisIsNewer) {
                 (!right[prop] || overwrite) && (right[prop] = this[prop]);
             }
             return true;
+        } catch (e) {
+            error('Object.joinRight', e);
+        }
+    });
+    _ao("keyOf", function (value) {
+        try {
+            for(var prop in this) {
+                if(this.hasOwnProperty(prop)) {
+                     if(this[prop] === value)
+                         return prop;
+                }
+            }
+            return null;
         } catch (e) {
             error('Object.joinRight', e);
         }
