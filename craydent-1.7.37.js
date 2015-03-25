@@ -2739,37 +2739,37 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
     /-	Array class Extensions
     /---------------------------------------------------------------------------------------------------------------*/
-    _ext(Array,'buildTree', function (arr,rt,child,options) {
+    _ext(Array,'buildTree', function (rt,child,options) {
         try {
             options = options || {};
             var rtnArr = [];
-            var i = 0,obj,cats=[],catDict={},tmp={}, singles = {};
+            var i = 0,objt,cats=[],catDict={},tmp={}, singles = {};
             var prop = options.childProp || "children";
-            while(obj=arr[i++]){
-                var cat = $c.isFunction(child) ? child(obj) : obj[child],
+            while(objt=this[i++]){
+                var cat = $c.isFunction(child) ? child(objt) : objt[child],
                     rootFound = cats.contains(cat);
 
-                obj[prop] = obj[prop] || [];
-                if (rt(obj)) {
+                objt[prop] = objt[prop] || [];
+                if (rt(objt)) {
                     delete singles[cat];
 
                     if (!rootFound && tmp[cat]) {
-                        obj[prop] = tmp[cat];
+                        objt[prop] = tmp[cat];
                     }
-                    tmp[cat] = obj[prop];
+                    tmp[cat] = objt[prop];
 
                     cats.push(cat);
-                    //catDict[cat] = obj;
-                    rtnArr.push(obj);
+                    //catDict[cat] = objt;
+                    rtnArr.push(objt);
                     continue;
                 }
 
                 // root not found yet
                 if (!rootFound) {
                     singles[cat] = singles[cat] || [];
-                    singles[cat].push(obj);
+                    singles[cat].push(objt);
                     tmp[cat] = tmp[cat] || [];
-                    tmp[cat].push(obj);
+                    tmp[cat].push(objt);
                 }
             }
             for (var prop in singles) {
