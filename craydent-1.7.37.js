@@ -894,7 +894,6 @@ if (__thisIsNewer) {
                                 continue;
                             }
                             value = $c.getProperty(record, field);
-                            var
                             for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
                                 var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values  
                                 if (($c.isArray(value) && value.contains(query[fieldProp][k])) 
