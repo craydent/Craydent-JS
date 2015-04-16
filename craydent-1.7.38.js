@@ -950,7 +950,9 @@ if (__thisIsNewer) {
                         if (value === undefined) {
                             return false;
                         }
-                        rtn = value != query['$ne'];
+                        var q = query['$ne'],
+                                isRegex = q.constructor == RegExp;
+                        rtn = !(isRegex ? q.test(value) : value == q);
                     break;
 
                     case "$lt":
@@ -1211,11 +1213,11 @@ if (__thisIsNewer) {
 
 
         for (var i = 0, len = objs.length; i < len; i++) {
-            if (returnAll || _subQuery(objs[i], [condition],'$or', i)) {
-                if(!callback.call(objs, objs[i], i)) {
+                if (returnAll || _subQuery(objs[i], [condition],'$or', i)) {
+                    if(!callback.call(objs, objs[i], i)) {
                     break;
+                    }
                 }
-            }
         }
     }
 
@@ -1881,9 +1883,9 @@ if (__thisIsNewer) {
 
             for (var i = offset; i < max; i++) {
                 var obj = objs[i], regex, template = htmlTemplate;
-                if (!$c.isObject(obj)) {
-                    continue;
-                }
+//                if (!$c.isObject(obj) && typeof obj != "object") {
+//                    continue;
+//                }
 
                 if (template.contains("${this}")) {
                     template = template.replace_all(["${this}","${index}"],[parseRaw(obj, true).replace_all([';','[',']'], [';\\','\\[','\\]']),i]);
@@ -3410,6 +3412,34 @@ if (__thisIsNewer) {
             // if sql syntax convert to mongo object syntax
             if ($c.isString(condition)) {
                 condition = _processClause(condition);
+            }
+            
+            // check if there is query MongoDB syntax
+            if (!/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$where":|"\$elemMatch":|"\$not":/.test(JSON.stringify(condition))) {
+                var props=[],
+                    ncheck = function (o,c,p) {return o[p.prop] != c[c.prop]},
+                    rcheck = function (o,c,p) {return ncheck(o,c,p) && p.isReg && !c[p.prop].test(o[p.prop])},
+                    check = ncheck;
+                for (var p in condition) {
+                    var isReg = false;
+                    if (condition.hasOwnProperty(p)) {
+                        if (condition[p].constructor == RegExp) {
+                            isReg = true;
+                            check = rcheck;
+                        }
+                        props.push({prop:p,isReg:isReg});
+                    }
+                }
+                
+                return this.filter(function (obj) {
+                    var j = 0, prop;
+                    while (prop = props[j++]) {
+                        if (check(obj,condition,prop)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
             }
             
             var arr = [];
