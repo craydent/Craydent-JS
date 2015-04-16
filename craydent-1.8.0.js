@@ -937,7 +937,9 @@ if (__thisIsNewer) {
                         if (value === undefined) {
                             return false;
                         }
-                        rtn = value != query['$ne'];
+                        var q = query['$ne'],
+                                isRegex = q.constructor == RegExp;
+                        rtn = !(isRegex ? q.test(value) : value == q);
                     break;
 
                     case "$lt":
@@ -5004,6 +5006,34 @@ if (__thisIsNewer) {
                 return this;
             }
 
+            // check if there is query MongoDB syntax
+            if (!projection && !/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$where":|"\$elemMatch":|"\$not":/.test(JSON.stringify(condition))) {
+                var props=[],
+                    ncheck = function (o,c,p) {return o[p.prop] != c[c.prop]},
+                    rcheck = function (o,c,p) {return ncheck(o,c,p) && p.isReg && !c[p.prop].test(o[p.prop])},
+                    check = ncheck;
+                for (var p in condition) {
+                    var isReg = false;
+                    if (condition.hasOwnProperty(p)) {
+                        if (condition[p].constructor == RegExp) {
+                            isReg = true;
+                            check = rcheck;
+                        }
+                        props.push({prop:p,isReg:isReg});
+                    }
+                }
+                
+                return this.filter(function (obj) {
+                    var j = 0, prop;
+                    while (prop = props[j++]) {
+                        if (check(obj,condition,prop)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+
             var arr = [];
             _whereHelper(this, condition, function (obj,i) {
                 return arr.push(useReference ? obj : _copyWithProjection(projection, obj));
@@ -5497,7 +5527,7 @@ if (__thisIsNewer) {
             error('Object.duplicate', e);
         }
     });
-    _ao("equals", function (compare){
+    _ao("equals", function (compare, props){
         /*|  {info: "Object class extension to check if object values are equal",
          *    category: "Object",
          *    parameters:[
@@ -5507,8 +5537,16 @@ if (__thisIsNewer) {
          *    returnType: “(Bool)”
          * |*/
         try {
+            if ($c.isArray(props)) {
+                while (prop = props[j++]) {
+                    if (this.hasOwnProperty(prop) && compare.hasOwnProperty(prop) && this[prop] != compare[prop]
+                    || (!this.hasOwnProperty(prop) && compare.hasOwnProperty(prop)) || (this.hasOwnProperty(prop) && !compare.hasOwnProperty(prop))) {
+                        return false;
+                    }
+                }
+            }
             if (($c.isObject(this) && $c.isObject(compare)) || ($c.isArray(this) && $c.isArray(compare))) {
-                for (prop in compare){
+                for (var prop in compare){
                     if (!compare.hasOwnProperty(prop)) {
                         continue;
                     }
@@ -5516,7 +5554,7 @@ if (__thisIsNewer) {
                         return false;
                     }
                 }
-                for (prop in this){
+                for (var prop in this){
                     if (!this.hasOwnProperty(prop)) {
                         continue;
                     }
