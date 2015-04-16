@@ -935,11 +935,11 @@ if (__thisIsNewer) {
                     // value is the record in the array
                     // q is the conditional value
                     case "$equals":
-                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query),
-                            isRegex = q.constructor == RegExp;
-                        if (isNull(value)) {
+                        if (isNull(query) || isNull(value)) {
                             return false;
                         }
+                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query),
+                            isRegex = q.constructor == RegExp;
 //                        rtn = isRegex ? q.test(value) : 
 //                                (q.hasOwnProperty("$equals") ? value == q['$equals'] : value == q);
                         rtn = isRegex ? q.test(value) : 
@@ -947,7 +947,7 @@ if (__thisIsNewer) {
                     break;
 
                     case "$ne":
-                        if (value === undefined) {
+                        if (isNull(query) || isNull(value)) {
                             return false;
                         }
                         var q = query['$ne'],
