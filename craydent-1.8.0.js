@@ -924,17 +924,18 @@ if (__thisIsNewer) {
                     // value is the record in the array
                     // q is the conditional value
                     case "$equals":
-                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query),
-                            isRegex = q.constructor == RegExp;
-                        if (isNull(value)) {
+                        if (isNull(query) || isNull(value)) {
                             return false;
                         }
+                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query),
+                            isRegex = q.constructor == RegExp;
+                        
                         rtn = isRegex ? q.test(value) : 
                                 ($c.isFunction(q) ? q(record, field, index) : value == q);
                     break;
 
                     case "$ne":
-                        if (value === undefined) {
+                        if (isNull(query) || isNull(value)) {
                             return false;
                         }
                         var q = query['$ne'],
@@ -943,26 +944,26 @@ if (__thisIsNewer) {
                     break;
 
                     case "$lt":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value < query['$lt'];
                     break;
 
                     case "$lte":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value <= query['$lte'];
                     break;
                     case "$gt":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value > query['$gt'];
                     break;
                     case "$gte":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value >= query['$gte'];
@@ -976,7 +977,7 @@ if (__thisIsNewer) {
                         rtn = true;
                     break;
                     case "$regex":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = query["$regex"].test(value);
@@ -987,7 +988,7 @@ if (__thisIsNewer) {
                         rtn = finished.validPath == query["$exists"];
                     break;
                     case "$type":
-                        if (value === undefined && query === undefined || value !== undefined && value.constructor == query) {
+                        if (isNull(value) && isNull(query) || !isNull(value) && value.constructor == query) {
     //                        return true;
                             rtn = true;
                             break;
@@ -998,7 +999,7 @@ if (__thisIsNewer) {
                         //return record.getProperty(field).contains(query['$search']);
                         break;
                     case "$mod":
-                        if (!$c.isArray(query) || value === undefined) {
+                        if (!$c.isArray(query) || isNull(value)) {
                             return false;
                         }
                         rtn = value % query[0] == query[1];
