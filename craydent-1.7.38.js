@@ -2975,7 +2975,7 @@ if (__thisIsNewer) {
                     tmp[cat] = objt[prop];
 
                     cats.push(cat);
-                    //catDict[cat] = objt;
+                    catDict[cat] = objt;
                     rtnArr.push(objt);
                     continue;
                 }
@@ -2986,6 +2986,8 @@ if (__thisIsNewer) {
                     singles[cat].push(objt);
                     tmp[cat] = tmp[cat] || [];
                     tmp[cat].push(objt);
+                } else {
+                    catDict[cat][prop].push(objt);
                 }
             }
             for (var prop in singles) {
