@@ -30,7 +30,7 @@ function __isNewer(loadedVersion, thisVersion){
         }
         return __isNewer(loadedVersion, thisVersion);
     }
-    return loadedVersion < thisVersion;
+    return parseInt(loadedVersion[0]) < parseInt(thisVersion[0]);
 }
 function __cleanUp() {
     try {
@@ -1848,7 +1848,7 @@ if (__thisIsNewer) {
                 offset = 0;
             }
 
-            htmlTemplate = htmlTemplate || "";
+            htmlTemplate = (htmlTemplate || "").replace(/\{\{(?!\{)(.*?)\}\}/g,'${$1}');
             $c.isDomElement(htmlTemplate) && (htmlTemplate = htmlTemplate.toString());
             if (htmlTemplate.trim() == "") {
                 return "";
@@ -1878,7 +1878,8 @@ if (__thisIsNewer) {
             max = max || objs.length;
             offset = offset || 0;
 
-            var props = (htmlTemplate.match(/\$\{.*?\}/g) || []).condense(true);
+            //            var props = (htmlTemplate.match(/\$\{.*?\}/g) || []).condense(true);
+            var props = (htmlTemplate.match(/\$\{(?!\$).*?\}/g) || []).condense(true);
 
 
             for (var i = offset; i < max; i++) {
