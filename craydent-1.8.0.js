@@ -127,6 +127,19 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
     /-	private methods
     /---------------------------------------------------------------------------------------------------------------*/
+    function __and (){
+        try {
+            var len = arguments.length;
+            for(var a = 0; a<len; a++){
+                if(!arguments[a]){
+                    return arguments[a - 1] || "";
+                }
+            }
+            return arguments[len - 1];
+        } catch (e) {
+            error('fillTemplate.__or', e);
+        }
+    }
     function __andNotHelper (record, query, operands, index) {
         try {
             for (var i = 0, len = query.length; i < len; i++) {
@@ -833,7 +846,6 @@ if (__thisIsNewer) {
                 if ($w.HTMLElement.prototype.hasOwnProperty(prop)) {
                     try {
                         if (prop == "dataset" || prop == "firstElementChild" || prop == "nextElementSibling") {
-//                            _elem[prop] = $w.HTMLElement.prototype['_' + prop]();
                             _elem[prop] = $w['_' + prop]();
                             //return;
                         }
@@ -1044,7 +1056,7 @@ if (__thisIsNewer) {
                                     val = query[prop];
                                     operand = "$equals";
                                 }
-                                if (_subQuery(record, val, operand, prop)) {
+                                if (_subQuery(record, val, operand, prop, index)) {
                                     brk = true;
                                     break;
     //                                return true;
@@ -1096,12 +1108,6 @@ if (__thisIsNewer) {
                                 continue;
                             }
                             value = $c.getProperty(record, field);
-
-
-//                            rtn = query[fieldProp].contains(value);
-//                            if (rtn) {
-//                                return isNIN?!rtn:rtn;
-//                            }
                             for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
                                 var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values  
                                 if (($c.isArray(value) && value.contains(query[fieldProp][k])) 
@@ -2119,7 +2125,10 @@ if (__thisIsNewer) {
                     }
                     var expression = "${"+property+"}";
                     if (template.contains(expression) && (objval = $c.getProperty(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
-                        objval = parseRaw(objval, true).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
+                        objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
+                        if (objval.contains('${')) {
+                            objval = fillTemplate(objval,[obj]);
+                        }
                         template = template.replace_all(expression, objval);
 
                         if (hasDataProps) {
@@ -2135,8 +2144,16 @@ if (__thisIsNewer) {
                 template = template.contains("${") ? template.replace(/(\$\{[a-zA-Z$_-]*\})/g, '') : template;
                 var tmp, rptmp;
                 if (template.contains('||') && (tmp = /\$\{(.+?\|\|?.+?)\}/.exec(template)) && tmp[1]) {
+                    tmp = tmp[1].strip('|').replace(/\|{3,}/,'');
+                    if (tmp.contains('||')) {
+                        rptmp = (tmp && "__or|" + tmp.replace_all('||', "|") || "");
+                        template = template.replace_all(tmp, rptmp);
+                    }
+                    template = template.replace("||",'|');
+                }
+                if (template.contains('&&') && (tmp = /\$\{(.+?\&\&?.+?)\}/.exec(template)) && tmp[1]) {
                     tmp = tmp[1];
-                    rptmp = (tmp && "__or|"+tmp.replace_all('||', "|") || "");
+                    rptmp = (tmp && "__and|"+tmp.replace_all('&&', "|") || "");
                     template = template.replace_all(tmp, rptmp);
                 }
                 template = template.contains('|') ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
@@ -2303,11 +2320,11 @@ if (__thisIsNewer) {
             }
             var raw = "";
             if ($c.isString(value)) {
-                !skipQuotes && (raw = "\"" + value + "\"") || (raw = value);
+                raw = (!skipQuotes ? "\"" + value.replace_all('"','\\"') + "\"" : value);
             } else if ($c.isArray(value)) {
                 var tmp = [];
                 for (var i = 0, len = value.length; i < len; i++) {
-                    tmp[i] = parseRaw(value[i]);
+                    tmp[i] = parseRaw(value[i], skipQuotes, saveCircular, __windowVars, __windowVarNames);
                 }
                 raw = "[" + tmp.join(',') + "]";
             } else if (value instanceof Object && !$c.isFunction(value)) {
@@ -2335,7 +2352,7 @@ if (__thisIsNewer) {
                     raw = "{";
                     for (var prop in value) {
                         if (value.hasOwnProperty(prop)) {
-                            raw += "'" + prop + "': " + parseRaw(value[prop], skipQuotes, saveCircular, __windowVars, __windowVarNames) + ",";
+                            raw += "\"" + prop + "\": " + parseRaw(value[prop], skipQuotes, saveCircular, __windowVars, __windowVarNames) + ",";
                         }
                     }
                     raw = raw.slice(0,-1) + "}";
@@ -5013,7 +5030,7 @@ if (__thisIsNewer) {
             // check if there is query MongoDB syntax
             if (!projection && !/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$where":|"\$elemMatch":|"\$not":/.test(JSON.stringify(condition))) {
                 var props=[],
-                    ncheck = function (o,c,p) {return o[p.prop] != c[c.prop]},
+                    ncheck = function (o,c,p) {return o[p.prop] != c[p.prop]},
                     rcheck = function (o,c,p) {return ncheck(o,c,p) && p.isReg && !c[p.prop].test(o[p.prop])},
                     check = ncheck;
                 for (var p in condition) {
