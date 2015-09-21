@@ -264,7 +264,7 @@ if (__thisIsNewer) {
             error('fillTemplate.__run_replace', e);
         }
     }
-    
+
     function _ajaxServerResponse(response) {
         try {
             if (response.readyState == 4 && response.status==200) {
@@ -1934,7 +1934,7 @@ if (__thisIsNewer) {
                 template = template.contains("${COUNT") ? template.replace(/\$\{COUNT\[(.*?)\]\}/g, '${RUN[__count;$1]}') : template;
                 template = template.contains("${ENUM") ? template.replace(/\$\{ENUM\[(.*?)\]\}/g, '${RUN[__enum;$1]}') : template;
                 template = template.contains("${RUN") ? __run_replace(/\$\{RUN\[(.+?)\]\}/, template, true, obj) : template;
-                template = template.contains("${") ? template.replace(/(\$\{[a-zA-Z$_-]*\})/g, '') : template;
+                //template = template.contains("${") ? template.replace(/(\$\{[a-zA-Z$_-]*\})/g, '') : template;
                 var tmp, rptmp;
                 if (template.contains('||') && (tmp = /\$\{(.+?\|\|?.+?)\}/.exec(template)) && tmp[1]) {
                     tmp = tmp[1].strip('|').replace(/\|{3,}/,'');
@@ -1949,9 +1949,22 @@ if (__thisIsNewer) {
                     rptmp = (tmp && "__and|"+tmp.replace_all('&&', "|") || "");
                     template = template.replace_all(tmp, rptmp);
                 }
-                template = template.contains('|') ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
-                template = template.contains('${') ? template.replace(/\$\{.*?\}/g,"") : template;
-                html += template.replace_all('${dataproperties}', "").replace_all(';\\', ';');
+                var leftovervars = template.match(/\$\{.*?\}/g);
+                if (leftovervars) {
+                    var hasPipe = false;
+                    for (var k = 0, klen = leftovervars.length; k < klen; k++) {
+                        var variable = leftovervars[k];
+                        if (variable.contains('|')) {
+                            var regex = new RegExp(variable.replace_all(['$','{','}','|'],['\\$','\\{(',')\\}','\\|']));
+                            template = hasPipe ? __run_replace (regex, template, false,obj) : template;
+                        }
+                    }
+                }
+                
+//                template = template.contains('|') ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
+                template = __logic_parser(template);
+//                template = template.contains('${') ? template.replace(/\$\{.*?\}/g,"") : template;
+                html += (template.contains('${') ? template.replace(/\$\{.*?\}/g,"") : template).replace_all(';\\', ';');
             }
 
             return html;
@@ -2250,7 +2263,7 @@ if (__thisIsNewer) {
             error('parseBoolean', e);
         }
     }
-    function parseRaw(value, skipQuotes/*, removeCircular*/, __windowVars, __windowVarNames) {
+    function parseRaw(value, skipQuotes, saveCircular, __windowVars, __windowVarNames) {
         try {
             if (value === null || value === undefined) {
                 return value + "";
@@ -2596,6 +2609,115 @@ if (__thisIsNewer) {
             SERVER_PATH: $l.pathname,
             SYMBIAN:isSymbian(),
             TEMPLATE_VARS: [],
+            TEMPLATE_TAG_CONFIG: {
+                /* loop config */
+                IGNORE_CHARS:['\n'],
+                FOR_BEGIN:{
+                    syntax:/\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
+                    handler:function (variables, condition, execute/*, block*/) {
+                        eval(variables);
+                        if (variables.indexOf("var ") == 0) {
+                            variables = variables.substring(4);
+                        }
+                        variables = variables.split(',');
+                        var vars = {};
+                        for (var i_i = 0, i_ilen = variables.length; i_i < i_ilen; i_i++) {
+                            var parts = variables[i_i].split("="),
+                                v = parts[0].trim();
+                            vars[v] = parts[1].trim();
+                            execute += "," + execute.replace(v,"this.variables." + v);
+//                            condition = condition.replace(parts[0],parts[0]);
+                        }
+                        return {
+                            variables:vars,
+                            condition:function(){
+                                return eval(condition);
+                            },
+                            execute:function(){
+                                eval(execute);
+                            }
+                        }
+                    }
+                },
+                FOR_END:/(\$\{end for\})|(\{\{end for\}\})/i,
+                FOREACH_BEGIN:{
+                    syntax:/\$\{foreach (.*?)\s+in\s+(.*?)\}/i,
+                    handler:function(){
+
+                    }
+                },
+                FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
+                /*
+                WHILE_BEGIN:{
+                    syntax:/\$\{while (.*?)\}/i,
+                    handler:function(){
+
+                    }
+                },
+                WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
+                */
+                /* end loop config*/
+
+                /* conditional config*/
+                // if and else if conditions must be wrapped in capturing ()
+                IF_BEGIN:{
+                    syntax:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                    handler:function (condition) {
+                        var value = "undefined" == condition ? false : tryEval(condition);
+
+                        if (value === undefined) {
+                            logit(condition + " is not valid boolean expression");
+                            value = false;
+                        }
+                        return value;
+                    }
+                },
+                ELSE_IF:{
+                    syntax:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                    handler:function (condition) {
+                        var value = "undefined" == condition ? false : tryEval(condition);
+
+                        if (value === undefined) {
+                            logit(condition + " is not valid boolean expression");
+                            value = false;
+                        }
+                        return value;
+                    }
+                },
+                ELSE:/\$\{else\}|\{\{else\}\}/i,
+                IF_END:/\$\{end if\}|\{\{end if\}\}/i,
+
+                /*
+                SWITCH_BEGIN: {
+                    syntax: /(\$\{switch\s+\((.*)?(?!\{)\)\s*\})|(\{\{switch\s+\((.*)?(?!\{)\)\s*\}\})/i,
+                    handler: function (condition) {
+                    }
+                },
+                SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
+                CASE:/(\$\{case\s+(.*?)\s*?:\})|(\{\{case\s+(.*?)\s*?:\}\})/i,
+                */
+                /* end conditional config*/
+
+                /* error handling config */
+                /*
+                TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
+                CATCH:{
+                    syntax:/(\$\{catch\s+\((.*)?(?!\{)\)\s*\})|(\{\{catch\s+\((.*)?(?!\{)\)\s*\}\})/i,
+                    handler:function(error){}
+                },
+                FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
+                TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
+                */
+                /* end error handling config */
+
+                /* tokens config */
+                VARIABLE:/\$\{.*?\}|\{\{.*?\}\}/i/*,
+                BREAK:/(\$\{break\})|(\{\{break\}\})/i,
+                THROW:/(\$\{throw\})|(\{\{throw\}\})/i,
+                CONTINUE:/(\$\{continue\})|(\{\{continue\}\})/i
+                */
+                /* end tokens config */
+            },
             TRIDENT:isTrident(),
             VERBOSE_LOGS: !!$GET("verbose"),
             VERSION: $w.__craydentVersion,
@@ -2633,7 +2755,169 @@ if (__thisIsNewer) {
         EVENT_REGISTRY = {
             length : 0
         };// Array();
-        
+
+        function __parse_for(code){
+            var fsyntax = $c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax,
+                efsyntax = $c.TEMPLATE_TAG_CONFIG.FOR_END,
+                formatch = code.match(fsyntax);
+
+            // verify that there is an if
+            if (!formatch) { return code; }
+
+            formatch = formatch.condense();
+
+            var forindex = 1,//code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
+                endindex = 0,// = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_END.syntax),
+                beginCount = 1,
+                endCount = 0,
+                forlength = formatch[0].length,
+                endlength = code.match(efsyntax)[0].length,
+                str = "";
+            while (beginCount != endCount /*&& forindex != -1 && endindex != -1*/) {
+                forindex = code.indexOfAlt(fsyntax, forindex + 1);
+                endindex = code.indexOfAlt(efsyntax, endindex + 1);
+
+                if (forindex != -1) { beginCount++; }
+                if (endindex != -1) { endCount++; }
+                if (forindex == -1 && endindex == -1) { break; }
+            }
+            // if true syntax error, start end missmatch
+            if (endindex == -1) { return code; }
+
+            for (var i = 1, len = formatch.length; i < len; i++) {
+                formatch[i] = formatch[i].replace_all(['\\[','\\]'],['[',']']).toString();
+            }
+            var block = code.substring(forlength, endindex);
+            code = code.substring(endindex + endlength);
+
+            var components = $c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.handler.apply(this,formatch.splice(1))
+                || {variables:{},condition:foo,execute:foo};
+            while(components.condition()){
+                str += fillTemplate(block,components.variables);
+                components.execute();
+            }
+            str = str.replace(/\\?\[.*?\\?\]\[\d+\]/g,function(m){return tryEval(m.replace_all(['\\[','\\]'],['[',']']).toString())||"";});
+            return __logic_parser(str + code);
+
+        }
+        function __parse_foreach(code){
+
+        }
+        function __parse_if(code){
+            var ifsyntax = $c.TEMPLATE_TAG_CONFIG.IF_BEGIN.syntax,
+                ifmatch = code.match(ifsyntax);
+            // verify that there is an if
+            if (!ifmatch) {
+                return code;
+            }
+
+            var elseifsyntax = $c.TEMPLATE_TAG_CONFIG.ELSE_IF.syntax,
+                elsesyntax = $c.TEMPLATE_TAG_CONFIG.ELSE,
+                endsyntax = $c.TEMPLATE_TAG_CONFIG.IF_END,
+                ifreg = ifsyntax.toString(),
+                elseifreg = elseifsyntax.toString(),
+                elsereg = elsesyntax.toString(),
+                endreg = endsyntax.toString();
+            ifreg = ifreg.substring(1, ifreg.lastIndexOf('/'));
+            elseifreg = elseifreg.substring(1, elseifreg.lastIndexOf('/'));
+            elsereg = elsereg.substring(1, elsereg.lastIndexOf('/'));
+            endreg = endreg.substring(1, endreg.lastIndexOf('/'));
+
+            var ifblock = new RegExp("("+ifreg+")|("+elseifreg+")|("+elsereg+")|("+endreg+")"),
+                parts = code.split(ifblock).filter(function(defined){return defined}),
+                block = "", ifcount = 0, endcount = 0, condition = false, skipblock = false;
+
+            for (var i = 0, len = parts.length; i < len; i++) {
+                var part = parts[i];
+                if (ifsyntax.test(part)) {
+                    if (ifcount == endcount) {
+                        condition = $c.TEMPLATE_TAG_CONFIG.IF_BEGIN.handler.call(this, parts[i + 1]);
+                        if (!condition) {
+                            skipblock = true;
+                        }
+                    } else {
+                        block += part;
+                    }
+                    ifcount++;
+                } else if (elseifsyntax.test(part) || elsesyntax.test(part)) {
+                    // this is the outermost else or elseif
+                    if (ifcount - 1 == endcount) {
+                        skipblock = condition;
+                        if (!skipblock && elseifsyntax.test(part)) {
+                            condition = $c.TEMPLATE_TAG_CONFIG.ELSE_IF.handler.call(this, parts[i + 1]);
+                            if (!condition) {
+                                skipblock = true;
+                            }
+                        }
+                    } else {
+                        block += part;
+                    }
+                } else if (endsyntax.test(part)) {
+                    endcount++;
+                    if (endcount == ifcount) {
+                         skipblock = condition = false;
+                    } else {
+                        block += part;
+                    }
+                } else if (!skipblock) {
+                    block += part;
+                }
+                if (ifsyntax.test(part) || elseifsyntax.test(part)) {
+                    i++;
+                }
+            }
+
+            return __logic_parser(block);
+
+
+        }
+
+        function __parse_switch(code){}
+        function __parse_try(code){}
+        function __parse_while(code){
+
+        }
+        function __logic_parser (code) {
+            if (!code) {
+                return "";
+            }
+            code = code.replace_all($c.TEMPLATE_TAG_CONFIG.IGNORE_CHARS,['']);
+            var ifor = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
+                iforeach = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOREACH_BEGIN.syntax),
+                iwhile = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.WHILE_BEGIN.syntax),
+                iif = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.IF_BEGIN.syntax),
+                iswitch = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.SWITCH_BEGIN.syntax),
+                itry = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.TRY_BEGIN),
+                first = [ifor,iforeach,iwhile,iif,iswitch,itry].filter(function(i){return i !=-1;}).sort(function(a,b){return a-b;})[0],
+                run = "__parse_";
+
+
+            switch (true) {
+                case (iif > -1 && iif == first):
+                    run += "if";
+                    break;
+                case (ifor > -1 && ifor == first):
+                    run += "for";
+                    break;
+                case (iforeach > -1 && iforeach == first):
+                    run += "foreach";
+                    break;
+                case (iwhile > -1 && iwhile == first):
+                    run += "while";
+                    break;
+                case (iswitch > -1 && iswitch == first):
+                    run += "switch";
+                    break;
+                case (itry > -1 && itry == first):
+                    run += "try";
+                    break;
+                default:
+                    return code;
+                    break;
+            }
+
+            return code.substring(0,first) + $w[run](code.substring(first));
+        }
         $w._onload = $w.onload || foo;
         $w.onload = function () {
             $c.browser.SCROLLBAR_WIDTH = (function(){
@@ -2706,6 +2990,23 @@ if (__thisIsNewer) {
                 }
             }
             return wordArray.join(' ');
+        } catch (e) {
+            error("String.capitalize", e);
+        }
+    }, true);
+    _ext(String, 'count', function (word) {
+        try {
+            if (word.constructor != RegExp) {
+                word = new RegExp(word, "g");
+            } else if (!word.global) {
+                var reg_str = word.toString(),
+                    index = reg_str.lastIndexOf('/'),
+                    options = reg_str(index + 1);
+
+                reg_str = reg_str.substring(1,index);
+                word = new RegExp(word, "g"+options);
+            }
+            return this.match(word);
         } catch (e) {
             error("String.capitalize", e);
         }
