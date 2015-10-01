@@ -400,7 +400,7 @@ if (__thisIsNewer) {
             exec = "",
 
             // extra code to account for when this == window
-            extra_code = "if(obj === undefined && this == $c){return;}",
+            extra_code = "if(isNull(obj) && this == $c){return;}",
             fnew = args.length === 0 || (args.length === 1 && !_trim(args[0])) ? 
             //    fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' ' + name + '(obj){'+extra_code) :
             fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' (obj){'+extra_code) :
@@ -608,7 +608,7 @@ if (__thisIsNewer) {
     }
     function _isArray (obj) {
         try {
-            if (obj === undefined) {return false;}
+            if (isNull(obj)) {return false;}
             return (obj.constructor == Array);
         } catch (e) {
             error('_isArray', e);
@@ -616,7 +616,7 @@ if (__thisIsNewer) {
     }
     function _isString (obj) {
         try {
-            if (obj === undefined) {return false;}
+            if (isNull(obj)) {return false;}
             return (obj.constructor == String);
         } catch (e) {
             error('_isString', e);
@@ -769,7 +769,7 @@ if (__thisIsNewer) {
             var props = path.split(delimiter);
             var value = this;
             for (var i = 0, len = props.length; i < len; i++) {
-                if (value[props[i]] === undefined || value[props[i]] === null 
+                if (isNull(value[props[i]])
                 || (options.noInheritance && !value.hasOwnProperty(props[i]))) {
                     return undefined;
                 }
@@ -795,7 +795,7 @@ if (__thisIsNewer) {
                 }
                 str = str.replace(RegExp(__convert_regex_safe(replace[i]), flag), subject[i] || subject[0]);
             }
-            return str;
+            return str.toString();
         } catch (e) {
             error("_replace_all", e);
         }
@@ -951,11 +951,10 @@ if (__thisIsNewer) {
                         if (isNull(query) || isNull(value)) {
                             return false;
                         }
-                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query),
-                            isRegex = q.constructor == RegExp;
+                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query);
 //                        rtn = isRegex ? q.test(value) : 
 //                                (q.hasOwnProperty("$equals") ? value == q['$equals'] : value == q);
-                        rtn = isRegex ? q.test(value) : 
+                        rtn = $c.isRegExp(q) ? q.test(value) : 
                                 ($c.isFunction(q) ? q(record, field, index) : value == q);
                     break;
 
@@ -963,32 +962,31 @@ if (__thisIsNewer) {
                         if (isNull(query) || isNull(value)) {
                             return false;
                         }
-                        var q = query['$ne'],
-                                isRegex = q.constructor == RegExp;
-                        rtn = !(isRegex ? q.test(value) : value == q);
+                        var q = query['$ne'];
+                        rtn = !($c.isRegExp(q) ? q.test(value) : value == q);
                     break;
 
                     case "$lt":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value < query['$lt'];
                     break;
 
                     case "$lte":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value <= query['$lte'];
                     break;
                     case "$gt":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value > query['$gt'];
                     break;
                     case "$gte":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = value >= query['$gte'];
@@ -1002,7 +1000,7 @@ if (__thisIsNewer) {
                         rtn = true;
                     break;
                     case "$regex":
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             return false;
                         }
                         rtn = query["$regex"].test(value);
@@ -1013,7 +1011,7 @@ if (__thisIsNewer) {
                         rtn = finished.validPath == query["$exists"];
                     break;
                     case "$type":
-                        if (value === undefined && query === undefined || value !== undefined && value.constructor == query) {
+                        if (isNull(value) && isNull(query) || !isNull(value) && value.constructor == query) {
     //                        return true;
                             rtn = true;
                             break;
@@ -1024,7 +1022,7 @@ if (__thisIsNewer) {
                         //return record.getProperty(field).contains(query['$search']);
                         break;
                     case "$mod":
-                        if (!$c.isArray(query) || value === undefined) {
+                        if (!$c.isArray(query) || isNull(value)) {
                             return false;
                         }
                         rtn = value % query[0] == query[1];
@@ -1107,8 +1105,7 @@ if (__thisIsNewer) {
                             rtn = !__andNotHelper (record, query, operands, index);
                             break;
                         }
-                        var isRegex =  query == RegExp;
-                        rtn = isRegex ? query.test(value) : value == query;
+                        rtn = $c.isRegExp(query) ? query.test(value) : value == query;
                     break;
 
 
@@ -1122,7 +1119,7 @@ if (__thisIsNewer) {
                             }
                             value = $c.getProperty(record, field);
                             for (var k = 0, klen = query[fieldProp].length; k < klen; k++) {
-                                var isRegex = query[fieldProp][k] && query[fieldProp][k].constructor == RegExp; //array of values  
+                                var isRegex = $c.isRegExp(query[fieldProp][k] && query[fieldProp][k]); //array of values  
                                 if (($c.isArray(value) && value.contains(query[fieldProp][k])) 
                                 || (isRegex ? query[fieldProp][k].test(value) : value == query[fieldProp][k])) {
                                     rtn = true;
@@ -1377,7 +1374,7 @@ if (__thisIsNewer) {
                 query = params.query,
                 url = params.url;
                 if (need_to_shard) {
-                    if (params.__FIRST === undefined) {
+                    if (isNull(params.__FIRST)) {
                         params.__FIRST = true;
                     } else {
                         params.__FIRST = false;
@@ -1856,12 +1853,15 @@ if (__thisIsNewer) {
     }
     function fillTemplate (htmlTemplate, objs, offset, max) {
         try {
-            if (offset !== undefined && max == undefined) {
+            if (!htmlTemplate || !objs) {
+                return "";
+            }
+            if (!isNull(offset) && isNull(max)) {
                 max = offset;
                 offset = 0;
             }
 
-            htmlTemplate = (htmlTemplate || "").replace(/\{\{(?!\{)(.*?)\}\}/g,'${$1}');
+//            htmlTemplate = (htmlTemplate || "").replace(/\{\{(?!\{)(.*?)\}\}/g,'${$1}');
             $c.isDomElement(htmlTemplate) && (htmlTemplate = htmlTemplate.toString());
             if (htmlTemplate.trim() == "") {
                 return "";
@@ -1880,7 +1880,9 @@ if (__thisIsNewer) {
             var html = "",
                 variable,
                 value,
-                hasDataProps = htmlTemplate.contains('${dataproperties}');
+                hasDataProps = htmlTemplate.contains('${dataproperties}'),
+                vsyntax = $c.TEMPLATE_TAG_CONFIG.VARIABLE,
+                vnsyntax = $c.TEMPLATE_TAG_CONFIG.VARIABLE_NAME;
             for (var j = 0, jlen = $c.TEMPLATE_VARS.length; j < jlen; j++) {
                 variable = $c.TEMPLATE_VARS[j].variable;
                 value = $c.TEMPLATE_VARS[j].value;
@@ -1891,8 +1893,9 @@ if (__thisIsNewer) {
             max = max || objs.length;
             offset = offset || 0;
 
-            //            var props = (htmlTemplate.match(/\$\{.*?\}/g) || []).condense(true);
-            var props = (htmlTemplate.match(/\$\{(?!\$).*?\}/g) || []).condense(true);
+//            var props = (htmlTemplate.match(/\$\{.*?\}/g) || []).condense(true);
+//            var props = (htmlTemplate.match(/\$\{(?!\$).*?\}/g) || []).condense(true);
+            var props = (htmlTemplate.match(vsyntax) || []).condense(true);
 
 
             for (var i = offset; i < max; i++) {
@@ -1912,12 +1915,12 @@ if (__thisIsNewer) {
                 }
                 var objval;
                 for (var j = 0, jlen = props.length; j < jlen; j++) {
-                    var property = props[j].slice(2,-1);
+                    var property = $c.isFunction(vnsyntax) ? vnsyntax(props[j]) : vnsyntax.exec && vnsyntax.exec(props[j]);
                     if (!obj.hasOwnProperty(property)) {
                         continue;
                     }
-                    var expression = "${"+property+"}";
-                    if (template.contains(expression) && (objval = $c.getProperty(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
+                    var expression = props[j];
+                    if (template.contains(expression) && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
                         objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
                         if (objval.contains('${')) {
                             objval = fillTemplate(objval,[obj]);
@@ -1949,14 +1952,13 @@ if (__thisIsNewer) {
                     rptmp = (tmp && "__and|"+tmp.replace_all('&&', "|") || "");
                     template = template.replace_all(tmp, rptmp);
                 }
-                var leftovervars = template.match(/\$\{.*?\}/g);
+                var leftovervars = template.match(vsyntax);
                 if (leftovervars) {
-                    var hasPipe = false;
                     for (var k = 0, klen = leftovervars.length; k < klen; k++) {
                         var variable = leftovervars[k];
                         if (variable.contains('|')) {
                             var regex = new RegExp(variable.replace_all(['$','{','}','|'],['\\$','\\{(',')\\}','\\|']));
-                            template = hasPipe ? __run_replace (regex, template, false,obj) : template;
+                            template = __run_replace (regex, template, false,obj);
                         }
                     }
                 }
@@ -1964,7 +1966,7 @@ if (__thisIsNewer) {
 //                template = template.contains('|') ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
                 template = __logic_parser(template);
 //                template = template.contains('${') ? template.replace(/\$\{.*?\}/g,"") : template;
-                html += (template.contains('${') ? template.replace(/\$\{.*?\}/g,"") : template).replace_all(';\\', ';');
+                html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
             }
 
             return html;
@@ -2265,7 +2267,7 @@ if (__thisIsNewer) {
     }
     function parseRaw(value, skipQuotes, saveCircular, __windowVars, __windowVarNames) {
         try {
-            if (value === null || value === undefined) {
+            if (isNull(value)) {
                 return value + "";
             } 
             var raw = "";
@@ -2278,6 +2280,8 @@ if (__thisIsNewer) {
                     tmp[i] = parseRaw(value[i], skipQuotes, saveCircular, __windowVars, __windowVarNames);
                 }
                 raw = "[" + tmp.join(',') + "]";
+            } else if ($c.isDate(value)) {
+                return "new Date('"+value.toString()+"')";
             }
             else if (value instanceof Object && !$c.isFunction(value)) {
                 if (!__windowVars) {
@@ -2647,7 +2651,7 @@ if (__thisIsNewer) {
                     }
                 },
                 FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
-                /*
+                
                 WHILE_BEGIN:{
                     syntax:/\$\{while (.*?)\}/i,
                     handler:function(){
@@ -2655,7 +2659,6 @@ if (__thisIsNewer) {
                     }
                 },
                 WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
-                */
                 /* end loop config*/
 
                 /* conditional config*/
@@ -2665,7 +2668,7 @@ if (__thisIsNewer) {
                     handler:function (condition) {
                         var value = "undefined" == condition ? false : tryEval(condition);
 
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             logit(condition + " is not valid boolean expression");
                             value = false;
                         }
@@ -2677,7 +2680,7 @@ if (__thisIsNewer) {
                     handler:function (condition) {
                         var value = "undefined" == condition ? false : tryEval(condition);
 
-                        if (value === undefined) {
+                        if (isNull(value)) {
                             logit(condition + " is not valid boolean expression");
                             value = false;
                         }
@@ -2687,7 +2690,7 @@ if (__thisIsNewer) {
                 ELSE:/\$\{else\}|\{\{else\}\}/i,
                 IF_END:/\$\{end if\}|\{\{end if\}\}/i,
 
-                /*
+                
                 SWITCH_BEGIN: {
                     syntax: /(\$\{switch\s+\((.*)?(?!\{)\)\s*\})|(\{\{switch\s+\((.*)?(?!\{)\)\s*\}\})/i,
                     handler: function (condition) {
@@ -2695,11 +2698,10 @@ if (__thisIsNewer) {
                 },
                 SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
                 CASE:/(\$\{case\s+(.*?)\s*?:\})|(\{\{case\s+(.*?)\s*?:\}\})/i,
-                */
                 /* end conditional config*/
 
                 /* error handling config */
-                /*
+                
                 TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
                 CATCH:{
                     syntax:/(\$\{catch\s+\((.*)?(?!\{)\)\s*\})|(\{\{catch\s+\((.*)?(?!\{)\)\s*\}\})/i,
@@ -2707,11 +2709,15 @@ if (__thisIsNewer) {
                 },
                 FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
                 TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
-                */
+                
                 /* end error handling config */
 
                 /* tokens config */
-                VARIABLE:/\$\{.*?\}|\{\{.*?\}\}/i/*,
+                VARIABLE:/\$\{((?!\$).)*?\}|\{\{((?!\{\{).)*?\}\}/gi,
+                VARIABLE_NAME:function(match){
+                    var endi = match.contains('}}') ? -2 : -1;
+                    return  match.slice(2,endi);
+                }/*,
                 BREAK:/(\$\{break\})|(\{\{break\}\})/i,
                 THROW:/(\$\{throw\})|(\{\{throw\}\})/i,
                 CONTINUE:/(\$\{continue\})|(\{\{continue\}\})/i
@@ -2994,23 +3000,6 @@ if (__thisIsNewer) {
             error("String.capitalize", e);
         }
     }, true);
-    _ext(String, 'count', function (word) {
-        try {
-            if (word.constructor != RegExp) {
-                word = new RegExp(word, "g");
-            } else if (!word.global) {
-                var reg_str = word.toString(),
-                    index = reg_str.lastIndexOf('/'),
-                    options = reg_str(index + 1);
-
-                reg_str = reg_str.substring(1,index);
-                word = new RegExp(word, "g"+options);
-            }
-            return this.match(word);
-        } catch (e) {
-            error("String.capitalize", e);
-        }
-    }, true);
     _ext(String, 'convertUTCDate', function (delimiter) {
         try {
             var dateAsString = this;
@@ -3023,6 +3012,23 @@ if (__thisIsNewer) {
             return parts ? parts[2] + "/" + parts[3] + "/" + parts[1] + " " + parts[4] + ":" + parts[5] + ":" + parts [6] : dateAsString;
         } catch (e) {
             error('String.convertUTCDate', e);
+        }
+    }, true);
+    _ext(String, 'count', function (word) {
+        try {
+            if (!$c.isRegExp(word)) {
+                word = new RegExp(word, "g");
+            } else if (!word.global) {
+                var reg_str = word.toString(),
+                    index = reg_str.lastIndexOf('/'),
+                    options = reg_str(index + 1);
+
+                reg_str = reg_str.substring(1,index);
+                word = new RegExp(word, "g"+options);
+            }
+            return this.match(word);
+        } catch (e) {
+            error("String.capitalize", e);
         }
     }, true);
      _ext(String, 'endsWith', function (str) {
@@ -3221,7 +3227,7 @@ if (__thisIsNewer) {
                 }
             }
             if (options.gmt) {
-                var offset = options.offset !== undefined ? options.offset : _getGMTOffset.call(new Date());
+                var offset = !isNull(options.offset) ? options.offset : _getGMTOffset.call(new Date());
                 dt = new Date(dt.valueOf() + offset * 60*60000);
             }
             return options.format ? dt.format(options.format) : dt;
@@ -3592,8 +3598,8 @@ if (__thisIsNewer) {
 
 
                 if (aVal == bVal) {return prop_sort(a,b,p+1);}
-                if (aVal == undefined) {return 1;}
-                if (aVal == undefined) {return -1;}
+                if (isNull(aVal)) {return 1;}
+                if (isNull(bVal)) {return -1;}
                 if(!reverseProp) {
                     if (aVal > bVal) {return 1;}
                     return -1;
@@ -3700,7 +3706,7 @@ if (__thisIsNewer) {
                     record = ref.record,
                     isEqual = callback(obj,record),
                     index = uIndex;
-                if (isEqual !== undefined ? isEqual : $c.equals(record,obj)) {
+                if (!isNull(isEqual) ? isEqual : $c.equals(record,obj)) {
                     index = sIndex;
                 } else {
                     $c.merge(obj, record);
@@ -3751,7 +3757,7 @@ if (__thisIsNewer) {
                 for (var p in condition) {
                     var isReg = false;
                     if (condition.hasOwnProperty(p)) {
-                        if (condition[p].constructor == RegExp) {
+                        if ($c.isRegExp(condition[p])) {
                             isReg = true;
                             check = rcheck;
                         }
@@ -4191,7 +4197,7 @@ if (__thisIsNewer) {
                     }
                     return this.indexOf(val) != -1;
                 case $c.isString(this):
-                    return this.indexOf(val) != -1;
+                    return ($c.isRegExp(val) ? this.search(val) : this.indexOf(val)) != -1;
                 case $c.isObject(this):
                     for (var prop in this) {
                         if ((func && func(this[prop])) || this[prop] == val) {
@@ -4363,7 +4369,7 @@ if (__thisIsNewer) {
     });
     _ao("isBetween", function(lowerBound, upperBound, inclusive) {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             if (inclusive) {
                 return (this >= lowerBound && this <= upperBound);
             } else {
@@ -4375,7 +4381,7 @@ if (__thisIsNewer) {
     });
     _ao("isBoolean", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor == Boolean);
         } catch (e) {
             error('Object.isBoolean', e);
@@ -4383,7 +4389,7 @@ if (__thisIsNewer) {
     });
     _ao("isDate", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor == Date);
         } catch (e) {
             error('Object.isDate', e);
@@ -4391,7 +4397,7 @@ if (__thisIsNewer) {
     });
     _ao("isDomElement", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.nodeType == 1);
         } catch (e) {
             error('Object.isDomElement', e);
@@ -4399,7 +4405,7 @@ if (__thisIsNewer) {
     });
     _ao("isFloat", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return ($c.isNumber(this) && (parseFloat(this) == this || parseFloat(this) === 0));
         } catch (e) {
             error('Object.isFloat', e);
@@ -4407,7 +4413,7 @@ if (__thisIsNewer) {
     });
     _ao("isFunction", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor == Function);
         } catch (e) {
             error('Object.isFunction', e);
@@ -4415,7 +4421,7 @@ if (__thisIsNewer) {
     });
     _ao("isGeolocation", function () {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor.toString().indexOf('function Geolocation()') == 0);
         } catch (e) {
             error('Object.isGeolocation', e);
@@ -4423,7 +4429,7 @@ if (__thisIsNewer) {
     });
     _ao("isInt", function () {
         try {
-            if (this === undefined || $c.isArray(this)) {return false;}
+            if (isNull(this) || $c.isArray(this)) {return false;}
             return (parseInt(this) == this || parseInt(this) === 0);
         } catch (e) {
             error('Object.isInt', e);
@@ -4431,7 +4437,7 @@ if (__thisIsNewer) {
     });
     _ao("isNumber", function() {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor == Number);
         } catch (e) {
             error('Object.isNumber', e);
@@ -4439,10 +4445,18 @@ if (__thisIsNewer) {
     });
     _ao("isObject", function (check_instance) {
         try {
-            if (this === undefined) {return false;}
+            if (isNull(this)) {return false;}
             return (this.constructor == Object || (!!check_instance && this instanceof Object));
         } catch (e) {
             error('Object.isObject', e);
+        }
+    });
+    _ao("isRegExp", function() {
+        try {
+            if (isNull(this)) {return false;}
+            return (this.constructor == RegExp);
+        } catch (e) {
+            error('Object.isRegExp', e);
         }
     });
     _ao("isString", function () {
@@ -4545,7 +4559,7 @@ if (__thisIsNewer) {
                         }
                         objtmp.push($c.duplicate({},secondary[prop]));
                     } else {
-                        if ($c.isArray(objtmp) && (condition === undefined || recurse)) {
+                        if ($c.isArray(objtmp) && (isNull(condition) || recurse)) {
                             if (objtmp.indexOf(secondary[prop]) == -1) {
                                 objtmp.push(secondary[prop]);
                             }
