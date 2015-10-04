@@ -1853,7 +1853,7 @@ if (__thisIsNewer) {
     }
     function fillTemplate (htmlTemplate, objs, offset, max) {
         try {
-            if (!htmlTemplate || !objs) {
+            if (!htmlTemplate) {
                 return "";
             }
             if (!isNull(offset) && isNull(max)) {
