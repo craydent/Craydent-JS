@@ -1641,10 +1641,10 @@ if (__thisIsNewer) {
                 options = {};
             }
             var defer = options.defer || options == "defer" ? true : false,
-            loc = {
-                'search' : $l.search, 
-                'hash' : $l.hash
-            };
+                loc = {
+                    'search' : $l.search, 
+                    'hash' : $l.hash
+                };
             if ($c.isArray(keyValuePairs)) {
                 for (var i = 0, len = keyValuePairs.length; i < len; i++) {
                     var keyValuePair = keyValuePairs[i];
@@ -1687,8 +1687,12 @@ if (__thisIsNewer) {
             }
             options = options || {};
             var ignoreCase = options.ignoreCase || options == "ignoreCase" ? "i" : "",
-            defer = options.defer || options == "defer" ? true : false,
-            regex, attr;
+                defer = options.defer || options == "defer" ? true : false,
+                loc = {
+                    'search' : $l.search,
+                    'hash' : $l.hash
+                },
+                regex, attr;
             for (var i = 0, len = variables.length; i < len; i++) {
                 var variable = variables[i];
                 regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
@@ -1704,6 +1708,17 @@ if (__thisIsNewer) {
                 regex = new RegExp('([&]?|[@])(' + variable + '=([^&|^@]*)[&]?)', ignoreCase);
 
                 if (!defer) {
+                    var noHistory = options.noHistory || options == "noHistory" || options == "h";
+                    if (noHistory) {
+                        if(loc.hash[0] != "#") {
+                            loc.hash = "#" + loc.hash;
+                        }
+                        if (loc.search && loc.search[0] != "?") {
+                            loc.search = "?" + loc.search;
+                        }
+                        $l.replace(loc.search.replace(regex, '') + loc.hash.replace(regex, ''));
+                        return true;
+                    }
                     $l[attr] = $l[attr].replace(regex, '');
                     if (attr == 'hash') {
                         _invokeHashChange();
@@ -3062,6 +3077,15 @@ if (__thisIsNewer) {
             error("String.ireplace_all", e);
         }
     }, true);
+    _ext(String, 'isCuid', function (msFormat) {
+        try {
+            var pre = "", post = "";
+            msFormat && (pre = "{") && (post = "}");
+            return (new RegExp(pre+"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"+post)).test(this);
+        } catch (e) {
+            error("String.isCuid", e);
+        }
+    }, true);
     _ext(String, 'isBlank', function () {
         try {
             return !this.length;
@@ -4192,8 +4216,14 @@ if (__thisIsNewer) {
         try {
             switch(true) {
                 case $c.isArray(this):
-                    if (func) {
-                        return $c.indexOfAlt(this, func) != -1;
+                    if ($c.isFunction(func)) {
+                        return $c.indexOfAlt(this, val, func) != -1;
+                    } else if ($c.isArray(val)) {
+                        for (var i = 0,len = val.length;i < len; i++) {
+                            if (this.contains(val[i])) {
+                                return val[i];
+                            }
+                        }
                     }
                     return this.indexOf(val) != -1;
                 case $c.isString(this):
