@@ -509,7 +509,11 @@ if (__thisIsNewer) {
                     func = "";
 
                 funcValue = match[1].replace_all(['\\[','\\]'],['[',']']).split(split_param);
-                func = funcValue.splice(0,1)[0];
+                while (funcValue[0].count("{") != funcValue[0].count("}")) {
+                    funcValue[0]+= funcValue[1]+($c.isString(split_param)?split_param:";");
+                    funcValue.splice(1,1);
+                }
+                func = funcValue.splice(0,1)[0].strip(";");
 
                 for (var i = 0, len = funcValue.length; i < len; i++) {
                     if (funcValue[i].contains("${")) {
@@ -519,7 +523,8 @@ if (__thisIsNewer) {
                 }
 
                 template = template.contains(match[1]) ? template.replace(match[1], (match[1] = match[1].replace_all(['\\[', '\\]'], ['[', ']']))) : template;
-                template = template.replace_all("${" + pre + match[1] + post +"}", $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : "");
+                template = template.replace_all("${" + pre + match[1] + post +"}",
+                    $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : (tryEval("("+func+")")||foo)() || "");
             }
             return template;
         } catch (e) {
@@ -1558,6 +1563,101 @@ if (__thisIsNewer) {
             };
         } catch (e) {
             error('BenchMarker', e);
+        }
+    }
+
+    /*----------------------------------------------------------------------------------------------------------------
+     /-	Collection class
+     /---------------------------------------------------------------------------------------------------------------*/
+    function Set(records) {
+        /*|  {"info": "Collection class that filters out duplicate values",
+         "category": "Global",
+         "parameters":[
+         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#Set",
+         "returnType": "(Set)"}
+         |*/
+        try {
+            var arr = $c.duplicate(records || []);
+            arr.add = function(value){
+                if (!this.contains(value)) {
+                    return !!arr.push(value);
+                }
+                return false;
+
+            };
+            arr.clear = arr.removeAll;
+            arr.clean = arr.toSet;
+            arr.size = function(){return this.length;};
+            return arr;
+        } catch (e) {
+            error('Set', e);
+        }
+    }
+    function Queue(records) {
+        /*|  {"info": "Collection class that follows FIFO",
+         "category": "Global",
+         "parameters":[
+         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#Queue",
+         "returnType": "(Queue)"}
+         |*/
+        try {
+            var arr = $c.duplicate(records || []);
+            arr.enqueue = function(value){
+                this.insertAt(0);
+            };
+            arr.dequeue = function(){
+                this.removeAt(this.length - 1);
+            };
+            arr.size = function(){return this.length;};
+            return arr;
+        } catch (e) {
+            error('Queue', e);
+        }
+    }
+    function Cursor(records) {
+        /*|  {"info": "Cursor class to facilitate iteration",
+         "category": "Global",
+         "parameters":[
+         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+
+         "overloads":[
+         {"parameters":[
+         {"records": "(Object) Object used to create the iterator to iterate each property"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#Cursor",
+         "returnType": "(Cursor)"}
+         |*/
+        try {
+            var props = [],
+                currentIndex = 0,
+                arr = $c.duplicate(records || []);
+            if ($c.isObject(arr)) {
+                for (var prop in arr) {
+                    if (!arr.hasOwnProperty(prop)) { continue; }
+                    props.push(prop);
+                }
+                props.sort();
+            } else if ($c.isArray(arr)) {
+                for (var i = 0, len = arr.length; i < len; i++) {
+                    props.push(i);
+                }
+            }
+            arr.hasNext = function () { return currentIndex <  props.length; };
+            arr.next = function (value) {
+                this.current = this[props[currentIndex]];
+                return this[props[currentIndex++]]; };
+            arr.reset = function () { currentIndex = 0; };
+            arr.setIndex = function (value) { currentIndex = parseInt(value) || 0; };
+            arr.current = this[props[currentIndex]];
+
+            arr.size = function () { return this.length; };
+            return arr;
+        } catch (e) {
+            error('Cursor', e);
         }
     }
 
@@ -3984,9 +4084,9 @@ if (__thisIsNewer) {
                 reg_str = reg_str.substring(1,index);
                 word = new RegExp(word, "g"+options);
             }
-            return this.match(word);
+            return (this.match(word) || []).length;
         } catch (e) {
-            error("String.capitalize", e);
+            error("String.count", e);
         }
     }, true);
     _ext(String, 'ellipsis', function (before, after) {
@@ -4582,18 +4682,113 @@ if (__thisIsNewer) {
         try {
             switch (field) {
                 case "$setEquals":
-                    return docs.slice(value);
+                    //var firstSet = __processExpression(doc, expr[field][0]);
+                    //if (!$c.isArray(firstSet)){
+                    //    throw errorMessage + (typeof firstSet).captialize();
+                    //}
+                    for (var i = 1, len = expr[field].length; i < len; i++) {
+                        var set1 = $c.duplicate(__processExpression(doc, expr[field][i - 1])),
+                            set2 = $c.duplicate(__processExpression(doc, expr[field][i]));
+                        if (!$c.isArray(set1) || !$c.isArray(set2)){
+                            throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
+                            (typeof (!$c.isArray(set1) ? set1 : set2)).captialize();
+                        }
+                        set1.toSet();
+                        set2.toSet();
+                        if (set1.length != set2.length) { return false; }
+                        for (var j = 0, jlen = set1.length; j < jlen; j++) {
+                            if (!set2.contains(set1[j])) { return false; }
+                        }
+                    }
+                    return true;
                 case "$setIntersection":
-                    return docs.slice(value);
+                    var rtnSet = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        errorMessage = "Exception: All operands of $setIntersection must be arrays. One argument is of type: ";
+                    if(!$c.isArray(rtnSet)) {
+                        throw errorMessage + (typeof rtnSet).captialize();
+                    }
+                    rtnSet.toSet();
+                    for (var i = 1, len = expr[field].length; i < len; i++) {
+                        var set1 = $c.duplicate(__processExpression(doc, expr[field][i]));
+                        if (!$c.isArray(set1)){
+                            throw errorMessage + + (typeof set1).captialize();
+                        }
+                        set1.toSet();
+                        if (set1.length < rtnSet.length) {
+                            var settmp = set1;
+                            set1 = rtnSet;
+                            rtnSet = settmp;
+                        }
+                        for (var j = 0; j < rtnSet.length; j++) {
+                            if (!set1.contains(rtnSet[j])) {
+                                rtnSet.removeAt(j);
+                                j--;
+                            }
+                        }
+                        if (!rtnSet.length) { return rtnSet; }
+                    }
+                    return rtnSet;
                 case "$setUnion":
-                    return docs.slice(value);
+                    var rtnSet = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        errorMessage = "Exception: All operands of $setUnion must be arrays. One argument is of type: ";
+                    if(!$c.isArray(rtnSet)) {
+                        throw errorMessage + (typeof rtnSet).captialize();
+                    }
+                    //rtnSet.toSet();
+                    for (var i = 1, len = expr[field].length; i < len; i++) {
+                        var arr = $c.duplicate(__processExpression(doc, expr[field][i]));
+                        if (!$c.isArray(arr)){
+                            throw errorMessage + + (typeof arr).captialize();
+                        }
+                        rtnSet = rtnSet.concat(arr);
+                    }
+                    return rtnSet.toSet();
                 case "$setDifference":
-                    return docs.slice(value);
+                    var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        arr2 = $c.duplicate(__processExpression(doc, expr[field][1])),
+                        rtnSet = [];
+                    if (!$c.isArray(arr1) || !$c.isArray(arr2)){
+                        throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
+                        (typeof (!$c.isArray(arr1) ? arr1 : arr2)).captialize();
+                    }
+                    for (var i = 0, len = arr1.length; i < len; i++) {
+                        var item = arr1[i];
+                        if (!arr2.contains(item) && !rtnSet.contains(item)) {
+                            rtnSet.push(item);
+                        }
+                    }
+                    return rtnSet;
                 case "$setIsSubset":
-                    return docs.slice(value);
+                    var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        arr2 = $c.duplicate(__processExpression(doc, expr[field][1])),
+                        rtnSet = [];
+                    if (!$c.isArray(arr1) || !$c.isArray(arr2)){
+                        throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
+                        (typeof (!$c.isArray(arr1) ? arr1 : arr2)).captialize();
+                    }
+                    return $c.isSubset(arr1,arr2);
                 case "$anyElementTrue":
-                    return docs.slice(value);
+                    var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        falseCondition = [undefined,null,0,false];
+
+                    for (var i = 0, len = arr1.length; i < len; i++) {
+                        var item = arr1[i];
+                        if (!falseCondition.contains(item)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 case "$allElementsTrue":
+                    var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
+                        falseCondition = [undefined,null,0,false];
+
+                    for (var i = 0, len = arr1.length; i < len; i++) {
+                        var item = arr1[i];
+                        if (falseCondition.contains(item)) {
+                            return false;
+                        }
+                    }
+                    return true;
             }
         } catch (e) {
             error('aggregate.__parseSetExpr', e);
@@ -4720,12 +4915,6 @@ if (__thisIsNewer) {
             error('aggregate.__parseStringExpr', e);
         }
     }
-    //function __parseTextSearchExpr (doc,expr) {
-    //    switch (field) {
-    //        case "$meta":
-    //            break;
-    //    }
-    //}
     function __parseArrayExpr (doc,expr,field) {
         try {
             switch (field) {
@@ -4765,7 +4954,6 @@ if (__thisIsNewer) {
                         delete doc[rmProps[i]];
                     }
                     return rtn;
-                    break;
             }
 
         } catch (e) {
@@ -5043,11 +5231,27 @@ if (__thisIsNewer) {
                 case "$group":
                     return __processGroup(docs, value);
                 case "$sort":
-                    return docs.sortBy(value);
-                case "$geoNear":
-                    break;
+                    var sorter = [];
+                    for (var prop in value) {
+                        if (!value.hasOwnProperty(prop)) { continue; }
+                        var pre = "";
+                        if (value[prop] == -1) {
+                            pre = "!";
+                        }
+                        sorter.push(pre+prop);
+                    }
+                    return docs.sortBy(sorter);
+                //case "$geoNear":
+                //    break;
                 case "$out":
-                    break;
+                    var rtnDocs = $c.duplicate(docs,true);
+                    if ($c.isString(value)) {
+                        $w[value] = rtnDocs;
+                    } else if ($c.isArray(value)) {
+                        value.removeAll();
+                        $c.merge(value,rtnDocs);
+                    }
+                    return rtnDocs;
             }
             return docs;
         } catch (e) {
@@ -5811,6 +6015,25 @@ if (__thisIsNewer) {
             return this;
         } catch (e) {
             error('Array.sortByLookup', e);
+        }
+    }, true);
+    _ext(Array, 'toSet', function() {
+        /*|  {"info": "Array class extension to convert the array to a set",
+         "category": "Array",
+         "parameters":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.toSet",
+         "returnType": "(Array)"}
+         |*/
+        try {
+            for (var i = 0,index; i < this.length - 1; i++) {
+                while ((index = this.indexOf(this[i],i+1)) != -1){
+                    this.removeAt(index);
+                }
+            }
+        } catch (e) {
+            error("Array.toSet", e);
+            return false;
         }
     }, true);
     _ext(Array, 'trim', function(chars) {
