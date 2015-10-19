@@ -3769,7 +3769,6 @@ if (__thisIsNewer) {
                     ELSE:/\$\{else\}|\{\{else\}\}/i,
                     IF_END:/\$\{end if\}|\{\{end if\}\}/i,
 
-                    /*
                      SWITCH_BEGIN: {
                      syntax: /(\$\{switch\s+\((.*)?(?!\{)\)\s*\})|(\{\{switch\s+\((.*)?(?!\{)\)\s*\}\})/i,
                      handler: function (condition) {
@@ -3777,11 +3776,11 @@ if (__thisIsNewer) {
                      },
                      SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
                      CASE:/(\$\{case\s+(.*?)\s*?:\})|(\{\{case\s+(.*?)\s*?:\}\})/i,
-                     */
+                     
                     /* end conditional config*/
 
                     /* error handling config */
-                    /*
+                    
                      TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
                      CATCH:{
                      syntax:/(\$\{catch\s+\((.*)?(?!\{)\)\s*\})|(\{\{catch\s+\((.*)?(?!\{)\)\s*\}\})/i,
@@ -3789,7 +3788,7 @@ if (__thisIsNewer) {
                      },
                      FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
                      TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
-                     */
+                     
                     /* end error handling config */
 
                     /* tokens config */
