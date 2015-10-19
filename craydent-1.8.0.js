@@ -3729,15 +3729,15 @@ if (__thisIsNewer) {
                         }
                     },
                     FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
-                    /*
-                     WHILE_BEGIN:{
-                     syntax:/\$\{while (.*?)\}/i,
-                     handler:function(){
+                    
+                    WHILE_BEGIN:{
+                        syntax:/\$\{while (.*?)\}/i,
+                        handler:function(){
 
-                     }
+                        }
                      },
                      WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
-                     */
+                     
                     /* end loop config*/
 
                     /* conditional config*/
