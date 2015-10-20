@@ -5260,22 +5260,14 @@ if (__thisIsNewer) {
     }
 
     _ext(Array, 'aggregate', function (pipelines) {
-        /*|  {"info": "Array class extension to ",
-         *    "category": "Array",
-         *    "parameters":[
-         *        {"piplines": "(Object[]) Array of stages defined in mongodb"},
-         *        {"": ""},
-         *        {"": ""}],
-         *
-         *    "overloads":[
-         *        {"parameters":[
-         *            {"": ""},
-         *            {"": ""},
-         *            {"": ""}]}],
-         *
-         *    "description": "http://www.craydent.com/library/1.8.0/docs#array.aggregate",
-         *    "returnType": "(Array)"}
-         * |*/
+        /*|  {"info": "Array class extension to perform mongo style aggregation",
+              "category": "Array",
+              "parameters":[
+                  {"piplines": "(Object[]) Array of stages defined in mongodb"}],
+
+              "description": "http://www.craydent.com/library/1.8.0/docs#array.aggregate",
+              "returnType": "(Array)"}
+       |*/
         try {
             var rtn = this;
             for (var i = 0, len = pipelines.length; i < len; i++) {
