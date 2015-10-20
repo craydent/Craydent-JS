@@ -1569,6 +1569,48 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	Collection class
      /---------------------------------------------------------------------------------------------------------------*/
+    function OrderedList (records,sorter) {
+        /*|  {"info": "Collection class that filters out duplicate values",
+         "category": "Global",
+         "parameters":[
+         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#Set",
+         "returnType": "(Set)"}
+         |*/
+        try {
+            sorter = sorter || function(a,b){if (a < b) {return -1;}if (a > b) {return 1;}return 0;};
+            var arr = $c.copyObject(records || []).sort(sorter), order;
+            arr.add = function(value){
+                var len = this.length, index = Math.round(len/2);
+                while (len > 1) {
+                    len = len - Math.ceil(len/2) - ($c.isEven(len)?1:0);
+                    order = sorter(value,this[index]);
+                    if (order == 0) {
+                        break;
+                    }
+                    if (order == -1) {
+                        index = index == 1?0:Math.ceil(index/2);
+                    } else if (order == 1) {
+                        index = index + Math.ceil(len/2);
+                        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
+                        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
+                    }
+                }
+                order = sorter(value,this[index]);
+                if (order == -1 || order == 0) {
+                    return this.insertBefore(index,value);
+                } else {
+                    return this.insertAfter(index,value);
+                }
+//                return this.insertBefore(index+($c.isEven(this.length) && index?1:0),value);
+            };
+            arr.size = function(){return this.length;};
+            return arr;
+        } catch (e) {
+            error('OrderedList', e);
+        }
+    }
     function Set (records) {
         /*|  {"info": "Collection class that filters out duplicate values",
          "category": "Global",
@@ -1579,7 +1621,7 @@ if (__thisIsNewer) {
          "returnType": "(Set)"}
          |*/
         try {
-            var arr = $c.duplicate(records || []);
+            var arr = $c.copyObject(records || []);
             arr.add = function(value){
                 if (!this.contains(value)) {
                     return !!arr.push(value);
@@ -1605,12 +1647,12 @@ if (__thisIsNewer) {
          "returnType": "(Queue)"}
          |*/
         try {
-            var arr = $c.duplicate(records || []);
+            var arr = $c.copyObject(records || []);
             arr.enqueue = function(value){
-                this.insertAt(0);
+                this.push(value);
             };
             arr.dequeue = function(){
-                this.removeAt(this.length - 1);
+                return this.slice(0,1);
             };
             arr.size = function(){return this.length;};
             return arr;
@@ -1634,7 +1676,7 @@ if (__thisIsNewer) {
         try {
             var props = [],
                 currentIndex = 0,
-                arr = $c.duplicate(records || []);
+                arr = $c.copyObject(records || []);
             if ($c.isObject(arr)) {
                 for (var prop in arr) {
                     if (!arr.hasOwnProperty(prop)) { continue; }
