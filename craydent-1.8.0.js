@@ -1569,7 +1569,7 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	Collection class
      /---------------------------------------------------------------------------------------------------------------*/
-    function Set(records) {
+    function Set (records) {
         /*|  {"info": "Collection class that filters out duplicate values",
          "category": "Global",
          "parameters":[
@@ -1595,7 +1595,7 @@ if (__thisIsNewer) {
             error('Set', e);
         }
     }
-    function Queue(records) {
+    function Queue (records) {
         /*|  {"info": "Collection class that follows FIFO",
          "category": "Global",
          "parameters":[
@@ -1618,7 +1618,7 @@ if (__thisIsNewer) {
             error('Queue', e);
         }
     }
-    function Cursor(records) {
+    function Cursor (records) {
         /*|  {"info": "Cursor class to facilitate iteration",
          "category": "Global",
          "parameters":[
