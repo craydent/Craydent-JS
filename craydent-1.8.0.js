@@ -5308,7 +5308,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "description": "http://www.craydent.com/library/1.8.0/docs#string.singularize"},
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.singularize",
             "returnType": "(String)"
         }|*/
         try {
@@ -8179,7 +8179,7 @@ if (__thisIsNewer) {
             "info": "HTMLElement class extension to add a class to the DOM object",
             "category": "HTMLElement",
             "parameters":[
-                {names": "(String[]) Name of the class to add"}],
+                {"names": "(String[]) Name of the class to add"}],
 
             "overloads":[],
 
@@ -8842,13 +8842,13 @@ if (__thisIsNewer) {
     });
     _ah("moveUp", function (tagName) {
         /*|{
-            "info: "HTMLElement class extension to move an element before the previous sibling",
+            "info": "HTMLElement class extension to move an element before the previous sibling",
             "category": "HTMLElement",
             "parameters":[],
 
             "overloads":[
                 {"parameters":[
-                {"tagName": "(String) Used to get previous sibling with a specific HTML tag"}]}],
+                    {"tagName": "(String) Used to get previous sibling with a specific HTML tag"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#htmlelement.moveUp",
             "returnType": "(Bool)"
