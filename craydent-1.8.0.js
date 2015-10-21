@@ -4715,7 +4715,7 @@ if (__thisIsNewer) {
                     /* end error handling config */
 
                     /* tokens config */
-                    VARIABLE:/\$\{((?!\$).*)?\}|\{\{((?!\{\{).*)?\}\}/gi,
+                    VARIABLE:/\$\{((?!\$).)*?\}|\{\{((?!\{\{).)*?\}\}/gi,
                     VARIABLE_NAME:function(match){
                         var endi = match.contains('}}') ? -2 : -1;
                         return  match.slice(2,endi);
