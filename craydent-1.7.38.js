@@ -3775,8 +3775,8 @@ if (__thisIsNewer) {
             // check if there is query MongoDB syntax
             if (!/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$where":|"\$elemMatch":|"\$not":/.test(JSON.stringify(condition))) {
                 var props=[],
-                    ncheck = function (o,c,p) {return o[p.prop] != c[p.prop]},
-                    rcheck = function (o,c,p) {return ncheck(o,c,p) && p.isReg && !c[p.prop].test(o[p.prop])},
+                    ncheck = function (o,c,p) {return $c.getProperty(o,p.prop) != c[p.prop]},
+                    rcheck = function (o,c,p) {return ncheck(o,c,p) && p.isReg && !c[p.prop].test($c.getProperty(o,p.prop))},
                     check = ncheck;
                 for (var p in condition) {
                     var isReg = false;
