@@ -2772,6 +2772,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Retrieve all or specific variables in the url",
             "category": "Global",
+            "featured": true,
             "parameters":[],
 
             "overloads":[
@@ -2856,6 +2857,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Store variable in the url",
             "category": "Global",
+            "featured": true,
             "parameters":[
                 {"keyValuePairs": "(Object[]) specify the key value pairs"}],
 
@@ -2927,6 +2929,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Delete variable in url",
             "category": "Global",
+            "featured": true,
             "parameters":[
                 {"variables": "(String[]) variable names"}],
 
@@ -2996,6 +2999,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Commit changes using $GET, $SET, and $DEL with defer flag",
             "category": "Global",
+            "featured": true,
             "parameters":[],
 
             "overloads":[
@@ -3035,6 +3039,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Rollback deferred changes from $GET, $SET, $DEL",
             "category": "Global",
+            "featured": true,
             "parameters":[],
 
             "overloads":[],
@@ -3143,6 +3148,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Function for templating",
             "category": "Global",
+            "featured": true,
             "parameters":[
                 {htmlTemplate: "(String) Template to be used"},
                 {objs: "(Objects[]) Objects to fill the template variables"}],
@@ -3468,6 +3474,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Track and trigger events when the object(s) change",
             "category": "Global",
+            "featured": true,
             "parameters":[
                 {"obj": "(Object) Object to track changes"}],
 
@@ -3874,6 +3881,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Download a zip of files from file contents",
             "category": "Global",
+            "featured": true,
             "parameters":[
                 {"files": "(Object[]) Objects containing properties name for file name and content for file content"}],
 
@@ -5005,6 +5013,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "String class extension to fill template based on template syntax",
             "category": "String",
+            "featured": true,
             "parameters":[
             {"objs": "(Objects[]) Objects to fill the template variables"}],
 
@@ -5545,6 +5554,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Array class extension to perform mongo style aggregation",
             "category": "Array",
+            "featured": true,
             "parameters":[
                 {"piplines": "(Object[]) Array of stages defined in mongodb"}],
 
@@ -6510,7 +6520,7 @@ if (__thisIsNewer) {
                     {"projection": "(Mixed) Indicate which properties to return"},
                     {"projection": "(Mixed) Indicate which properties to return"}]}],
 
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.upsert",
+            "description": "http://www.craydent.com/library/1.8.0/docs#array.mapReduce",
             "returnType": "(Array)"
         }|*/
         try {
@@ -6753,7 +6763,7 @@ if (__thisIsNewer) {
                 unchanged:sArr
             };
         } catch (e) {
-            error("Array.update", e);
+            error("Array.upsert", e);
             return false;
         }
     }, true);
@@ -6761,6 +6771,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Array class extension to use mongo or sql queries",
             "category": "Array",
+            "featured": true,
             "parameters":[
                 {"condition": "(Mixed) Query following find/where clause syntax"}],
 
@@ -6850,6 +6861,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Date class extension to convert to formatted string",
             "category": "Date",
+            "featured": true,
             "parameters":[
                 {"format": "(String) Format syntax to use to to format date"}],
 
@@ -7935,6 +7947,7 @@ if (__thisIsNewer) {
         /*|{
             "info": "Object class extension to retrieve nested properties without erroring when property path does not exist",
             "category": "Object",
+            "featured": true,
             "parameters":[
                 {"path": "(String) Path to nested property"}],
 
