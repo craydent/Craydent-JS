@@ -7254,6 +7254,32 @@ if (__thisIsNewer) {
             error("Function.getName", e);
         }
     }, true);
+    _ext(Function, 'extends',function(extendee, inherit){
+        /*|{
+         "info": "Function class extension to get the name of the function",
+         "category": "Function",
+         "parameters":[],
+
+         "overloads":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
+         "returnType": "(String)"
+         }|*/
+        try {
+            $w[this.getName()] = this;
+            var cls = new extendee();
+            for (var prop in cls) {
+                if (!cls.hasOwnProperty(prop) && !inherit) { continue; }
+                this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+            }
+
+            this.prototype.construct = this.prototype.construct || cls.construct || foo;
+
+            return this;
+        } catch (e) {
+            error("Function.extends", e);
+        }
+    }, true);
 
     /*----------------------------------------------------------------------------------------------------------------
      /-	Object class Extensions
@@ -7475,7 +7501,7 @@ if (__thisIsNewer) {
             "returnType": "(String)"
         }|*/
         try {
-            return _getFuncName(this);
+            return _getFuncName(this.constructor);
         } catch (e) {
             error('Object.getClass', e)
         }
