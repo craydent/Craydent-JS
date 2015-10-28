@@ -3932,8 +3932,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            var browser = "Chrome"
-            return _getBrowserVersion(browser);
+            return _getBrowserVersion("Chrome");
         } catch(e){
             error('ChromeVersion', e);
         }
@@ -3950,8 +3949,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            var browser = "Firefox"
-            return _getBrowserVersion(browser);
+            return _getBrowserVersion("Firefox");
         } catch(e){
             error('FirefoxVersion', e);
         }
@@ -3993,8 +3991,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            var browser = "Opera"
-            return _getBrowserVersion(browser);
+            return _getBrowserVersion("Opera");
         } catch(e){
             error('OperaVersion', e);
         }
@@ -4011,8 +4008,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            var browser = "Safari"
-            return _getBrowserVersion(browser);
+            return _getBrowserVersion("Safari");
         } catch(e){
             error('SafariVersion', e);
         }
@@ -4030,8 +4026,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/amaya/i.test(navUserAgent));
+            return (/amaya/i.test(navigator.userAgent));
         } catch (e) {
             error('isAmaya', e);
         }
@@ -4048,8 +4043,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/android/i.test(navUserAgent));
+            return (/android/i.test(navigator.userAgent));
         } catch (e) {
             error('isAndroid', e);
         }
@@ -4066,8 +4060,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/blackberry/i.test(navUserAgent));
+            return (/blackberry/i.test(navigator.userAgent));
         } catch (e) {
             error('isBlackBerry', e);
         }
@@ -4084,7 +4077,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (navigator.userAgent.contains("Chrome"));
+            return (/chrome/i.test(navigator.userAgent));
         } catch(e){
             error('isChrome', e);
         }
@@ -4101,10 +4094,11 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (!navigator.userAgent.contains("Chrome"))
-                && (!navigator.userAgent.contains("Apple"))
-                && (!navigator.userAgent.contains("Opera"))
-                && (navigator.userAgent.contains("Firefox"));
+            var nu = navigator.userAgent;
+            return (!/chrome/i.test(nu)
+                && !/apple/i.test(nu)
+                && !/opera/i.test(nu)
+                && /firefox/i.test(nu));
         } catch(e){
             error('isFirefox', e);
         }
@@ -4121,8 +4115,7 @@ if (__thisIsNewer) {
              "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/gecko/i.test(navUserAgent));
+            return (/gecko/i.test(navigator.userAgent));
         } catch (e) {
             error('isGecko', e);
         }
@@ -4174,8 +4167,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/iPad|iPhone OS 3_[1|2]_2/i.test(navUserAgent));
+            return (/iPad|iPhone OS 3_[1|2]_2/i.test(navigator.userAgent));
         } catch (e) {
             error('isIPad', e);
         }
@@ -4192,7 +4184,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return !isIPad() && navigator.userAgent.contains("iPhone");
+            return !isIPad() && /iphone/i.test(navigator.userAgent);
         } catch (e) {
             error('isIPhone', e);
         }
@@ -4209,8 +4201,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/ipod/i.test(navUserAgent));
+            return (/ipod/i.test(navigator.userAgent));
         } catch (e) {
             error('isIPod', e);
         }
@@ -4227,8 +4218,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/khtml/i.test(navUserAgent));
+            return (/khtml/i.test(navigator.userAgent));
         } catch (e) {
             error('isKHTML', e);
         }
@@ -4245,7 +4235,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return navigator.platform.contains("Linux");
+            return /linux/i.test(navigator.platform);
         } catch (e) {
             error('isLinux', e);
         }
@@ -4262,7 +4252,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return navigator.platform.contains("Mac");
+            return /mac/i.test(navigator.platform);
         } catch (e) {
             error('isMac', e);
         }
@@ -4321,9 +4311,10 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (navigator.userAgent.indexOf("Chrome") == -1)
-                && (navigator.userAgent.indexOf("Apple") == -1)
-                && (navigator.userAgent.indexOf("Opera") != -1);
+            var nu = navigator.userAgent;
+            return /chrome/i.test(nu)
+                && /apple/i.test(nu)
+                && /opera/i.test(nu);
         } catch(e){
             error('isOpera', e);
         }
@@ -4340,8 +4331,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/palm/i.test(navUserAgent));
+            return (/palm/i.test(navigator.userAgent));
         } catch (e) {
             error('isIPad', e);
         }
@@ -4358,8 +4348,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/presto/i.test(navUserAgent));
+            return (/presto/i.test(navigator.userAgent));
         } catch (e) {
             error('isPresto', e);
         }
@@ -4376,8 +4365,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/prince/i.test(navUserAgent));
+            return (/prince/i.test(navigator.userAgent));
         } catch (e) {
             error('isPrince', e);
         }
@@ -4394,7 +4382,8 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (navigator.userAgent.indexOf("Chrome") == -1) && (navigator.userAgent.indexOf("Apple") != -1);
+            var nu = navigator.userAgent;
+            return (/chrome/i.test(nu)) && (/apple/i.test(nu));
         } catch(e){
             error('isSafari', e);
         }
@@ -4411,8 +4400,8 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (isWebkit() && (/series60/i.test(navUserAgent) || /symbian/i.test(navUserAgent)));
+            var nu = navigator.userAgent;
+            return (isWebkit() && (/series60/i.test(nu) || /symbian/i.test(nu)));
         } catch (e) {
             error('isIPad', e);
         }
@@ -4429,8 +4418,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/trident/i.test(navUserAgent));
+            return (/trident/i.test(navigator.userAgent));
         } catch (e) {
             error('isTrident', e);
         }
@@ -4447,8 +4435,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/webkit/i.test(navUserAgent));
+            return (/webkit/i.test(navigator.userAgent));
         } catch (e) {
             error('isWebkit', e);
         }
@@ -4465,7 +4452,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return navigator.platform.indexOf("Win") != -1;
+            return /win/i.test(navigator.platform);
         } catch (e) {
             error('isWindows', e);
         }
@@ -4482,8 +4469,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var navUserAgent = navigator.userAgent;
-            return (/windows ce/i.test(navUserAgent));
+            return (/windows ce/i.test(navigator.userAgent));
         } catch (e) {
             error('isWindowsMobile', e);
         }
