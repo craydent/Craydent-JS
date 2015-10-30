@@ -1328,6 +1328,21 @@ if (__thisIsNewer) {
             error('_duplicate', e);
         }
     }
+    function _endsWith (/*str, str1*/) {
+        try {
+            for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this) {
+                    continue;
+                }
+                if (arguments[i] == this.slice(-arguments[i].length)) {
+                    return arguments[i];
+                }
+            }
+            return false;
+        } catch (e) {
+            error('String.endsWith', e);
+        }
+    }
     function _ext (cls, property, func, override) {
         try {
             cls['prototype'][property] = cls['prototype'][property] || func;
@@ -1759,6 +1774,21 @@ if (__thisIsNewer) {
             }
         } catch (e) {
             error("_setDOMElementProperties", e);
+        }
+    }
+    function _startsWith (/*str, str1*/) {
+        try {
+            for (var i = 0, len = arguments.length; i < len; i++) {
+                if (arguments[i] == this) {
+                    continue;
+                }
+                if (arguments[i] == this.slice(0, arguments[i].length)) {
+                    return arguments[i];
+                }
+            }
+            return false;
+        } catch (e) {
+            error('String.startsWith', e);
         }
     }
     function _strip (str, character) {
@@ -4989,6 +5019,34 @@ if (__thisIsNewer) {
             error("String.count", e);
         }
     }, true);
+    _ext(String, 'doesStartWith', function (/*str, str1*/) {
+        /*|{
+         "info": "String class extension to check if the string starts with the given string",
+         "category": "String",
+         "parameters":[
+         {"infinit": "any number of arguments can be passed"}],
+
+         "overloads":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#string.doesStartWith",
+         "returnType": "(Bool)"
+         }|*/
+        return _startsWith.apply(this, arguments);
+    });
+    _ext(String, 'doesEndWith', function (/*str, str1*/) {
+        /*|{
+             "info": "String class extension to check if the string ends with the given string",
+             "category": "String",
+             "parameters":[
+                {"infinite": "any number of arguments can be passed"}],
+
+             "overloads":[],
+
+             "description": "http://www.craydent.com/library/1.8.0/docs#string.endsWith",
+             "returnType": "(Bool)"
+         }|*/
+        return _endsWith.apply(this, arguments);
+    });
     _ext(String, 'ellipsis', function (before, after) {
         /*|{
             "info": "String class extension to shorten by ellpsis",
@@ -5026,19 +5084,7 @@ if (__thisIsNewer) {
             "description": "http://www.craydent.com/library/1.8.0/docs#string.endsWith",
             "returnType": "(Bool)"
         }|*/
-        try {
-            for (var i = 0, len = arguments.length; i < len; i++) {
-                if (arguments[i] == this) {
-                    continue;
-                }
-                if (arguments[i] == this.slice(-arguments[i].length)) {
-                    return arguments[i];
-                }
-            }
-            return false;
-        } catch (e) {
-            error('String.endsWith', e);
-        }
+        return _endsWith.apply(this, arguments);
     });
     _ext(String, 'fillTemplate', function (arr_objs, offset, max) {
         /*|{
@@ -5390,19 +5436,7 @@ if (__thisIsNewer) {
             "description": "http://www.craydent.com/library/1.8.0/docs#string.startsWith",
             "returnType": "(Bool)"
         }|*/
-        try {
-            for (var i = 0, len = arguments.length; i < len; i++) {
-                if (arguments[i] == this) {
-                    continue;
-                }
-                if (arguments[i] == this.slice(0, arguments[i].length)) {
-                    return arguments[i];
-                }
-            }
-            return false;
-        } catch (e) {
-            error('String.startsWith', e);
-        }
+        return _startsWith.apply(this, arguments);
     });
     _ext(String, 'strip', function(character) {
         /*|{
