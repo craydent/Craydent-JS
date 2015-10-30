@@ -5086,28 +5086,37 @@ if (__thisIsNewer) {
         }|*/
         return _endsWith.apply(this, arguments);
     });
-    _ext(String, 'fillTemplate', function (arr_objs, offset, max) {
+    _ext(String, 'fillTemplate', function (arr_objs, offset, max, bound) {
         /*|{
-            "info": "String class extension to fill template based on template syntax",
-            "category": "String",
+            "info": "Function for templating",
+            "category": "Global",
             "featured": true,
             "parameters":[
-            {"objs": "(Objects[]) Objects to fill the template variables"}],
+                {htmlTemplate: "(String) Template to be used"},
+                {objs: "(Objects[]) Objects to fill the template variables"}],
 
             "overloads":[
                 {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
+                    {"objs": "(Objects[]) Objects to fill the template variables"},
+                    {"max": "(Int) The maximum number of records to process"}]},
+                {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
                     {"offset": "(Int) The start index of the Object array"},
-                    {"max": "(Int) The maximum number of records to process"}]}
+                    {"max": "(Int) The maximum number of records to process"}]},
                 {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
-                    {"max": "(Int) The maximum number of records to process"}]}],
+                    {"offset": "(Int) The start index of the Object array"},
+                    {"max": "(Int) The maximum number of records to process"},
+                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]}],
 
-            "description": "http://www.craydent.com/library/1.8.0/docs#string.fillTemplate",
+            "description": "http://www.craydent.com/library/1.8.0/docs#fillTemplate",
             "returnType": "(String)"
-        }|*/
+         }|*/
         try {
-            return fillTemplate(this, arr_objs, offset, max);
+            return fillTemplate(this, arr_objs, offset, max, bound);
         } catch (e) {
             error('String.fillTemplate', e);
         }
