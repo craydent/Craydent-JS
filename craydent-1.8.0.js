@@ -1529,6 +1529,29 @@ if (__thisIsNewer) {
             return false;
         }
     }
+    function _orderListHelper(value, sorter, arr, i) {
+        try {
+            var len = arr.length;
+            if (!len) { return i; }
+
+            var index = parseInt(len/2),
+                order = sorter(value, arr[index]), newArr, args = [value,sorter];
+            //i = isNull(i) ? index : i;
+            i = parseInt(isNull(i) ? index : i);
+            if (order == 0) { return isNull(i) ? index : i; }
+            if (order == -1) {
+                arr = arr.slice(0, index);
+                i = arr.length ? i / 2 : i;
+            } else if (order == 1) {
+                arr = arr.slice(index + 1);
+                i = i + 1 + (arr.length - index/2);
+            }
+            return _orderListHelper(value,sorter,arr,i);
+        } catch (e) {
+            error("OrderedList._orderListHelper", e);
+            return false;
+        }
+    }
     function _processClause (clause) {
         try {
             var index = clause.indexOfAlt(/between/i);
@@ -2208,17 +2231,17 @@ if (__thisIsNewer) {
      /---------------------------------------------------------------------------------------------------------------*/
     function Cursor (records) {
         /*|{
-         "info": "Cursor class to facilitate iteration",
-         "category": "Global",
-         "parameters":[
-         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+             "info": "Cursor class to facilitate iteration",
+             "category": "Global",
+             "parameters":[
+                {"records": "(Array) Array used to create the iterator to iterate each item"}],
 
-         "overloads":[
-         {"parameters":[
-         {"records": "(Object) Object used to create the iterator to iterate each property"}]}],
+             "overloads":[
+                {"parameters":[
+                    {"records": "(Object) Object used to create the iterator to iterate each property"}]}],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#Cursor",
-         "returnType": "(Cursor)"
+             "description": "http://www.craydent.com/library/1.8.0/docs#Cursor",
+             "returnType": "(Cursor)"
          }|*/
         try {
             var props = [],
@@ -2249,44 +2272,66 @@ if (__thisIsNewer) {
             error('Cursor', e);
         }
     }
-    function OrderedList (records,sorter) { // TODO: Fix bug
+    function OrderedList (records,sorter) {
         /*|{
-            "info": "Collection class that filters out duplicate values",
+            "info": "Collection class that filters out duplicate values and maintains an ordered list",
             "category": "Global",
-            "parameters":[
-                {"records": "(Array) Array used to create the iterator to iterate each item"}],
+            "parameters":[],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"records": "(Array) Array used to create the initial items in the ordered list"}]},
+                {"parameters":[
+                    {"records": "(Array) Array used to create the initial items in the ordered list"},
+                    {"sorter": "(Function) Function for sorting logic"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#OrderedList",
-            "returnType": "(Set)"
+            "returnType": "(OrderedList)"
         }|*/
         try {
             sorter = sorter || function(a,b){if (a < b) {return -1;}if (a > b) {return 1;}return 0;};
             var arr = $c.copyObject(records || []).sort(sorter), order;
             arr.add = function(value){
-                var len = this.length, index = Math.round(len/2);
-                while (len > 1) {
-                    len = len - Math.ceil(len/2) - ($c.isEven(len)?1:0);
-                    order = sorter(value,this[index]);
-                    if (order == 0) {
-                        break;
-                    }
-                    if (order == -1) {
-                        index = index == 1?0:Math.ceil(index/2);
-                    } else if (order == 1) {
-                        index = index + Math.ceil(len/2);
-                        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
-                        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
-                    }
-                }
-                order = sorter(value,this[index]);
-                if (order == -1 || order == 0) {
-                    return this.insertBefore(index,value);
-                } else {
-                    return this.insertAfter(index,value);
-                }
-//                return this.insertBefore(index+($c.isEven(this.length) && index?1:0),value);
+                var index = _orderListHelper(value, sorter, this);
+                return this.insertBefore(index, value);
+                //var len = this.length, clen = this.length, index = Math.ceil(len/2);
+                //while (len > 1) {
+                //    order = sorter(value,this[index]);
+                //    if (order == 0) {
+                //        break;
+                //    }
+                //    if (order == -1) {
+                //        len = clen - len - index;
+                //        index = index == 1 ? 0 : Math.ceil(len/2);
+                //    } else if (order == 1) {
+                //        len = clen - index - 1;
+                //        index += Math.ceil(len/2);
+                //        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
+                //        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
+                //    }
+                //}
+                //
+                //
+                //while (len > 1) {
+                //    len = len - Math.ceil(len/2) - ($c.isEven(len)?1:0);
+                //    order = sorter(value,this[index]);
+                //    if (order == 0) {
+                //        break;
+                //    }
+                //    if (order == -1) {
+                //        index = index == 1?0:Math.ceil(index/2);
+                //    } else if (order == 1) {
+                //        index = index + Math.ceil(len/2);
+                //        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
+                //        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
+                //    }
+                //}
+                //order = sorter(value,this[index]);
+                //if (order == -1 || order == 0) {
+                //    return this.insertBefore(index,value);
+                //} else {
+                //    return this.insertAfter(index,value);
+                //}
             };
             arr.size = function(){return this.length;};
             return arr;
@@ -2421,7 +2466,7 @@ if (__thisIsNewer) {
                         if (params.jsonpCallback) {
                             $w[func] = params.onsuccess;
                         } else {
-                            delete $w[func];
+                            try { delete $w[func] } catch(e){ $w[func] = undefined; };
                         }
                     }
                 };
