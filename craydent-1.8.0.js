@@ -1329,6 +1329,17 @@ if (__thisIsNewer) {
         }
     }
     function _endsWith (/*str, str1*/) {
+        /*|{
+            "info": "String class extension to check if the string ends with the given string",
+            "category": "String",
+            "parameters":[
+                {"infinite": "any number of arguments can be passed"}],
+
+            "overloads":[],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.endsWith",
+            "returnType": "(Bool)"
+         }|*/
         try {
             for (var i = 0, len = arguments.length; i < len; i++) {
                 if (arguments[i] == this) {
@@ -1778,6 +1789,17 @@ if (__thisIsNewer) {
         }
     }
     function _startsWith (/*str, str1*/) {
+        /*|{
+            "info": "String class extension to check if the string starts with the given string",
+            "category": "String",
+            "parameters":[
+                {"infinit": "any number of arguments can be passed"}],
+
+            "overloads":[],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.startsWith",
+            "returnType": "(Bool)"
+         }|*/
         try {
             for (var i = 0, len = arguments.length; i < len; i++) {
                 if (arguments[i] == this) {
@@ -5020,34 +5042,8 @@ if (__thisIsNewer) {
             error("String.count", e);
         }
     }, true);
-    _ext(String, 'doesStartWith', function (/*str, str1*/) {
-        /*|{
-         "info": "String class extension to check if the string starts with the given string",
-         "category": "String",
-         "parameters":[
-         {"infinit": "any number of arguments can be passed"}],
-
-         "overloads":[],
-
-         "description": "http://www.craydent.com/library/1.8.0/docs#string.doesStartWith",
-         "returnType": "(Bool)"
-         }|*/
-        return _startsWith.apply(this, arguments);
-    });
-    _ext(String, 'doesEndWith', function (/*str, str1*/) {
-        /*|{
-             "info": "String class extension to check if the string ends with the given string",
-             "category": "String",
-             "parameters":[
-                {"infinite": "any number of arguments can be passed"}],
-
-             "overloads":[],
-
-             "description": "http://www.craydent.com/library/1.8.0/docs#string.endsWith",
-             "returnType": "(Bool)"
-         }|*/
-        return _endsWith.apply(this, arguments);
-    });
+    _ext(String, 'doesStartWith', _startsWith);
+    _ext(String, 'doesEndWith', _endsWith);
     _ext(String, 'ellipsis', function (before, after) {
         /*|{
             "info": "String class extension to shorten by ellpsis",
@@ -5073,47 +5069,25 @@ if (__thisIsNewer) {
             error('String.ellipsis', e);
         }
     });
-    _ext(String, 'endsWith', function (/*str, str1*/) {
+    _ext(String, 'endsWith', _endsWith);
+    _ext(String, 'fillTemplate', function (arr_objs, offset, max) {
         /*|{
-            "info": "String class extension to check if the string ends with the given string",
+         "info": "String class extension to fill template based on template syntax",
             "category": "String",
-            "parameters":[
-                {"infinite": "any number of arguments can be passed"}],
-
-            "overloads":[],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#string.endsWith",
-            "returnType": "(Bool)"
-        }|*/
-        return _endsWith.apply(this, arguments);
-    });
-    _ext(String, 'fillTemplate', function (arr_objs, offset, max, bound) {
-        /*|{
-            "info": "Function for templating",
-            "category": "Global",
             "featured": true,
             "parameters":[
-                {htmlTemplate: "(String) Template to be used"},
-                {objs: "(Objects[]) Objects to fill the template variables"}],
+                {"objs": "(Objects[]) Objects to fill the template variables"}],
 
             "overloads":[
                 {"parameters":[
-                    {"htmlTemplate": "(String) Template to be used"},
-                    {"objs": "(Objects[]) Objects to fill the template variables"},
-                    {"max": "(Int) The maximum number of records to process"}]},
-                {"parameters":[
-                    {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
                     {"offset": "(Int) The start index of the Object array"},
-                    {"max": "(Int) The maximum number of records to process"}]},
+                    {"max": "(Int) The maximum number of records to process"}]}
                 {"parameters":[
-                    {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
-                    {"offset": "(Int) The start index of the Object array"},
-                    {"max": "(Int) The maximum number of records to process"},
-                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]}],
+                    {"max": "(Int) The maximum number of records to process"}]}],
 
-            "description": "http://www.craydent.com/library/1.8.0/docs#fillTemplate",
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.fillTemplate",
             "returnType": "(String)"
          }|*/
         try {
@@ -5434,20 +5408,7 @@ if (__thisIsNewer) {
             error('String.singularize', e);
         }
     });
-    _ext(String, 'startsWith', function (/*str, str1*/) {
-        /*|{
-            "info": "String class extension to check if the string starts with the given string",
-            "category": "String",
-            "parameters":[
-                {"infinit": "any number of arguments can be passed"}],
-
-            "overloads":[],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#string.startsWith",
-            "returnType": "(Bool)"
-        }|*/
-        return _startsWith.apply(this, arguments);
-    });
+    _ext(String, 'startsWith', _startsWith);
     _ext(String, 'strip', function(character) {
         /*|{
             "info": "String class extension to remove characters from the beginning and end of the string",
