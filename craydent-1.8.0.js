@@ -1707,6 +1707,7 @@ if (__thisIsNewer) {
     }
     function _run_func_array(funcs, args) {
         try {
+            !$c.isArray(funcs) && (funcs = [funcs]);
             for (var i = 0, len = funcs.length; i < len; i++) {
                 funcs[i].apply(this, args);
             }
