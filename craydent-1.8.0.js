@@ -2274,7 +2274,7 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	Benchmark testing Class
      /---------------------------------------------------------------------------------------------------------------*/
-    function Benchmarker() { // TODO: adjust functionality to be more usable
+    function Benchmarker() {
         /*|{
             "info": "Class used to measure the run time of code",
             "category": "Global",
@@ -2286,14 +2286,18 @@ if (__thisIsNewer) {
             "returnType": "(void)"
         }|*/
         try {
-            this.start = new Date();
-            this.end = "";
+            this._start;
+            this._end;
             this.executionTime = 0;
-            this.stop = function (func) {
-                this.end = new Date();
-                this.executionTime = (this.end - this.start)/1000;
-                return this.executionTime;
+            this.start = function () {
+                this._start = new Date();
+                this._end = 0;
             };
+            this.stop = function () {
+                this._end = new Date();
+                return this.executionTime = (this._end - this._start) / 1000;
+            };
+            this.start();
         } catch (e) {
             error('BenchMarker', e);
         }
@@ -5060,8 +5064,6 @@ if (__thisIsNewer) {
             error("String.count", e);
         }
     }, true);
-    _ext(String, 'doesStartWith', _startsWith);
-    _ext(String, 'doesEndWith', _endsWith);
     _ext(String, 'ellipsis', function (before, after) {
         /*|{
             "info": "String class extension to shorten by ellipsis",
@@ -5088,6 +5090,7 @@ if (__thisIsNewer) {
         }
     });
     _ext(String, 'endsWith', _endsWith);
+    _ext(String, 'endsWithAny', _endsWith);
     _ext(String, 'fillTemplate', function (arr_objs, offset, max, bound) {
         /*|{
          "info": "String class extension to fill template based on template syntax",
@@ -5425,6 +5428,7 @@ if (__thisIsNewer) {
         }
     });
     _ext(String, 'startsWith', _startsWith);
+    _ext(String, 'startWithAny', _startsWith);
     _ext(String, 'strip', function(character) {
         /*|{
             "info": "String class extension to remove characters from the beginning and end of the string",
@@ -5626,20 +5630,28 @@ if (__thisIsNewer) {
             error("Array.aggregate", e);
         }
     }, true);
-    _ext(Array,'buildTree', function (rt,child,options) { // TODO: comment Build tree and grab latest file
+    _ext(Array,'buildTree', function (parentFinder,childFinder,options) {
         /*|{
-            "info": "Array class extension to ",
+            "info": "Array class extension to create a parent/child hierarchy",
             "category": "Array",
             "parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}],
+                {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+                {"childFinder": "(String) Property name of the object to use as a grouping."}],
 
             "overloads":[
                 {"parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}]}],
+                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+                    {"childFinder": "(Function) Function to determine the grouping."}]},
+
+                {"parameters":[
+                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+                    {"childFinder": "(String) Property name of the object to use as a grouping."},
+                    {"options":"(Object) Options to customize properties,  Valid property is:<br />childProperty"}]},
+
+                {"parameters":[
+                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+                    {"childFinder": "(String) Property name of the object to use as a grouping."},
+                    {"options":"(Object) Options to customize properties,  Valid property is:<br />childProperty"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#array.buildTree",
             "returnType": "(Array)"
@@ -5648,13 +5660,13 @@ if (__thisIsNewer) {
             options = options || {};
             var rtnArr = [];
             var i = 0,objt,cats=[],catDict={},tmp={}, singles = {};
-            var prop = options.childProp || "children";
+            var prop = options.childProperty || "children";
             while(objt=this[i++]){
-                var cat = $c.isFunction(child) ? child(objt) : objt[child],
+                var cat = $c.isFunction(childFinder) ? childFinder(objt) : objt[childFinder],
                     rootFound = cats.contains(cat);
 
                 objt[prop] = objt[prop] || [];
-                if (rt(objt)) {
+                if (rootFinder(objt)) {
                     delete singles[cat];
 
                     if (!rootFound && tmp[cat]) {
@@ -5679,9 +5691,7 @@ if (__thisIsNewer) {
                 }
             }
             for (var prop in singles) {
-                if (!singles.hasOwnProperty(prop)) {
-                    continue;
-                }
+                if (!singles.hasOwnProperty(prop)) { continue; }
                 for (var j = 0, len = singles[prop].length; j < len; j++) {
                     singles[prop][j].children = [];
 
@@ -6283,29 +6293,69 @@ if (__thisIsNewer) {
         }
     }, true);
     //ARRAY SORTING
-    _ext(Array, 'sortBy', function(props, rev, primer, lookup, options){ // TODO: finish commenting
+    _ext(Array, 'sortBy', function(props, rev, primer, lookup, options){
         /*|{
             "info": "Array class extension to sort the array",
             "category": "Array",
             "parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}],
+                {"props": "(String) Property/Comma delimited list of properties to sort by. If the first character is '!', the sort order is reversed"}],
 
             "overloads":[
                 {"parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}]}],
+                    {"props": "(Array) Properties to sort by. If the first character is '!', the sort order is reversed"}]},
+
+                {"parameters":[
+                    {"props": "(String) Property/Comma delimited list of properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"}]},
+
+                {"parameters":[
+                    {"props": "(Array) Properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"}]},
+
+                {"parameters":[
+                    {"props": "(String) Property/Comma delimited list of properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."}]},
+
+                {"parameters":[
+                    {"props": "(Array) Properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."}]},
+
+                {"parameters":[
+                    {"props": "(String) Property/Comma delimited list of properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."},
+                    {"lookup": "(Object) Look up object to use as values instead of the array values."}]},
+
+                {"parameters":[
+                    {"props": "(Array) Properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."},
+                    {"lookup": "(Object) Look up object to use as values instead of the array values."}]},,
+
+                {"parameters":[
+                    {"props": "(String) Property/Comma delimited list of properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."},
+                    {"lookup": "(Object) Look up object to use as values instead of the array values."},
+                    {"options": "(Object) Options to pass. Valid options are:<br />i<br />ignoreCase"}]},
+
+                {"parameters":[
+                    {"props": "(Array) Properties to sort by. If the first character is '!', the sort order is reversed"},
+                    {"rev": "(Boolean) Flag to reverse the sort"},
+                    {"primer": "(Function) Function to apply to values in the array."},
+                    {"lookup": "(Object) Look up object to use as values instead of the array values."},
+                    {"options": "(Object) Options to pass. Valid options are:<br />i<br />ignoreCase"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#array.sortBy",
             "returnType": "(Array)"
         }|*/
         try {
             options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
-            if($c.isString(props)){props=[props];}
-            var key = function (x) {return primer ? primer(x[prop]) : x[prop]};
             primer = primer || function(x){return x;};
+            if($c.isString(props)){ props = props.split(','); }
+            var key = function (x) { return primer(x[prop]); };
             var tmpVal;
             var prop_sort = function (a,b,p) {
                 p = p||0;
@@ -6318,16 +6368,12 @@ if (__thisIsNewer) {
                     reverseProp = true;
                 }
                 var aVal = primer((lookup && lookup[a][prop]) || a[prop]),
-                    bVal =primer( (lookup && lookup[b][prop]) || b[prop] );
+                    bVal = primer((lookup && lookup[b][prop]) || b[prop]);
 
                 if (options.i && aVal && bVal) {
                     aVal = aVal.toLowerCase();
                     bVal = bVal.toLowerCase();
                 }
-                //            tmpVal = aVal;
-                //            aVal = (parseInt(aVal) && aVal.toString() == tmpVal && tmpVal) || tmpVal;
-                //            tmpVal = bVal;
-                //            bVal = (parseInt(bVal) && bVal.toString() == tmpVal && tmpVal) || tmpVal;
                 tmpVal = aVal;
                 aVal = ((aVal = parseInt(aVal)) && aVal.toString() == tmpVal && parseInt(tmpVal)) || tmpVal;
                 tmpVal = bVal;
@@ -6353,53 +6399,6 @@ if (__thisIsNewer) {
             return this;
         } catch (e) {
             error('Array.sortBy', e);
-        }
-    }, true);
-    _ext(Array, 'sortByLookup', function(prop,lookup,rev,primer,options){ // TODO: finish commenting
-        /*|{
-            "info": "Array class extension to ",
-            "category": "Array",
-            "parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}],
-
-            "overloads":[
-                {"parameters":[
-                    {"": ""},
-                    {"": ""},
-                    {"": ""}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.sortByLookup",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            options = ($c.isString(options) && options in {"i":1,"ignoreCase":1}) ? {i:1} : {};
-            //prop="TABLE_SORT";
-            function orderByTable(a, b) {
-                var aVal = a[prop],
-                    bVal = b[prop];
-                if (lookup) {
-                    aVal = lookup[a][prop];
-                    bVal = lookup[b][prop];
-                }
-                if (options.i) {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
-                }
-                aVal = parseFloat(aVal);
-                bVal = parseFloat(bVal);
-                if (aVal == bVal) {return 0;}
-                if (aVal > bVal) {return 1;}
-                return -1;
-            }
-            this.sort(orderByTable);
-            if(rev){
-                this.reverse();
-            }
-            return this;
-        } catch (e) {
-            error('Array.sortByLookup', e);
         }
     }, true);
     _ext(Array, 'toSet', function() {
@@ -6484,12 +6483,12 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ext(Array, 'group', function(fields, condition, reduce, initial) { // TODO: params should be JSON
+    _ext(Array, 'group', function(params) { // TODO: finish implementing esp initial, keyf, and finalize
         /*|{
             "info": "Array class extension to group records by fields",
             "category": "Array",
             "parameters":[
-                {"params": "(Object) specs with common properties:<br />(Mixed) fields<br />(Mixed) condition"}],
+                {"params": "(Object) specs with common properties:<br />(Mixed) fields<br />(Mixed) cond<br />(Function) reduce<br />(Mixed) initial"}],
 
             "overloads":[],
 
@@ -6515,8 +6514,12 @@ if (__thisIsNewer) {
          *            {initial: ""}]}],*/
 
         try {
-            reduce = reduce || foo;
-            initial = initial || {};
+            var fields = params.field,
+                condition = params.cond,
+                reduce = params.reduce || foo,
+                initial = params.initial || {},
+                keyf = params.keyf || {},
+                finalize = params.finalize || {};
             if ($c.isString(fields)) {
                 fields = fields.split(',');
             }
