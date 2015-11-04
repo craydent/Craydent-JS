@@ -2418,15 +2418,15 @@ if (__thisIsNewer) {
     }
     function Queue (records) {
         /*|{
-         "info": "Collection class that follows FIFO",
-         "category": "Global",
-         "parameters":[
-         {"records": "(Array) Array used to create the iterator to iterate each item"}],
+            "info": "Collection class that follows FIFO",
+            "category": "Global",
+            "parameters":[
+                {"records": "(Array) Array used to create the iterator to iterate each item"}],
 
-         "overloads":[],
+            "overloads":[],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#Queue",
-         "returnType": "(Queue)"
+            "description": "http://www.craydent.com/library/1.8.0/docs#Queue",
+            "returnType": "(Queue)"
          }|*/
         try {
             var arr = $c.copyObject(records || []);
@@ -3177,18 +3177,19 @@ if (__thisIsNewer) {
         }
     }
     function cacheImages(imgs) {
-        /*|  {"info": "Cache images in browser",
-         "category": "Global",
-         "parameters":[
-         {"imgs": "(String[]) full or relative urls to images"}],
+        /*|{
+            "info": "Cache images in browser",
+            "category": "Global",
+            "parameters":[
+                {"imgs": "(String[]) full or relative urls to images"}],
 
-         "overloads":[
-         {"parameters":[
-         {"imgURL": "(String) full or relative url to image""}]}],
+            "overloads":[
+                {"parameters":[
+                    {"imgURL": "(String) full or relative url to image""}]}],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#cacheImages",
-         "returnType": "(void)"}
-         |*/
+            "description": "http://www.craydent.com/library/1.8.0/docs#cacheImages",
+            "returnType": "(void)"
+        }|*/
         try {
             if ($c.isString(imgs)) {imgs = [imgs];}
             for (var i = 0, len = imgs.length; i < len; i++) {
@@ -3571,6 +3572,27 @@ if (__thisIsNewer) {
             cout.apply(this, arguments);
         } catch (e) {
             error('logit', e);
+        }
+    }
+    function namespace (name, clazz) {
+        /*|{
+            "info": "Adds the class to a namespace instead of the global space",
+            "category": "Global",
+            "parameters":[
+                {"name":"(String) Name of the namespace to add to."}
+                {"clazz":"(Class) Class to add to the given namespace"}],
+
+            "overloads":[],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#namespace",
+            "returnType":"(void)"
+        }|*/
+        try {
+            var className = clazz.getName();
+            $w[className] = namespace[className] || clazz;
+            $w.setProperty(name + "." + className, clazz);
+        } catch (e) {
+            error('namespace', e);
         }
     }
     function now (format) {
@@ -7319,18 +7341,19 @@ if (__thisIsNewer) {
     }, true);
     _ext(Function, 'extends',function(extendee, inherit){
         /*|{
-         "info": "Function class extension to get the name of the function",
-         "category": "Function",
-         "parameters":[],
+            "info": "Function class extension to get the name of the function",
+            "category": "Function",
+            "parameters":[],
 
-         "overloads":[],
+            "overloads":[],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
-         "returnType": "(String)"
+            "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
+            "returnType": "(String)"
          }|*/
         try {
-            $w[this.getName()] = this;
-            var cls = new extendee();
+            var className = this.getName(),
+                cls = new extendee();
+            namespace[className] = $w[className];
             for (var prop in cls) {
                 if (!cls.hasOwnProperty(prop) && !inherit) { continue; }
                 this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
