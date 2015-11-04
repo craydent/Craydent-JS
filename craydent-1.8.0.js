@@ -186,7 +186,7 @@ if (__thisIsNewer) {
     }
     function __dup (old) {
         try {
-            for (prop in old){
+            for (var prop in old){
                 this[prop] = old[prop];
             }
         } catch (e) {
@@ -206,7 +206,7 @@ if (__thisIsNewer) {
         }
     }
     function __clean_micro_templates () {
-        var _micro_templates = fillTemplate._micro_templates
+        var _micro_templates = fillTemplate._micro_templates;
         for (var id in _micro_templates) {
             if (!_micro_templates.hasOwnProperty(id)) { continue; }
             if (!$CSS("[data-craydent-bind*='"+id+"']").length) { delete _micro_templates[id]; }
@@ -1669,6 +1669,7 @@ if (__thisIsNewer) {
     }
     function _run_func_array(funcs, args) {
         try {
+            !$c.isArray(funcs) && (funcs = [funcs]);
             for (var i = 0, len = funcs.length; i < len; i++) {
                 funcs[i].apply(this, args);
             }
