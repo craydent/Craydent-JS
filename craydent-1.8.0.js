@@ -3574,15 +3574,19 @@ if (__thisIsNewer) {
             error('logit', e);
         }
     }
-    function namespace (name, clazz) {
+    function namespace (name, clazz, fn) {
         /*|{
             "info": "Adds the class to a namespace instead of the global space",
             "category": "Global",
             "parameters":[
-                {"name":"(String) Name of the namespace to add to."}
+                {"name":"(String) Name of the namespace to add to."},
                 {"clazz":"(Class) Class to add to the given namespace"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"name":"(String) Name of the namespace to add to."},
+                    {"clazz":"(Class) Class to add to the given namespace"},
+                    {"fn":"(Function) Method to call after the class has been added to the namespace"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#namespace",
             "returnType":"(void)"
@@ -3591,6 +3595,7 @@ if (__thisIsNewer) {
             var className = clazz.getName();
             $w[className] = namespace[className] || clazz;
             $w.setProperty(name + "." + className, clazz);
+            fn && fn.call(clazz);
         } catch (e) {
             error('namespace', e);
         }
