@@ -7344,13 +7344,17 @@ if (__thisIsNewer) {
             error("Function.getName", e);
         }
     }, true);
-    _ext(Function, 'extends',function(extendee, inherit){
+    _ext(Function, 'extends',function(extendee, inheritAsOwn){
         /*|{
-            "info": "Function class extension to get the name of the function",
+            "info": "Function class extension to extend another class",
             "category": "Function",
-            "parameters":[],
+            "parameters":[
+                {"extendee":"(Object) Class to extend"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"extendee":"(Object) Class to extend"},
+                    {"inheritAsOwn":"(Boolean) Flag to inherit and for values hasOwnProperty to be true."}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
             "returnType": "(String)"
@@ -7359,9 +7363,15 @@ if (__thisIsNewer) {
             var className = this.getName(),
                 cls = new extendee();
             namespace[className] = $w[className];
-            for (var prop in cls) {
-                if (!cls.hasOwnProperty(prop) && !inherit) { continue; }
-                this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+            if (inheritAsOwn) {
+                for (var prop in cls) {
+                    if (!cls.hasOwnProperty(prop)) { continue; }
+                    this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+                }
+                for (var prop in extendee) {
+                    if (!extendee.hasOwnProperty(prop)) { continue; }
+                    this[prop] = this[prop] || extendee[prop];
+                }
             }
 
             this.prototype.construct = this.prototype.construct || cls.construct || foo;
