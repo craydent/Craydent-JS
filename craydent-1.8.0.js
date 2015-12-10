@@ -161,6 +161,13 @@ if (__thisIsNewer) {
             error('where.__andNotHelper', e);
         }
     }
+    function __clean_micro_templates () {
+        var _micro_templates = fillTemplate._micro_templates;
+        for (var id in _micro_templates) {
+            if (!_micro_templates.hasOwnProperty(id)) { continue; }
+            if (!$CSS("[data-craydent-bind*='"+id+"']").length) { delete _micro_templates[id]; }
+        }
+    }
     function __convert_regex_safe(reg_str) {
         try {
             return reg_str.replace(/\\/gi,"\\\\")
@@ -184,6 +191,13 @@ if (__thisIsNewer) {
             error('__convert_regex_safe', e);
         }
     }
+    function __count(arr){
+        try {
+            return arr.length;
+        } catch (e) {
+            error('fillTemplate.count', e);
+        }
+    }
     function __dup (old) {
         try {
             for (var prop in old){
@@ -192,32 +206,6 @@ if (__thisIsNewer) {
             }
         } catch (e) {
             error('__dup', e);
-        }
-    }
-    function __or (){
-        try {
-            for(var a = 0, len = arguments.length; a<len; a++){
-                if(arguments[a]){
-                    return arguments[a];
-                }
-            }
-            return "";
-        } catch (e) {
-            error('fillTemplate.__or', e);
-        }
-    }
-    function __clean_micro_templates () {
-        var _micro_templates = fillTemplate._micro_templates;
-        for (var id in _micro_templates) {
-            if (!_micro_templates.hasOwnProperty(id)) { continue; }
-            if (!$CSS("[data-craydent-bind*='"+id+"']").length) { delete _micro_templates[id]; }
-        }
-    }
-    function __count(arr){
-        try {
-            return arr.length;
-        } catch (e) {
-            error('fillTemplate.count', e);
         }
     }
     function __enum(obj, delimiter, prePost){
@@ -319,42 +307,43 @@ if (__thisIsNewer) {
         if (!code) {
             return "";
         }
-        code = code.replace_all($c.TEMPLATE_TAG_CONFIG.IGNORE_CHARS,['']);
-        var ifor = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
-            iforeach = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOREACH_BEGIN.syntax),
-            iwhile = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.WHILE_BEGIN.syntax),
-            iif = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.IF_BEGIN.syntax),
-            iswitch = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.SWITCH_BEGIN.syntax),
-            itry = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.TRY_BEGIN),
+        var ttc = $c.TEMPLATE_TAG_CONFIG;
+        code = code.replace_all(ttc.IGNORE_CHARS,['']);
+        var ifor = code.indexOfAlt(ttc.FOR.begin),
+            iforeach = code.indexOfAlt(ttc.FOREACH.begin),
+            iwhile = code.indexOfAlt(ttc.WHILE.begin),
+            iif = code.indexOfAlt(ttc.IF.begin),
+            iswitch = code.indexOfAlt(ttc.SWITCH.begin),
+            itry = code.indexOfAlt(ttc.TRY.begin),
             first = [ifor,iforeach,iwhile,iif,iswitch,itry].filter(function(i){return i !=-1;}).sort(function(a,b){return a-b;})[0],
-            run = "__parse_";
+            keyword = "";
 
 
         switch (true) {
             case (iif > -1 && iif == first):
-                run += "if";
+                keyword = "IF";
                 break;
             case (ifor > -1 && ifor == first):
-                run += "for";
+                keyword = "FOR";
                 break;
             case (iforeach > -1 && iforeach == first):
-                run += "foreach";
+                keyword = "FOREACH";
                 break;
             case (iwhile > -1 && iwhile == first):
-                run += "while";
+                keyword = "WHILE";
                 break;
             case (iswitch > -1 && iswitch == first):
-                run += "switch";
+                keyword = "SWITCH";
                 break;
             case (itry > -1 && itry == first):
-                run += "try";
+                keyword = "TRY";
                 break;
             default:
                 return code;
                 break;
         }
 
-        return code.substring(0,first) + $w[run](code.substring(first));
+        return code.substring(0,first) + ttc[keyword].parser(code.substring(first));
     }
     function __on_observable_change (changes) {
         try {
@@ -381,129 +370,71 @@ if (__thisIsNewer) {
             error('observe.on_observable_change', e);
         }
     }
-    function __parse_for(code){
-        var fsyntax = $c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax,
-            efsyntax = $c.TEMPLATE_TAG_CONFIG.FOR_END,
-            formatch = code.match(fsyntax);
-
-        // verify that there is an if
-        if (!formatch) { return code; }
-
-        formatch = formatch.condense();
-
-        var forindex = 1,//code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
-            endindex = 0,// = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_END.syntax),
-            beginCount = 1,
-            endCount = 0,
-            forlength = formatch[0].length,
-            endlength = code.match(efsyntax)[0].length,
-            str = "";
-        while (beginCount != endCount /*&& forindex != -1 && endindex != -1*/) {
-            forindex = code.indexOfAlt(fsyntax, forindex + 1);
-            endindex = code.indexOfAlt(efsyntax, endindex + 1);
-
-            if (forindex != -1) { beginCount++; }
-            if (endindex != -1) { endCount++; }
-            if (forindex == -1 && endindex == -1) { break; }
+    function __or (){
+        try {
+            for(var a = 0, len = arguments.length; a<len; a++){
+                if(arguments[a]){
+                    return arguments[a];
+                }
+            }
+            return "";
+        } catch (e) {
+            error('fillTemplate.__or', e);
+        }
+    }
+    function __processBlocks (start, end, code, lookups) {
+        lookups = lookups || {};
+        var blocks = [], sindexes = [], sindex = 0, eindexes = [], eindex = 0;
+        while ((sindex = code.indexOfAlt(start, sindex)) != -1 && (eindex = code.indexOfAlt(end, eindex)) != -1) {
+            sindex != -1 && (sindexes.push(sindex), sindex++);
+            eindex != -1 && (eindexes.push(eindex), eindex++);
         }
         // if true syntax error, start end missmatch
-        if (endindex == -1) { return code; }
-
-        for (var i = 1, len = formatch.length; i < len; i++) {
-            formatch[i] = formatch[i].replace_all(['\\[','\\]'],['[',']']).toString();
-        }
-        var block = code.substring(forlength, endindex);
-        code = code.substring(endindex + endlength);
-
-        var components = $c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.handler.apply(this,formatch.splice(1))
-            || {variables:{},condition:foo,execute:foo};
-        while(components.condition()){
-            str += fillTemplate(block,components.variables);
-            components.execute();
-        }
-        str = str.replace(/\\?\[.*?\\?\]\[\d+\]/g,function(m){return tryEval(m.replace_all(['\\[','\\]'],['[',']']).toString())||"";});
-        return __logic_parser(str + code);
-
-    }
-    function __parse_foreach(code){ // TODO: implement
-
-    }
-    function __parse_if(code){
-        var ifsyntax = $c.TEMPLATE_TAG_CONFIG.IF_BEGIN.syntax,
-            ifmatch = code.match(ifsyntax);
-        // verify that there is an if
-        if (!ifmatch) {
-            return code;
+        if (sindexes.length != eindexes.length) {
+            blocks.push({id: uid, block: "", body:"", code: code});
+            return blocks;
         }
 
-        var elseifsyntax = $c.TEMPLATE_TAG_CONFIG.ELSE_IF.syntax,
-            elsesyntax = $c.TEMPLATE_TAG_CONFIG.ELSE,
-            endsyntax = $c.TEMPLATE_TAG_CONFIG.IF_END,
-            ifreg = ifsyntax.toString(),
-            elseifreg = elseifsyntax.toString(),
-            elsereg = elsesyntax.toString(),
-            endreg = endsyntax.toString();
-        ifreg = ifreg.substring(1, ifreg.lastIndexOf('/'));
-        elseifreg = elseifreg.substring(1, elseifreg.lastIndexOf('/'));
-        elsereg = elsereg.substring(1, elsereg.lastIndexOf('/'));
-        endreg = endreg.substring(1, endreg.lastIndexOf('/'));
+        var  j, pairs = OrderedList([], function (a, b) {
+            if (a.end < b.end) { return -1; }
+            if (a.end > b.end) { return 1; }
+            return 0;
+        });
 
-        var ifblock = new RegExp("("+ifreg+")|("+elseifreg+")|("+elsereg+")|("+endreg+")"),
-            parts = code.split(ifblock).filter(function(defined){return defined}),
-            block = "", ifcount = 0, endcount = 0, condition = false, skipblock = false;
-
-        for (var i = 0, len = parts.length; i < len; i++) {
-            var part = parts[i];
-            if (ifsyntax.test(part)) {
-                if (ifcount == endcount) {
-                    condition = $c.TEMPLATE_TAG_CONFIG.IF_BEGIN.handler.call(this, parts[i + 1]);
-                    if (!condition) {
-                        skipblock = true;
-                    }
-                } else {
-                    block += part;
-                }
-                ifcount++;
-            } else if (elseifsyntax.test(part) || elsesyntax.test(part)) {
-                // this is the outermost else or elseif
-                if (ifcount - 1 == endcount) {
-                    skipblock = condition;
-                    if (!skipblock && elseifsyntax.test(part)) {
-                        condition = $c.TEMPLATE_TAG_CONFIG.ELSE_IF.handler.call(this, parts[i + 1]);
-                        if (!condition) {
-                            skipblock = true;
-                        }
-                    }
-                } else {
-                    block += part;
-                }
-            } else if (endsyntax.test(part)) {
-                endcount++;
-                if (endcount == ifcount) {
-                    skipblock = condition = false;
-                } else {
-                    block += part;
-                }
-            } else if (!skipblock) {
-                block += part;
+        j = 0;
+        while (j < sindexes.length) {
+            var e = 0;
+            while (eindexes[0] > sindexes[e]) {
+                e++;
             }
-            if (ifsyntax.test(part) || elseifsyntax.test(part)) {
-                i++;
+            e--;
+            pairs.add({begin: sindexes[e], end: eindexes[0]});
+            sindexes.removeAt(e);
+            eindexes.removeAt(0);
+        }
+
+
+
+        var endlength = code.match(end)[0].length;
+        for (var k = 0, len = pairs.size(); k < len; k++) {
+            var uid = "##" + cuid() + "##",
+                block = code.slice(pairs[k].begin, pairs[k].end + endlength),
+                beginLength = block.match(start)[0].length,
+                body = code.slice(pairs[k].begin + beginLength, pairs[k].end);
+            code = code.replace(block, uid);
+            blocks.push({id: uid, block: block, body: body, code: code});
+            lookups[uid] = block;
+
+            for (var i = k + 1; i < len; i++) {
+                var offset = block.length - uid.length;
+                pairs[i].end -= offset;
+                if (pairs[i].begin > pairs[k].end) {
+                    pairs[i].begin -= offset;
+                }
             }
         }
 
-        return __logic_parser(block);
-
-
-    }
-    function __parse_switch(code){ // TODO: implement
-
-    }
-    function __parse_try(code){ // TODO: implement
-
-    }
-    function __parse_while(code){ // TODO: implement
-
+        return blocks.reverse();
     }
     function __parseArithmeticExpr (doc,expr,field) {
         try {
@@ -1138,10 +1069,17 @@ if (__thisIsNewer) {
     }
     function _condense (obj, check_values) {
         try {
-            var skip = [], arr = [];
+            var skip = [], arr = [], without = false;
+            if ($c.isArray(check_values)) {
+                without = true;
+            }
             for (var i = 0, len = obj.length; i < len; i++) {
                 if (check_values) {
                     var index = i;
+                    if (without && check_values.contains(obj[i])) {
+                        skip.push(i);
+                        continue;
+                    }
                     if (skip.indexOf(i) != -1) {
                         continue;
                     }
@@ -1177,13 +1115,14 @@ if (__thisIsNewer) {
             }
         }
         for (var prop in projection) {
-            if (projection.hop(prop)) {
+            if (projection.has(prop)) {
                 if (prop == "*") {
 //                    _copyWithProjectionHelper(record,copy);
                     copy = $c.duplicate(record);
                 } else if (record[prop] && !$c.isArray(record[prop])) {
                     copy[prop] = record[prop];
                 } else if (record[prop]) {
+                    var del = true;
                     if (prop.slice(-2) == ".$") {
                         prop = prop.slice(0,-2);
                         copy[prop] = record[prop].slice(0,1);
@@ -1197,10 +1136,15 @@ if (__thisIsNewer) {
                             length = projection[prop]['$slice'][1];
                         }
                         copy[prop] = record[prop].slice(start, length);
+                    } else if (projection[prop]) {
+                        del = false;
+                        copy[prop] = record[prop];
                     }
-                    if (!copy[prop].length) {
+                    if (del && !copy[prop].length) {
                         delete copy[prop];
                     }
+                } else {
+                    copy[prop] = projection[prop];
                 }
             }
         }
@@ -1208,7 +1152,7 @@ if (__thisIsNewer) {
     }
     function _copyWithProjectionHelper(record,copy) {
         for (var prop in record) {
-            if (record.hop(prop)) {
+            if (record.has(prop)) {
                 copy[prop] = record[prop];
             }
         }
@@ -1267,7 +1211,6 @@ if (__thisIsNewer) {
             error("_defineFunction", ex);
         }
     }
-    _df = _defineFunction;
     function _displayHelper(object, func){
         try {
             return (($d.getElementById(object) && $(object)[func]())
@@ -1570,24 +1513,20 @@ if (__thisIsNewer) {
             return false;
         }
     }
-    function _orderListHelper(value, sorter, arr, i) {
+    function _orderListHelper(value, sorter, arr) {
         try {
-            var len = arr.length;
-            if (!len) { return i; }
-
-            var index = parseInt(len/2),
-                order = sorter(value, arr[index]), newArr, args = [value,sorter];
-            //i = isNull(i) ? index : i;
-            i = parseInt(isNull(i) ? index : i);
-            if (order == 0) { return isNull(i) ? index : i; }
-            if (order == -1) {
-                arr = arr.slice(0, index);
-                i = arr.length ? i / 2 : i;
-            } else if (order == 1) {
-                arr = arr.slice(index + 1);
-                i = i + 1 + (arr.length - index/2);
+            var ii = 0, i = 0, len = arr.length;
+            if (sorter(value, arr[0]) == -1) { return 0; }
+            if (sorter(value, arr[len - 1]) === 1) { return len; }
+            while (len > 1) {
+                len = Math.ceil(len/2);
+                ii = i + len;
+                var order = sorter(value, arr[ii]);
+                if (order === 0) { return ii; }
+                if (order === 1) { i = ii++; }
             }
-            return _orderListHelper(value,sorter,arr,i);
+            return ii;
+
         } catch (e) {
             error("OrderedList._orderListHelper", e);
             return false;
@@ -2270,6 +2209,7 @@ if (__thisIsNewer) {
     }
     _ao = addObjectPrototype;
     _ah = addHTMLPrototype;
+    _df = _defineFunction;
 
     /*----------------------------------------------------------------------------------------------------------------
      /-	Benchmark testing Class
@@ -2336,20 +2276,22 @@ if (__thisIsNewer) {
                 }
             }
             arr.hasNext = function () { return currentIndex <  props.length; };
-            arr.next = function (value) {
+            arr.next = function () {
                 this.current = this[props[currentIndex]];
-                return this[props[currentIndex++]]; };
+                //return this[props[currentIndex++]];
+                return {value:this[props[currentIndex++]], done:currentIndex >= this.size()};
+            };
             arr.reset = function () { currentIndex = 0; };
             arr.setIndex = function (value) { currentIndex = parseInt(value) || 0; };
-            arr.current = this[props[currentIndex]];
+            arr.current = arr[props[currentIndex]];
 
-            arr.size = function () { return this.length; };
+            arr.size = function () { return isNull(this.length) ? $c.itemCount(this) : this.length; };
             return arr;
         } catch (e) {
             error('Cursor', e);
         }
     }
-    function OrderedList (records,sorter) {
+    function OrderedList (records,sorter)  {
         /*|{
             "info": "Collection class that filters out duplicate values and maintains an ordered list",
             "category": "Global",
@@ -2367,48 +2309,14 @@ if (__thisIsNewer) {
         }|*/
         try {
             sorter = sorter || function(a,b){if (a < b) {return -1;}if (a > b) {return 1;}return 0;};
-            var arr = $c.copyObject(records || []).sort(sorter), order;
+            var arr = $c.copyObject(records || []).sort(sorter), order, nextIndex = 0;
             arr.add = function(value){
+                if (!this.length) { return this.push(value); }
                 var index = _orderListHelper(value, sorter, this);
                 return this.insertBefore(index, value);
-                //var len = this.length, clen = this.length, index = Math.ceil(len/2);
-                //while (len > 1) {
-                //    order = sorter(value,this[index]);
-                //    if (order == 0) {
-                //        break;
-                //    }
-                //    if (order == -1) {
-                //        len = clen - len - index;
-                //        index = index == 1 ? 0 : Math.ceil(len/2);
-                //    } else if (order == 1) {
-                //        len = clen - index - 1;
-                //        index += Math.ceil(len/2);
-                //        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
-                //        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
-                //    }
-                //}
-                //
-                //
-                //while (len > 1) {
-                //    len = len - Math.ceil(len/2) - ($c.isEven(len)?1:0);
-                //    order = sorter(value,this[index]);
-                //    if (order == 0) {
-                //        break;
-                //    }
-                //    if (order == -1) {
-                //        index = index == 1?0:Math.ceil(index/2);
-                //    } else if (order == 1) {
-                //        index = index + Math.ceil(len/2);
-                //        // -2 -1 0 1 2 1 1 3 4 5  6  7  8  9  10 11 12 13 14 15 20
-                //        //[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 16 17 18 19 20 21]
-                //    }
-                //}
-                //order = sorter(value,this[index]);
-                //if (order == -1 || order == 0) {
-                //    return this.insertBefore(index,value);
-                //} else {
-                //    return this.insertAfter(index,value);
-                //}
+            };
+            arr.next = function () {
+                return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
             arr.size = function(){return this.length;};
             return arr;
@@ -2429,12 +2337,15 @@ if (__thisIsNewer) {
             "returnType": "(Queue)"
          }|*/
         try {
-            var arr = $c.copyObject(records || []);
+            var arr = $c.copyObject(records || []), nextIndex = 0;
             arr.enqueue = function(value){
                 this.push(value);
             };
             arr.dequeue = function(){
                 return this.slice(0,1);
+            };
+            arr.next = function () {
+                return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
             arr.size = function(){return this.length;};
             return arr;
@@ -2455,7 +2366,7 @@ if (__thisIsNewer) {
             "returnType": "(Set)"
         }|*/
         try {
-            var arr = $c.copyObject(records || []);
+            var arr = $c.copyObject(records || []), nextIndex = 0;
             arr.add = function(value){
                 if (!this.contains(value)) {
                     return !!arr.push(value);
@@ -2465,6 +2376,9 @@ if (__thisIsNewer) {
             };
             arr.clear = arr.removeAll;
             arr.clean = arr.toSet;
+            arr.next = function () {
+                return {value:this[nextIndex++], done:nextIndex >= this.size()};
+            };
             arr.size = function(){return this.length;};
             return arr;
         } catch (e) {
@@ -3265,7 +3179,7 @@ if (__thisIsNewer) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
     }
-    function fillTemplate (htmlTemplate, objs, offset, max, bound) {
+    function fillTemplate (htmlTemplate, objs, offset, max, bound) {// TODO Test DECLARE and logic parsers in fillTemplate -> make sure all returns run through parser
         /*|{
             "info": "Function for templetizing",
             "category": "Global",
@@ -3295,6 +3209,7 @@ if (__thisIsNewer) {
             "returnType": "(String)"
         }|*/
         try {
+            fillTemplate.declared = {};
             if (!htmlTemplate) {
                 return "";
             }
@@ -3321,19 +3236,22 @@ if (__thisIsNewer) {
             if (!$c.isArray(objs)) {
                 objs = [objs];
             }
-            var html = "",
-                variable,
-                value,
+            var html = "", variable, value, ttc = $c.TEMPLATE_TAG_CONFIG, tv = $c.TEMPLATE_VARS,
                 hasDataProps = htmlTemplate.contains('${dataproperties}'),
-                vsyntax = $c.TEMPLATE_TAG_CONFIG.VARIABLE,
-                vnsyntax = $c.TEMPLATE_TAG_CONFIG.VARIABLE_NAME;
-            for (var j = 0, jlen = $c.TEMPLATE_VARS.length; j < jlen; j++) {
-                variable = $c.TEMPLATE_VARS[j].variable;
-                value = $c.TEMPLATE_VARS[j].value;
+                vsyntax = ttc.VARIABLE,
+                vnsyntax = ttc.VARIABLE_NAME,
+                declarations = htmlTemplate.match(ttc.DECLARE.syntax.addFlags('g')) || [];
+            for (var j = 0, jlen = tv.length; j < jlen; j++) {
+                variable = tv[j].variable;
+                value = tv[j].value;
                 if (!variable) {continue;}
                 value = $c.isFunction(value) ? value(variable,j):value;
                 htmlTemplate = htmlTemplate.replace_all("${"+variable+"}", value);
             }
+            for (var j = 0, jlen = declarations.length; j < jlen; j++) {
+                htmlTemplate = ttc.DECLARE.parser(htmlTemplate, declarations[j]);
+            }
+
             max = max || objs.length;
             offset = offset || 0;
 
@@ -3375,7 +3293,7 @@ if (__thisIsNewer) {
 //                                }
 //                            }
                         } else {
-                            __setBindAttribute(child);
+                            __processNodes(child);
                         }
                     }
                     $c._micro_templates[id] = {template:n.toString()};
@@ -3384,7 +3302,7 @@ if (__thisIsNewer) {
                 if (!nodes.length) { nodes = [nodes]; }
                 var node, i = 0;
                 while (node = nodes[i++]) {
-                    __setBindAttribute(node);
+                    __processNodes(node);
                 }
                 htmlTemplate = "";
                 i = 0;
@@ -3874,7 +3792,7 @@ if (__thisIsNewer) {
             try {
                 return eval("("+expression+")");
             } catch(e) {
-                return undefined;
+                return null;
             }
         }
     }
@@ -4752,115 +4670,768 @@ if (__thisIsNewer) {
                 SYMBIAN:isSymbian(),
                 TEMPLATE_VARS: [],
                 TEMPLATE_TAG_CONFIG: {
-                    /* loop config */
                     IGNORE_CHARS:['\n'],
-                    FOR_BEGIN:{
-                        syntax:/\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
-                        handler:function (variables, condition, execute/*, block*/) {
-                            eval(variables);
-                            if (variables.indexOf("var ") == 0) {
-                                variables = variables.substring(4);
+                    /* loop config */
+                    FOR:{
+                        begin:/(?:\$\{for \((.*?)\);\((.*?)\);\((.*?)\)\})|(?:\{\{for \((.*?)\);\((.*?)\);\((.*?)\)\}\})/i,///\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
+                        end:/(\$\{end for\})|(\{\{end for\}\})/i,
+                        helper:function(code, body){
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                FOR = ttc.FOR,
+                                fsyntax = FOR.begin,
+                                mresult = code.match(fsyntax),
+                                condition = mresult[2] || mresult[5],
+                                exec = mresult[3] || mresult[6],
+                                dvars = (mresult[1] || mresult[4]).split(','),
+                                vars = "", ovars = {},code_result = "";
+                            for (var i = 0, len = dvars.length; i < len; i++) {
+                                var parts = ttc.VARIABLE_NAME(dvars[i]).split('=');
+                                vars += "var " + parts[0] + "=" + parts[1] + ";";
+                                ovars[parts[0]] = parts[0];
                             }
-                            variables = variables.split(',');
-                            var vars = {};
-                            for (var i_i = 0, i_ilen = variables.length; i_i < i_ilen; i_i++) {
-                                var parts = variables[i_i].split("="),
-                                    v = parts[0].trim();
-                                vars[v] = parts[1].trim();
-                                execute += "," + execute.replace(v,"this.variables." + v);
-//                            condition = condition.replace(parts[0],parts[0]);
+                            eval(vars);
+                            while (eval(fillTemplate(condition,ovars))) {
+                                code_result += body;
+                                eval(ttc.VARIABLE_NAME(exec));
                             }
-                            return {
-                                variables:vars,
-                                condition:function(){
-                                    return eval(condition);
-                                },
-                                execute:function(){
-                                    eval(execute);
+
+                            return code_result;
+                        },
+                        parser:function (code){
+                            var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
+                                fsyntax = FOR.begin,
+                                efsyntax = FOR.end,
+                                formatch = code.match(fsyntax);
+
+                            var blocks = __processBlocks(fsyntax, efsyntax, code);
+
+
+                            var code_result = "";
+                            for (var i = 0, len = blocks.length; i < len; i++) {
+                                var obj = blocks[i],
+                                    block = obj.block,
+                                    id = obj.id;
+
+
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) {
+                                    continue;
+                                }
+                                code_result = code_result.replace_all(id,FOR.helper(block,obj.body));
+                            }
+
+                            return code_result;
+                            //var vars = "";
+                            //for (var prop in fillTemplate.declared) {
+                            //    if (!code.contains("${"+prop+"}")) { continue; }
+                            //    vars += "var " + prop + "=" + fillTemplate.declared[prop] + ";";
+                            //}
+                            //eval(vars);
+                            //var matches = code_result.match(ttc.VARIABLE);
+                            //matches.map(function (var_match) {
+                            //    var var_match_name = ttc.VARIABLE_NAME(var_match),
+                            //        var_match_index = code_result.indexOf(var_match);
+                            //    if (tryEval("var "+ var_match_name +";") !== null) {
+                            //        var_match_index += var_match.length;
+                            //    }
+                            //
+                            //
+                            //    pre = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name)),
+                            //        post = code_result.substring(code_result.indexOf(var_match) + var_match.length);
+                            //    code_result = pre + post;
+                            //});
+                            //
+                            //
+                            //return code_result;
+                            //
+                            //
+                            //
+                            //
+                            //
+                            //
+                            //
+                            //var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
+                            //    fsyntax = FOR.begin,
+                            //    efsyntax = FOR.end,
+                            //    formatch = code.match(fsyntax);
+                            //
+                            //// verify that there is an for
+                            //if (!formatch) { return code; }
+                            //
+                            //formatch = formatch.condense();
+                            //
+                            //var forindex = 1,//code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
+                            //    endindex = 0,// = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_END.syntax),
+                            //    beginCount = 1,
+                            //    endCount = 0,
+                            //    forlength = formatch[0].length,
+                            //    endlength = code.match(efsyntax)[0].length,
+                            //    str = "";
+                            //while (beginCount != endCount /*&& forindex != -1 && endindex != -1*/) {
+                            //    forindex = code.indexOfAlt(fsyntax, forindex + 1);
+                            //    endindex = code.indexOfAlt(efsyntax, endindex + 1);
+                            //
+                            //    if (forindex != -1) { beginCount++; }
+                            //    if (endindex != -1) { endCount++; }
+                            //    if (forindex == -1 && endindex == -1) { break; }
+                            //}
+                            //// if true syntax error, start end missmatch
+                            //if (endindex == -1) { return code; }
+                            //
+                            //for (var i = 1, len = formatch.length; i < len; i++) {
+                            //    formatch[i] = formatch[i].replace_all(['\\[','\\]'],['[',']']).toString();
+                            //}
+                            //var block = code.substring(forlength, endindex);
+                            //code = code.substring(endindex + endlength);
+                            //
+                            //var components = FOR.helper.apply(this,formatch.splice(1))
+                            //    || {variables:{},condition:foo,execute:foo};
+                            //while(components.condition()){
+                            //    str += fillTemplate(block,components.variables);
+                            //    components.execute();
+                            //}
+                            //str = str.replace(/\\?\[.*?\\?\]\[\d+\]/g,function(m){return tryEval(m.replace_all(['\\[','\\]'],['[',']']).toString())||"";});
+                            //return __logic_parser(str + code);
+
+                        }
+                    },
+                    FOREACH:{
+                        begin:/(?:\$\{foreach (.*?)\s+in\s+(\[\s*\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\[\s*\{.*:.*?\}\s*\])\s*\}\})/i,
+                        end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
+                        helper:function (code, body,rtnObject,uid) {
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                FOREACH = ttc.FOREACH,
+                                fsyntax = FOREACH.begin,
+                                mresult = code.match(fsyntax),
+                                //condition = mresult[2] || mresult[5],
+                                obj_str = mresult[2] || mresult[4],
+                                objs = tryEval(obj_str),
+                                dvar = mresult[1] || mresult[3],
+                                var_name = ttc.VARIABLE_NAME(dvar),
+                                ovars = {},code_result = "";
+
+                            rtnObject = rtnObject || {};
+                            rtnObject[uid] += "var " + var_name + "s," + var_name + ";";
+                            rtnObject[var_name+"s"] = objs;
+                            if ($c.isArray(objs)) {
+                                for (var i = 0, len = objs.length; i < len; i++) {
+                                    //eval(var_name + "=" + obj_str + "[" + i + "]");
+
+                                    code_result += "${i="+i+","+var_name+"="+var_name+"s[i],null}" + body;
                                 }
                             }
+
+                            return code_result;
+
+                        },
+                        parser:function (code){
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                FOREACH = ttc.FOREACH,
+                                fsyntax = FOREACH.begin,
+                                efsyntax = FOREACH.end,
+                                uid = cuid(),
+                                formatch = code.match(fsyntax),result_obj = {};
+
+                            result_obj[uid] = "";
+
+                            var blocks = __processBlocks(fsyntax, efsyntax, code);
+
+
+                            var code_result = "";
+                            for (var i = 0, len = blocks.length; i < len; i++) {
+                                var obj = blocks[i],
+                                    block = obj.block,
+                                    id = obj.id;
+
+
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) {
+                                    continue;
+                                }
+                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid));
+                            }
+                            eval(result_obj[uid]);
+                            delete result_obj[uid];
+                            for (var prop in result_obj) {
+                                if (!result_obj.has(prop)) { continue; }
+                                eval(prop + "=" + "result_obj['" + prop + "']");
+                            }
+
+                            var matches = code_result.match(ttc.VARIABLE);
+                            matches.map(function (var_match) {
+                                var var_match_name = ttc.VARIABLE_NAME(var_match),
+                                    str = "";
+                                try { str = eval(var_match_name); } catch(e){ return; }
+
+                                code_result = code_result.replace(var_match,str||"");
+
+                            });
+
+                            return code_result;
                         }
                     },
-                    FOR_END:/(\$\{end for\})|(\{\{end for\}\})/i,
-                    FOREACH_BEGIN:{
-                        syntax:/\$\{foreach (.*?)\s+in\s+(.*?)\}/i,
-                        handler:function(){ // TODO: implement
+                    WHILE: {
+                        begin: /(?:\$\{while\s*\((.*?)\)\s*\})|(?:\{\{while\s*\((.*?)\)\s*\}\})/i,
+                        end: /(?:\$\{end while\})|(?:\{\{end while\}\})/i,
+                        helper: function (code,body) {
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                WHILE = ttc.WHILE,
+                                wsyntax = WHILE.begin,
+                                mresult = code.match(wsyntax),
+                                condition = mresult[1] || mresult[2],
+                                vars = "", ovars = {},code_result = "";
+                            for (var prop in fillTemplate.declared) {
+                                if (!code.contains("${"+prop+"}")) { continue; }
+                                var val = fillTemplate.declared[prop];
+                                vars += "var " + prop + "=" + val + ";";
+                                ovars[prop] = prop;
+                            }
+                            eval(vars);
+                            var declared = fillTemplate.declared;
+                            while (eval(fillTemplate(condition,ovars))) {
+                                code_result += body;
+                                (body.match(ttc.VARIABLE)||[]).map(function(var_matches){ eval(ttc.VARIABLE_NAME(var_matches)); });
+                            }
+                            fillTemplate.declared = declared;
+
+                            for (var prop in ovars) {
+                                if (!ovars.hasOwnProperty(prop)) { continue; }
+                                var ovar = ovars[prop];
+                                code_result += "${" + prop + "=" + fillTemplate.declared[prop] + ",null}";
+                            }
+
+                            return code_result;
+                        },
+                        parser: function (code) {
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                WHILE = ttc.WHILE,
+                                wsyntax = WHILE.begin,
+                                esyntax = WHILE.end,
+                                lookups = {};
+
+                            var blocks = __processBlocks(wsyntax, esyntax, code, lookups);
+
+
+                            var code_result = "";
+                            for (var i = 0, len = blocks.length; i < len; i++) {
+                                var obj = blocks[i],
+                                    block = obj.block,
+                                    id = obj.id;
+
+
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) {
+                                    continue;
+                                }
+                                code_result = code_result.replace_all(id,WHILE.helper(block,obj.body));
+                            }
+
+                            var vars = ""
+                            for (var prop in fillTemplate.declared) {
+                                if (!code.contains("${"+prop+"}")) { continue; }
+                                vars += "var " + prop + "=" + fillTemplate.declared[prop] + ";";
+                            }
+                            eval(vars);
+                            var matches = code_result.match(ttc.VARIABLE);
+                            matches.map(function (var_match) {
+                                var var_match_name = ttc.VARIABLE_NAME(var_match),
+                                    var_match_index = code_result.indexOf(var_match);
+                                    if (tryEval("var "+ var_match_name +";") !== null) {
+                                        var_match_index += var_match.length;
+                                    }
+
+
+                                    pre = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name)),
+                                    post = code_result.substring(code_result.indexOf(var_match) + var_match.length);
+                                code_result = pre + post;
+                            });
+
+
+                            return code_result;
 
                         }
                     },
-                    FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
-                    
-                    WHILE_BEGIN:{
-                        syntax:/\$\{while (.*?)\}/i,
-                        handler:function(){ // TODO: implement
+                    /* end loop config*/
+
+                    /* conditional config*/
+                    IF:{
+                        begin:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        elseif:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        else:/\$\{else\}|\{\{else\}\}/i,
+                        end:/\$\{end if\}|\{\{end if\}\}/i,
+                        helper:function (code) {
+                            var IF = $c.TEMPLATE_TAG_CONFIG.IF,
+                                isyntax = IF.begin,
+                                esyntax = IF.end,
+                                eisyntax = IF.elseif,
+                                elsyntax = IF.else,
+                                ifmatch = (code.match(isyntax) || []).condense(),
+                                iflength = (ifmatch[0] || "").length,
+                                endlength = code.match(esyntax)[0].length,
+                                startindex = code.indexOfAlt(isyntax),
+                                endindex = code.indexOfAlt(esyntax);
+
+
+                            if (ifmatch.length) {
+
+                                for (var j = 1, jlen = ifmatch.length; j < jlen; j++) {
+                                    ifmatch[j] = ifmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                                }
+                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength);
+                                //code = code.substring(startindex + switchlength, endindex);
+                                var //condition = tryEval(ifmatch[2]) || ifmatch[2],
+                                    ifsyntax = new RegExp(isyntax.source+"|"+eisyntax.source+"|"+elsyntax.source,'i'),
+                                    elfsyntax = new RegExp(eisyntax.source+"|"+elsyntax.source,'ig'),
+                                    elf = code.match(elfsyntax);
+
+                                if (!elf) {
+
+                                    return pre + code.substring(startindex + ifmatch[0].length, endindex) + post;
+                                }
+                                ifmatch = (code.match(ifsyntax.addFlags('g')) || []).condense();
+                                //var brk = SWITCH.break, dflt = SWITCH.default, found = false;
+                                for (var i = 0, len = ifmatch.length; i < len; i++) {
+                                    var ife = ifmatch[i].match(ifsyntax).condense(),
+                                        condition = ife[1],
+                                        value = "undefined" == condition ? false : tryEval(condition),
+                                        sindex = code.indexOf(ifmatch[i]) + ifmatch[i].length;
+
+                                    if (value !== undefined && value) {
+                                        var //sindex = code.indexOf(ifmatch[i]) + ifmatch[i].length,
+                                            eindex = code.indexOf(ifmatch[i + 1]);
+                                        if (eindex == -1) {
+                                            return pre + code.substring(sindex) + post;
+                                        }
+                                        return pre + code.substring(sindex, eindex) + post;
+                                    } else if (ifmatch[i].match(elsyntax)) {
+                                        return pre + code.substring(sindex,endindex) + post;
+                                    }
+                                    //if (val == cvalue) {
+                                    //    var cindex = code.indexOf(cases[i]),
+                                    //        bindex = code.indexOfAlt(brk, cindex);
+                                    //    bindex = bindex == -1 ? code.length : bindex;
+                                    //    return pre + code.substring(cindex + cases[i].length, bindex).replace(cgsyntax, '') + post;
+                                    //}
+                                }
+                                //var dindex = code.indexOfAlt(dflt);
+                                //if (!found && dindex != -1) {
+                                //    return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
+                                //}
+                                return pre + post;
+                            }
+                            return code;
+
+
+
+
+
+                            var value = "undefined" == condition ? false : tryEval(condition);
+
+                            if (isNull(value)) {
+                                logit(condition + " is not valid boolean expression");
+                                value = false;
+                            }
+                            return value;
+                        },
+                        parser:function (code){
+                            var IF = $c.TEMPLATE_TAG_CONFIG.IF,
+                                isyntax = IF.begin,
+                                esyntax = IF.end;
+
+                            var blocks = __processBlocks(isyntax, esyntax, code);
+
+                            var code_result = "";
+                            for (var i = 0, len = blocks.length; i < len; i++) {
+                                var obj = blocks[i],
+                                    block = obj.block,
+                                    id = obj.id;
+
+
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) {
+                                    continue;
+                                }
+                                code_result = IF.helper(code_result.replace(id, block));
+                            }
+                            return code_result;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            var IF = $c.TEMPLATE_TAG_CONFIG.IF,
+                                ifsyntax = IF.begin,
+                                ifmatch = code.match(ifsyntax);
+                            // verify that there is an if
+                            if (!ifmatch) {
+                                return code;
+                            }
+
+                            var elseifsyntax = IF.elseif,
+                                elsesyntax = IF.else,
+                                endsyntax = IF.end,
+                                ifreg = ifsyntax.toString(),
+                                elseifreg = elseifsyntax.toString(),
+                                elsereg = elsesyntax.toString(),
+                                endreg = endsyntax.toString();
+                            ifreg = ifreg.substring(1, ifreg.lastIndexOf('/'));
+                            elseifreg = elseifreg.substring(1, elseifreg.lastIndexOf('/'));
+                            elsereg = elsereg.substring(1, elsereg.lastIndexOf('/'));
+                            endreg = endreg.substring(1, endreg.lastIndexOf('/'));
+
+                            var ifblock = new RegExp("("+ifreg+")|("+elseifreg+")|("+elsereg+")|("+endreg+")"),
+                                parts = code.split(ifblock).filter(function(defined){return defined}),
+                                block = "", ifcount = 0, endcount = 0, condition = false, skipblock = false;
+
+                            for (var i = 0, len = parts.length; i < len; i++) {
+                                var part = parts[i];
+                                if (ifsyntax.test(part)) {
+                                    if (ifcount == endcount) {
+                                        condition = IF.begin.helper.call(this, parts[i + 1]);
+                                        if (!condition) {
+                                            skipblock = true;
+                                        }
+                                    } else {
+                                        block += part;
+                                    }
+                                    ifcount++;
+                                } else if (elseifsyntax.test(part) || elsesyntax.test(part)) {
+                                    // this is the outermost else or elseif
+                                    if (ifcount - 1 == endcount) {
+                                        skipblock = condition;
+                                        if (!skipblock && elseifsyntax.test(part)) {
+                                            condition = IF.helper.call(this, parts[i + 1]);
+                                            if (!condition) {
+                                                skipblock = true;
+                                            }
+                                        }
+                                    } else {
+                                        block += part;
+                                    }
+                                } else if (endsyntax.test(part)) {
+                                    endcount++;
+                                    if (endcount == ifcount) {
+                                        skipblock = condition = false;
+                                    } else {
+                                        block += part;
+                                    }
+                                } else if (!skipblock) {
+                                    block += part;
+                                }
+                                if (ifsyntax.test(part) || elseifsyntax.test(part)) {
+                                    i++;
+                                }
+                            }
+
+                            return __logic_parser(block);
+
 
                         }
-                     },
-                     WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
+                    },
+                    SWITCH: {
+                        begin: /(\$\{switch\s+\((.*?)\)\s*\})|(\{\{switch\s+\((.*?)\)\s*\}\})/i,
+                        end: /(\$\{end switch\})|(\{\{end switch\}\})/i,
+                        case: /(?:\$\{case\s+(.*?)\s*?:\})|(?:\{\{case\s+(.*?)\s*?:\}\})/i,
+                        default: /(\$\{default\})|(\{\{default\}\})/i,
+                        break: /(\$\{break\})|(\{\{break\}\})/i,
+                        helper: function (code) {
+                            var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
+                                ssyntax = SWITCH.begin,
+                                essyntax = SWITCH.end,
+                                csyntax = SWITCH.case,
+                            //switchmatch = code.match(ssyntax),
+                                switchmatch = (code.match(ssyntax) || []).condense(),
+                                switchlength = (switchmatch[0] || "").length,
+                                endlength = code.match(essyntax)[0].length,
+                                startindex = code.indexOfAlt(ssyntax),
+                                endindex = code.indexOfAlt(essyntax);
+
+
+                            if (switchmatch.length) {
+
+                                for (var j = 1, jlen = switchmatch.length; j < jlen; j++) {
+                                    switchmatch[j] = switchmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                                }
+                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength);
+                                code = code.substring(startindex + switchlength, endindex);
+                                var val = tryEval(switchmatch[2]) || switchmatch[2],
+                                    cgsyntax = csyntax.addFlags("g"),
+                                    cases = code.match(cgsyntax);
+
+                                if (!cases) {
+                                    return pre + code.cut(startindex, endindex + endlength) + post;
+                                }
+                                var brk = SWITCH.break, dflt = SWITCH.default, found = false;
+                                for (var i = 0, len = cases.length; i < len; i++) {
+                                    var cs = cases[i].match(csyntax),
+                                        cvalue = cs[1] || cs[2];
+                                    if (val == cvalue) {
+                                        var cindex = code.indexOf(cases[i]),
+                                            bindex = code.indexOfAlt(brk, cindex);
+                                        bindex = bindex == -1 ? code.length : bindex;
+                                        return pre + code.substring(cindex + cases[i].length, bindex).replace(cgsyntax, '') + post;
+                                    }
+                                }
+                                var dindex = code.indexOfAlt(dflt);
+                                if (!found && dindex != -1) {
+                                    return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
+                                }
+
+                            }
+                            return code;
+                        },
+                        parser: function (code) {
+                            var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
+                                ssyntax = SWITCH.begin,
+                                essyntax = SWITCH.end;
+
+                            var blocks = __processBlocks(ssyntax, essyntax, code);
+
+                            var code_result = "";
+                            for (var i = 0, len = blocks.length; i < len; i++) {
+                                var obj = blocks[i],
+                                    block = obj.block,
+                                    id = obj.id;
+
+
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) {
+                                    continue;
+                                }
+                                code_result = SWITCH.helper(code_result.replace(id, block));
+                            }
+                            return __logic_parser(code_result);
+                        }
+
+                    },
+                    /* end conditional config*/
+
+                    /* error handling and execution config */
+                    SCRIPT: {
+                        begin: /(\$\{script\})|(\{\{script\}\})/i,
+                        end: /(\$\{end script\})|(\{\{end script\}\})/i,
+                        parser: function (code) {
+                            var SCRIPT = $c.TEMPLATE_TAG_CONFIG.SCRIPT,
+                                sindex = code.indexOfAlt(SCRIPT.begin),
+                                slen = code.match(SCRIPT.begin)[0].length,
+                                eindex = code.indexOfAlt(SCRIPT.end),
+                                elen = code.match(SCRIPT.end)[0].length;
+
+                            if (eindex == -1) {
+                                eindex = undefined;
+                            }
+                            var block = code.substring(sindex + slen,eindex),
+
+                            echo = function (value) {
+                                echo.out += value;
+                            }, str = "";
+                            echo.out = "";
+
+                            str = eval("(function(){"+block+";return echo.out;})()");
+
+                            return __logic_parser(code.cut(sindex,eindex+elen, str));
+
+                        }
+
+                    },
+                    TRY: {
+                        begin: /(\$\{try\})|(\{\{try\}\})/i,
+                        catch: /(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
+                        finally: /(\$\{finally\})|(\{\{finally\}\})/i,
+                        end: /(\$\{end try\})|(\{\{end try\}\})/i,
+                        helper: function (code, lookups) {
+                            var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
+                                tsyntax = TRY.begin,
+                                csyntax = TRY.catch,
+                                fsyntax = TRY.finally,
+                                tindex = code.indexOfAlt(tsyntax),
+                                cindex = code.indexOfAlt(csyntax),
+                                findex = code.indexOfAlt(fsyntax),
+                                eindex = code.indexOfAlt(TRY.end),
+                                tlen = code.match(tsyntax)[0].length,
+                                flen = code.match(fsyntax)[0].length,
+                                tend = cindex;
+
+                            if (tend == -1) {
+                                tend = findex != -1 ? findex : eindex;
+                            }
+
+                            var body = code.substring(tindex + tlen, tend),
+                                match = body.match(/\$\{[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\}/i),
+                                echo = function (value) {
+                                    echo.out += value;
+                                }, str = "";
+                            echo.out = "";
+                            if (match) {
+                                var id = match[0];
+                                body = body.replace(id, ";echo('" + TRY.helper(lookups[id], lookups) + "');");
+                            }
+
+                            try {
+                                str = eval("(function(){" + body + ";return echo.out; })()");
+                            } catch (e) {
+                                if (cindex != -1) {
+                                    echo.out = "";
+                                    tend = findex != -1 ? findex : eindex;
+                                    var catchBlock = code.substring(cindex, tend),
+                                        catchLine = catchBlock.match(csyntax);
+                                    catchBlock = catchBlock.replace(catchLine[0], '');
+                                    str = eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})('" + e.message + "')");
+                                }
+                            } finally {
+                                if (findex != -1) {
+                                    echo.out = "";
+                                    var finalBlock = code.substring(findex + flen, eindex);
+                                    str += eval("(function(){" + finalBlock + ";return echo.out; })()");
+                                }
+                            }
+                            return str;
+                        },
+                        parser: function (code) {
+                            var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
+                                tsyntax = TRY.begin,
+                                esyntax = TRY.end,
+                                lookups = {};
+
+                            var blocks = __processBlocks(tsyntax, esyntax, code, lookups);
+
+
+                            var obj = blocks[0],
+                                block = obj.block,
+                                id = obj.id;
+
+                            return __logic_parser(TRY.helper(obj.code.replace(id, block), lookups));
+
+                        }
+
+                    },
+                    /* end error handling config */
+
+                    //FOR_BEGIN:{
+                    //    syntax:/\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
+                    //    handler:function (variables, condition, execute/*, block*/) {
+                    //        eval(variables);
+                    //        if (variables.indexOf("var ") == 0) {
+                    //            variables = variables.substring(4);
+                    //        }
+                    //        variables = variables.split(',');
+                    //        var vars = {};
+                    //        for (var i = 0, len = variables.length; i < len; i++) {
+                    //            var parts = variables[i].split("="),
+                    //                v = parts[0].trim();
+                    //            vars[v] = parts[1].trim();
+                    //            execute += "," + execute.replace(v,"this.variables." + v);
+                    //        }
+                    //        return {
+                    //            variables:vars,
+                    //            condition:function(){
+                    //                return eval(condition);
+                    //            },
+                    //            execute:function(){
+                    //                eval(execute);
+                    //            }
+                    //        }
+                    //    }
+                    //},
+                    //FOR_END:/(\$\{end for\})|(\{\{end for\}\})/i,
+                    //FOREACH_BEGIN:{
+                    //    syntax:/\$\{foreach (.*?)\s+in\s+(.*?)\}/i,
+                    //    handler:function (prop_variable, obj, value) {
+                    //        var o = {};
+                    //        o[prop_variable] = value;
+                    //        return o;
+                    //    }
+                    //},
+                    //FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
+                    //
+                    //WHILE_BEGIN:{
+                    //    syntax:/\$\{while\s*\((.*?)\)\s*\}/i,
+                    //    handler:function(){
+                    //
+                    //    }
+                    //},
+                    //WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
                      
                     /* end loop config*/
 
                     /* conditional config*/
                     // if and else if conditions must be wrapped in capturing ()
-                    IF_BEGIN:{
-                        syntax:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        handler:function (condition) {
-                            var value = "undefined" == condition ? false : tryEval(condition);
-
-                            if (isNull(value)) {
-                                logit(condition + " is not valid boolean expression");
-                                value = false;
-                            }
-                            return value;
-                        }
-                    },
-                    ELSE_IF:{
-                        syntax:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        handler:function (condition) {
-                            var value = "undefined" == condition ? false : tryEval(condition);
-
-                            if (isNull(value)) {
-                                logit(condition + " is not valid boolean expression");
-                                value = false;
-                            }
-                            return value;
-                        }
-                    },
-                    ELSE:/\$\{else\}|\{\{else\}\}/i,
-                    IF_END:/\$\{end if\}|\{\{end if\}\}/i,
-
-                     SWITCH_BEGIN: {
-                     syntax: /(\$\{switch\s+\((.*)?(?!\{)\)\s*\})|(\{\{switch\s+\((.*)?(?!\{)\)\s*\}\})/i,
-                         handler: function (condition) {
-                         }
-                     },
-                     SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
-                     CASE:/(\$\{case\s+(.*?)\s*?:\})|(\{\{case\s+(.*?)\s*?:\}\})/i,
-                     
+                    //IF_BEGIN:{
+                    //    syntax:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                    //    handler:function (condition) {
+                    //        var value = "undefined" == condition ? false : tryEval(condition);
+                    //
+                    //        if (isNull(value)) {
+                    //            logit(condition + " is not valid boolean expression");
+                    //            value = false;
+                    //        }
+                    //        return value;
+                    //    }
+                    //},
+                    //ELSE_IF:{
+                    //    syntax:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                    //    handler:function (condition) {
+                    //        var value = "undefined" == condition ? false : tryEval(condition);
+                    //
+                    //        if (isNull(value)) {
+                    //            logit(condition + " is not valid boolean expression");
+                    //            value = false;
+                    //        }
+                    //        return value;
+                    //    }
+                    //},
+                    //ELSE:/\$\{else\}|\{\{else\}\}/i,
+                    //IF_END:/\$\{end if\}|\{\{end if\}\}/i,
+                    //
+                    //SWITCH_BEGIN: {
+                    //    syntax: /(\$\{switch\s+\((.*?)\)\s*\})|(\{\{switch\s+\((.*?)\)\s*\}\})/i,
+                    //        handler: function (condition) {
+                    //     }
+                    //},
+                    //SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
+                    //CASE:/(?:\$\{case\s+(.*?)\s*?:\})|(?:\{\{case\s+(.*?)\s*?:\}\})/i,
+                    //DEFAULT:/(\$\{default\})|(\{\{default\}\})/i,
+                    //BREAK:/(\$\{break\})|(\{\{break\}\})/i,
                     /* end conditional config*/
 
                     /* error handling config */
                     
-                     TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
-                     CATCH:{
-                     syntax:/(\$\{catch\s+\((.*)?(?!\{)\)\s*\})|(\{\{catch\s+\((.*)?(?!\{)\)\s*\}\})/i,
-                     handler:function(error){}
-                     },
-                     FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
-                     TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
+                    //TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
+                    //CATCH:/(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
+                    //FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
+                    //TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
                      
                     /* end error handling config */
 
                     /* tokens config */
-                    VARIABLE:/\$\{((?!\$).)*?\}|\{\{((?!\{\{).)*?\}\}/gi,
+                    VARIABLE:/(?:\$\{((?!\$).)*?\})|(?:\{\{((?!\{\{).)*?\}\})/gi,
                     VARIABLE_NAME:function(match){
                         var endi = match.contains('}}') ? -2 : -1;
                         return  match.slice(2,endi);
-                    }/*,
+                    },/*,
                      BREAK:/(\$\{break\})|(\{\{break\}\})/i,
                      THROW:/(\$\{throw\})|(\{\{throw\}\})/i,
                      CONTINUE:/(\$\{continue\})|(\{\{continue\}\})/i
                      */
+                    DECLARE:{
+                        syntax: /(?:\$\{DECLARE (.*?)\})|(?:\{\{DECLARE (.*?)\}\})/i,
+                        parser: function (htmlTemplate, declare){
+                            var matches = declare.match($c.TEMPLATE_TAG_CONFIG.DECLARE.syntax),
+                                var_nameValue = (matches[1]||matches[2]).strip(';').split("=");
+
+                            fillTemplate.declared[var_nameValue[0]] = var_nameValue[1];
+                            return htmlTemplate.replace_all(declare,'');
+                        }
+                    }
                     /* end tokens config */
                 },
                 TRIDENT:isTrident(),
@@ -5106,7 +5677,8 @@ if (__thisIsNewer) {
             if (before + after > this.length) {
                 return this;
             }
-            return this.slice(0, before) + "..." + this.slice(-1*after);
+            //return this.slice(0, before) + "..." + this.slice(-1*after);
+            return this.cut(before, -1*after, "...");
         } catch (e) {
             error('String.ellipsis', e);
         }
@@ -5155,6 +5727,7 @@ if (__thisIsNewer) {
             "returnType": "(Int)"
         }|*/
         try {
+            if (isNull(regex)) { return -1; }
             pos = pos || 0;
             var index = this.substring(pos).search(regex);
             return (index >= 0) ? (index + pos) : index;
@@ -5194,9 +5767,9 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var pre = "", post = "";
-            msFormat && (pre = "{") && (post = "}");
-            return (new RegExp(pre+"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"+post)).test(this);
+            var pre = "", post = "", length = 36;
+            msFormat && ((pre = "{") && (post = "}"),length += 2);
+            return this.length == length && (new RegExp(pre+"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"+post)).test(this);
         } catch (e) {
             error("String.isCuid", e);
         }
@@ -5512,6 +6085,7 @@ if (__thisIsNewer) {
             if (/\d\d\d\d-\d\d-\d\d/.test(strDatetime)) {
                 strDatetime = this.replace("-","/").replace("-","/");
             }
+            strDatetime = strDatetime.replace(/(am|pm)/i,' $1');
             var dt = new Date(strDatetime);
             if (!dt.getDate()) {
                 var parts = [],
@@ -5538,7 +6112,7 @@ if (__thisIsNewer) {
                             dt = new Date(parts[2] + "/" + parts[1] + "/" + parts[3] + parts[4]);
                         }
                     }
-                    if (!dt.getDate() && (parts = dtstring.match(/(\d{1,2})\/(\d{1,2})-(\d{2,4})(.*)/)) && parts.length > 1) {
+                    if (!dt.getDate() && (parts = dtstring.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(.*)/)) && parts.length > 1) {
                         dt = new Date(parts[2] + "/" + parts[1] + "/" + parts[3] + parts[4]);
                     } else if (!dt.getDate() && (parts = dtstring.match(/(\d{1,2})-([a-zA-Z]{3,9})-(\d{2,4})(.*)/)) && parts.length > 1) {
                         dt = new Date(dtstring.replace("-", " "));
@@ -5623,6 +6197,32 @@ if (__thisIsNewer) {
             error("String.trim", e);
         }
     }, true);
+    _ext(String, 'cut', function (si, ei, replacement) {
+        /*|{
+            "info": "String class extension to remove between the provided indexes",
+            "category": "String",
+            "parameters":[
+                 {"start_index": "(Integer) Start index to cut"},
+                 {"end_index": "(Integer) End index to cut"}],
+
+            "overloads":[{
+            "parameters":[
+                {"start_index": "(Integer) Start index to cut"},
+                {"end_index": "(Integer) End index to cut"},
+                {"replacement": "(String) String to put in place of the cut"}]}],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.cut",
+            "returnType": "(String)"
+        }|*/
+        try {
+            if (isNull(si) || isNull(si)) {
+                return this;
+            }
+            return this.slice(0, si) + this.slice(ei);
+        } catch (e) {
+            error("String.cut", e);
+        }
+    }, true)
 
     /*----------------------------------------------------------------------------------------------------------------
      /-	Array class Extensions
@@ -5652,7 +6252,7 @@ if (__thisIsNewer) {
             error("Array.aggregate", e);
         }
     }, true);
-    _ext(Array,'buildTree', function (parentFinder,childFinder,options) {
+    _ext(Array, 'buildTree', function (parentFinder,childFinder,options) {
         /*|{
             "info": "Array class extension to create a parent/child hierarchy",
             "category": "Array",
@@ -5725,20 +6325,15 @@ if (__thisIsNewer) {
             error('Array.buildTree', e);
         }
     });
-    _ext(Array, 'complexSort', function(specs){ // TODO: finish commenting
+    _ext(Array, 'complexSort', function(specs){
         /*|{
-            "info": "Array class extension to ",
+            "info": "Array class extension to sort using lookups",
             "category": "Array",
-            "parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}],
+            "parameters":[],
 
             "overloads":[
                 {"parameters":[
-                {"": ""},
-                {"": ""},
-                {"": ""}]}],
+                    {"specs": "(Object) specs with common properties:<br />(Mixed) props<br />(Boolean) reverse<br />(Function) lookupprimer<br />(Function) propprimer<br />(Object) lookup<br />(Function) lookupfunc"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#array.complexSort",
             "returnType": "(Array)"
@@ -5747,7 +6342,7 @@ if (__thisIsNewer) {
             specs = specs || {};
             var defunc = function(v){return v;},
                 props = specs.props,
-                rev = specs.rev,
+                rev = specs.reverse,
                 lprimer = specs.lookupprimer || defunc,
                 pprimer = specs.propprimer || defunc,
                 lookup = specs.lookup,
@@ -5780,8 +6375,8 @@ if (__thisIsNewer) {
                     if (aVal > bVal) {return 1;}
                     return -1;
                 };
-
-            return this.sort(prop_sort);
+            this.sort(prop_sort);
+            return rev && this.reverse || this;
         } catch (e) {
             error('Array.complexSort', e);
         }
@@ -5815,6 +6410,79 @@ if (__thisIsNewer) {
             "returnType": "(Int)"
         }|*/
         return this.where(condition).length;
+    });
+    _ext(Array, 'delete', function(condition, justOne) {
+        /*|{
+         "info": "Array class extension to delete records",
+         "category": "Array",
+         "parameters":[
+         {"condition": "(Mixed) Query following find/where clause syntax"}],
+
+         "overloads":[
+         {"parameters":[
+         {"condition": "(Mixed) Query following find/where clause syntax"},
+         {"justOne": "(Boolean) Flag for deleting just one records [Default is: true]"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.delete",
+         "returnType": "(Array)"
+         }|*/
+        try {
+            justOne = parseBoolean(isNull(justOne) ? true : isNull(justOne.justOne, justOne));
+            // if no condition was given, remove all
+            if (!condition) {
+                return this.splice(0,justOne ? 1 : this.length);
+            }
+
+            var arr = [], indexes = [];
+            _whereHelper(this, condition,function (obj, i) {
+                if (justOne) {
+                    arr = arr.concat(this.splice(i,1));
+                    return false
+                }
+                indexes.push(i);
+                return true;
+            });
+            for (var i = indexes.length - 1; i >= 0; i--) {
+                arr = this.splice(indexes[i],1).concat(arr);
+            }
+
+            return arr;
+        } catch (e) {
+            error("Array.delete", e);
+            return false;
+        }
+    }, true);
+    _ext(Array, 'distinct', function(fields, condition) {
+        /*|{
+         "info": "Array class extension to get all unique records by fields specified",
+         "category": "Array",
+         "parameters":[
+         {"fields": "(Mixed) Fields to use as the projection and unique comparison"}],
+
+         "overloads":[
+         {"parameters":[
+         {"fields": "(Mixed) Fields to use as the projection and unique comparison"},
+         {"condition": "(Mixed) Query following find/where clause syntax"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.distinct",
+         "returnType": "(Array)"
+         }|*/
+        try {
+            if ($c.isString(fields)) {
+                fields = [fields];
+            }
+
+//            var projection = {},len = fields.length;
+//            for (var i = 0; i < len; i++) {
+//                projection[fields[i]] = 1;
+//            }
+
+
+            return this.group(fields,condition);
+        } catch (e) {
+            error("Array.distinct", e);
+            return false;
+        }
     });
     _ext(Array, 'every', function(callback, thisObject) {
         /*|{
@@ -5876,6 +6544,90 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
+    _ext(Array, 'group', function(params) {
+        /*|{
+         "info": "Array class extension to group records by fields",
+         "category": "Array",
+         "parameters":[
+         {"params": "(Object) specs with common properties:<br />(Object) key<br />(Mixed) cond<br />(Function) reduce<br />(Object) initial"}],
+
+         "overloads":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.group",
+         "returnType": "(Array)"
+         }|*/
+
+        /*         *    parameters:[
+         *        {fields: "(Mixed) Fields to use as the projection and to group by"}],
+         *
+         *    overloads:[
+         *        {parameters:[
+         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
+         *            {condition: "(Mixed) Query following find/where clause syntax"}]},
+         *        {parameters:[
+         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
+         *            {condition: "(Mixed) Query following find/where clause syntax"},
+         *            {reduce: "(Function) Method that operates on the records during the grouping operation"}]},
+         *        {parameters:[
+         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
+         *            {condition: "(Mixed) Query following find/where clause syntax"},
+         *            {reduce: ""},
+         *            {initial: ""}]}],*/
+        try {
+            //var fields = params.field || params.key,
+            var key = params.field || params.key,
+                condition = params.cond,
+                reduce = params.reduce || foo,
+                initial = params.initial || {},
+                keyf = params.keyf,
+                finalize = params.finalize || foo;
+            if ($c.isString(key)) {
+                key = key.split(',');
+            }
+            if ($c.isArray(key)) {
+                var tmp = {};
+                for (var i = 0, len = key.length; i < len; i++) {
+                    tmp[key[i]] = 1;
+                }
+                key = tmp;
+            }
+
+            var props = $c.keys(initial),
+                key = $c.keys(key),
+                arr = [], result = {}, id = cuid();
+            _whereHelper(this, condition,function (obj, i) {
+                // _groupFieldHelper creates a grouping string based on the field value pairs
+                var fields = key;
+                if (!key && keyf) {
+                    fields = $c.isFunction(keyf) ? keyf(doc) : keyf;
+                }
+                var prop = _groupFieldHelper(obj, fields), addit = false;
+                if (!result[prop]) {
+                    addit = true;
+                    var tmp = $c.duplicate(initial);
+                    //for (var i = 0, len = props.length; i < len; i++) {
+                    //    tmp[props[i]] = initial[props[i]];
+                    //}
+                    result[prop] = tmp;
+                }
+                var curr = $c.duplicate(obj), item;
+                reduce(curr, result[prop]);
+                item = _copyWithProjection(fields, obj);
+                item[id] = prop;
+                addit && arr.push(item);
+                return true;
+            });
+
+            for (var i = 0, len = arr.length; i < len; i++) {
+                //var prop = _groupFieldHelper(arr[i], $c.keys(arr[i]));
+                arr[i] = finalize($c.merge(arr[i],result[arr[i][id]]));
+            }
+            return arr;
+        } catch (e) {
+            error("Array.group", e);
+            return false;
+        }
+    });
     _ext(Array, 'groupBy', function(clause){ // TODO: reconsider this with .group
         /*|{
             "info": "Array class extension to ",
@@ -5891,11 +6643,7 @@ if (__thisIsNewer) {
         try {
             var props = [];
             if ($c.isObject(clause)) {
-                for (var prop in clause) {
-                    if (clause.hop(prop)) {
-                        props.push(props);
-                    }
-                }
+                props = $c.keys(clause);
             }
             if ($c.isString(clause)) {
                 props = clause.split(',');
@@ -5905,18 +6653,23 @@ if (__thisIsNewer) {
 
             var arr = [];
             var temp = {};
+            // loop through each record
             for (var i = 0, len = this.length; i < len; i++) {
                 var obj = this[i],
                     nprop = fillTemplate(clause,obj);
                 temp[nprop] = temp[nprop] || {};
                 for (var prop in obj) {
+                    if (!obj.has(prop)) { continue; }
                     var propOnly = prop.replace(/.*\.(.*$)/, '$1'),
                         agg = prop.replace("."+propOnly, '');
 
-                    if (obj.hop(prop) && props.indexOf(propOnly)) {
+                    if (props.indexOf(propOnly)) {
 
                         switch (agg) {
                             case "avg":
+                                var avg = temp[nprop].avg = temp[nprop].avg || 0,
+                                    n = temp[nprop].n = temp[nprop].n || 1;
+                                temp[nprop].avg = (obj[prop]+avg*n)/temp[nprop].n++;
                                 break;
                             case "checksum_agg":
                                 break;
@@ -5925,6 +6678,8 @@ if (__thisIsNewer) {
                                 temp[nprop].sum += obj[prop];
                                 break;
                             case "count":
+                                temp[nprop].count = temp[nprop].count || 0;
+                                temp[nprop].count++;
                                 break;
                             case "stddev":
                                 break;
@@ -6183,6 +6938,30 @@ if (__thisIsNewer) {
             error("Array.map", e);
         }
     }, true);
+    _ext(Array, 'mapReduce', function(map, reduce, options) {
+        /*|{
+         "info": "Array class extension to run map-reduce aggregation over records",
+         "category": "Array",
+         "parameters":[
+         {"condition": "(Mixed) Query following find/where clause syntax"},
+         {"condition": "(Mixed) Query following find/where clause syntax"}],
+
+         "overloads":[
+         {"parameters":[
+         {"condition": "(Mixed) Query following find/where clause syntax"},
+         {"projection": "(Mixed) Indicate which properties to return"},
+         {"projection": "(Mixed) Indicate which properties to return"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.mapReduce",
+         "returnType": "(Array)"
+         }|*/
+        try {
+
+        } catch (e) {
+            error("Array.mapReduce", e);
+            return false;
+        }
+    });
     _ext(Array, 'normalize', function () {
         /*|{
             "info": "Array class extension to normalize all properties in the object array",
@@ -6287,7 +7066,7 @@ if (__thisIsNewer) {
             "returnType": "(Mixed)"
         }|*/
         try {
-            if(!this[index]) {
+            if(this[index] === undefined) {
                 return false;
             }
             return this.splice(index, 1)[0];
@@ -6314,7 +7093,6 @@ if (__thisIsNewer) {
             error("Array.replaceAt", e);
         }
     }, true);
-    //ARRAY SORTING
     _ext(Array, 'sortBy', function(props, rev, primer, lookup, options){
         /*|{
             "info": "Array class extension to sort the array",
@@ -6473,180 +7251,6 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'distinct', function(fields, condition) {
-        /*|{
-            "info": "Array class extension to get all unique records by fields specified",
-            "category": "Array",
-            "parameters":[
-                {"fields": "(Mixed) Fields to use as the projection and unique comparison"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"fields": "(Mixed) Fields to use as the projection and unique comparison"},
-                    {"condition": "(Mixed) Query following find/where clause syntax"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.distinct",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            if ($c.isString(fields)) {
-                fields = [fields];
-            }
-
-//            var projection = {},len = fields.length;
-//            for (var i = 0; i < len; i++) {
-//                projection[fields[i]] = 1;
-//            }
-
-
-            return this.group(fields,condition);
-        } catch (e) {
-            error("Array.distinct", e);
-            return false;
-        }
-    });
-    _ext(Array, 'group', function(params) { // TODO: finish implementing esp initial, keyf, and finalize
-        /*|{
-            "info": "Array class extension to group records by fields",
-            "category": "Array",
-            "parameters":[
-                {"params": "(Object) specs with common properties:<br />(Mixed) fields<br />(Mixed) cond<br />(Function) reduce<br />(Mixed) initial"}],
-
-            "overloads":[],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.group",
-            "returnType": "(Array)"
-        }|*/
-
-        /*         *    parameters:[
-         *        {fields: "(Mixed) Fields to use as the projection and to group by"}],
-         *
-         *    overloads:[
-         *        {parameters:[
-         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
-         *            {condition: "(Mixed) Query following find/where clause syntax"}]},
-         *        {parameters:[
-         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
-         *            {condition: "(Mixed) Query following find/where clause syntax"},
-         *            {reduce: "(Function) Method that operates on the records during the grouping operation"}]},
-         *        {parameters:[
-         *            {fields: "(Mixed) Fields to use as the projection and to group by"},
-         *            {condition: "(Mixed) Query following find/where clause syntax"},
-         *            {reduce: ""},
-         *            {initial: ""}]}],*/
-
-        try {
-            var fields = params.field,
-                condition = params.cond,
-                reduce = params.reduce || foo,
-                initial = params.initial || {},
-                keyf = params.keyf || {},
-                finalize = params.finalize || {};
-            if ($c.isString(fields)) {
-                fields = fields.split(',');
-            }
-            if ($c.isArray(fields)) {
-                var tmp = {};
-                for (var i = 0, len = fields.length; i < len; i++) {
-                    tmp[fields[i]] = 1;
-                }
-                fields = tmp;
-            }
-
-            var props = $c.keys(initial),
-                fields = $c.keys(fields),
-                arr = [], result = {};
-            _whereHelper(this, condition,function (obj, i) {
-                var prop = _groupFieldHelper(obj, fields), addit = false;
-                if (!result[prop]) {
-                    addit = true;
-                    var tmp = {};
-                    for (var i = 0, len = props.length; i < len; i++) {
-                        tmp[props[i]] = initial[props[i]];
-                    }
-                    result[prop] = tmp;
-                }
-                var curr = $c.duplicate(obj);
-                reduce(curr, result[prop]);
-                addit && arr.push(_copyWithProjection(fields, obj));
-                return true;
-            });
-
-            for (var i = 0, len = arr.length; i < len; i++) {
-                var prop = _groupFieldHelper(arr[i], fields);
-                arr[i] = $c.merge(arr[i],result[prop]);
-            }
-            return arr;
-        } catch (e) {
-            error("Array.group", e);
-            return false;
-        }
-    });
-    _ext(Array, 'mapReduce', function(map, reduce, options) {
-        /*|{
-            "info": "Array class extension to run map-reduce aggregation over records",
-            "category": "Array",
-            "parameters":[
-                {"condition": "(Mixed) Query following find/where clause syntax"},
-                {"condition": "(Mixed) Query following find/where clause syntax"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"condition": "(Mixed) Query following find/where clause syntax"},
-                    {"projection": "(Mixed) Indicate which properties to return"},
-                    {"projection": "(Mixed) Indicate which properties to return"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.mapReduce",
-            "returnType": "(Array)"
-        }|*/
-        try {
-
-        } catch (e) {
-            error("Array.mapReduce", e);
-            return false;
-        }
-    });
-    _ext(Array, 'delete', function(condition, justOne) {
-        /*|{
-            "info": "Array class extension to delete records",
-            "category": "Array",
-            "parameters":[
-                {"condition": "(Mixed) Query following find/where clause syntax"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"condition": "(Mixed) Query following find/where clause syntax"},
-                    {"justOne": "(Boolean) Flag for deleting just one records [Default is: true]"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.delete",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            justOne = parseBoolean(isNull(justOne) ? true : isNull(justOne.justOne, justOne));
-            // if no condition was given, remove all
-            if (!condition) {
-                return this.splice(0,justOne ? 1 : this.length);
-            }
-
-            var arr = [], indexes = [];
-            _whereHelper(this, condition,function (obj, i) {
-                if (justOne) {
-                    arr = arr.concat(this.splice(i,1));
-                    return false
-                }
-                indexes.push(i);
-                return true;
-            });
-            for (var i = indexes.length - 1; i >= 0; i--) {
-                arr = this.splice(indexes[i],1).concat(arr);
-            }
-
-            return arr;
-        } catch (e) {
-            error("Array.delete", e);
-            return false;
-        }
-    }, true);
     _ext(Array, 'update', function(condition, setClause, multi) {
         /*|{
             "info": "Array class extension to update records in the array",
@@ -6696,44 +7300,44 @@ if (__thisIsNewer) {
                     this.splice(i,1,setObject);
                 }
                 for (var prop in (setObject['$set'] || {})) {
-                    setObject['$set'].hop(prop) && obj.setProperty(prop, setObject['$set'][prop]);
+                    setObject['$set'].has(prop) && obj.setProperty(prop, setObject['$set'][prop]);
                 }
                 if (setObject['$unset']) {
                     for (var prop in setObject['$unset']) {
-                        setObject['$unset'].hop(prop) && delete obj[prop];
+                        setObject['$unset'].has(prop) && delete obj[prop];
                     }
                 }
                 if (setObject['$currentDate']) {
                     for (var prop in setObject['$currentDate']) {
-                        setObject['$currentDate'].hop(prop) && (obj[prop] = new Date());
+                        setObject['$currentDate'].has(prop) && (obj[prop] = new Date());
                     }
                 }
                 if (setObject['$inc']) {
                     for (var prop in setObject['$inc']) {
-                        setObject['$inc'].hop(prop) && (obj[prop] += setObject['$inc'][prop]);
+                        setObject['$inc'].has(prop) && (obj[prop] += setObject['$inc'][prop]);
                     }
                 }
                 if (setObject['$max']) {
                     for (var prop in setObject['$max']) {
                         var value = obj[prop];
-                        setObject['$max'].hop(prop) && value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
+                        setObject['$max'].has(prop) && value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
                     }
                 }
                 if (setObject['$min']) {
                     var value = obj[prop];
                     for (var prop in setObject['$min']) {
                         var value = obj[prop];
-                        setObject['$min'].hop(prop) && value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
+                        setObject['$min'].has(prop) && value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
                     }
                 }
                 if (setObject['$mul']) {
                     for (var prop in setObject['$mul']) {
-                        setObject['$mul'].hop(prop) && (obj[prop] *= setObject['$mul'][prop]);
+                        setObject['$mul'].has(prop) && (obj[prop] *= setObject['$mul'][prop]);
                     }
                 }
                 if (setObject['$bit']) {
                     for (var prop in setObject['$bit']) {
-                        if (!setObject['$bit'].hop(prop) || !$c.isInt(obj[prop])) {continue;}
+                        if (!setObject['$bit'].has(prop) || !$c.isInt(obj[prop])) {continue;}
                         if ($c.isInt(setObject['$bit'][prop]['and'])) {
                             obj[prop] &= setObject['$bit'][prop]['and'];
                         } else if ($c.isInt(setObject['$bit'][prop]['or'])) {
@@ -6746,7 +7350,7 @@ if (__thisIsNewer) {
                 if (setObject['$rename']) {
                     for (var prop in setObject['$rename']) {
                         var value = obj[prop];
-                        setObject['$rename'].hop(prop) && delete obj[prop] && (obj[setObject['$rename'][prop]] = value);
+                        setObject['$rename'].has(prop) && delete obj[prop] && (obj[setObject['$rename'][prop]] = value);
                     }
                 }
 
@@ -6913,23 +7517,6 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	Date class Extensions
      /---------------------------------------------------------------------------------------------------------------*/
-    _ext(Date, 'getDayOfYear', function () {
-        /*|{
-            "info": "Date class extension to retrieve the day of the year",
-            "category": "Date",
-            "parameters":[],
-
-            "overloads":[],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#array.getDayOfYear",
-            "returnType": "(Int)"
-        }|*/
-        try {
-            return Math.floor((this - new Date(this.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-        } catch (e) {
-            error("Date.getDayOfYear", e);
-        }
-    });
     _ext(Date, 'format', function (format, options) {
         /*|{
             "info": "Date class extension to convert to formatted string",
@@ -7187,6 +7774,23 @@ if (__thisIsNewer) {
             error("Date.format", e);
         }
     }, true);
+    _ext(Date, 'getDayOfYear', function () {
+        /*|{
+         "info": "Date class extension to retrieve the day of the year",
+         "category": "Date",
+         "parameters":[],
+
+         "overloads":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#array.getDayOfYear",
+         "returnType": "(Int)"
+         }|*/
+        try {
+            return Math.floor((this - new Date(this.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+        } catch (e) {
+            error("Date.getDayOfYear", e);
+        }
+    });
     _ext(Date, 'getWeek', function () {
         /*|{
             "info": "Date class extension to retrieve the week number in the year",
@@ -7349,7 +7953,7 @@ if (__thisIsNewer) {
 
             "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
             "returnType": "(String)"
-         }|*/
+        }|*/
         try {
             var className = this.getName(),
                 cls = new extendee();
@@ -7364,6 +7968,33 @@ if (__thisIsNewer) {
             return this;
         } catch (e) {
             error("Function.extends", e);
+        }
+    }, true);
+
+
+    /*----------------------------------------------------------------------------------------------------------------
+     /-	RegExp class Extensions
+     /---------------------------------------------------------------------------------------------------------------*/
+    _ext(RegExp, 'addFlags',function(flags){
+        /*|{
+            "info": "RegExp class extension to add flags to regex",
+            "category": "RegExp",
+            "parameters":[
+                {"flags": "(String) Flags to add"}],
+
+            "overloads":[],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#regexp.addFlag",
+            "returnType": "(RegExp)"
+        }|*/
+        try {
+            if (this.global && !flags.contains('g')) { flags += "g"; }
+            if (this.ignoreCase && !flags.contains('i')) { flags += "i"; }
+            if (this.multiline && !flags.contains('m')) { flags += "m"; }
+
+            return new RegExp(this.source, flags);
+        } catch (e) {
+            error("RegExp.addFlags", e);
         }
     }, true);
 
@@ -7592,6 +8223,81 @@ if (__thisIsNewer) {
             return _getFuncName(this.constructor);
         } catch (e) {
             error('Object.getClass', e)
+        }
+    });
+    _ao("getProperty", function (path, delimiter, options) {
+        /*|{
+         "info": "Object class extension to retrieve nested properties without error when property path does not exist",
+         "category": "Object",
+         "featured": true,
+         "parameters":[
+         {"path": "(String) Path to nested property"}],
+
+         "overloads":[
+         {"parameters":[
+         {"path": "(String) Path to nested property"},
+         {"delimiter": "(Char) Separator used to parse path"}]},
+         {"parameters":[
+         {"path": "(String) Path to nested property"},
+         {"delimiter": "(Char) Separator used to parse path"},
+         {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
+         "returnType": "(Mixed)"
+         }|*/
+        try {
+            options = options || {};
+            delimiter = delimiter || ".";
+            var props = path.split(delimiter);
+            var value = this;
+            for (var i = 0, len = props.length; i < len; i++) {
+                if (isNull(value[props[i]])
+                    || (options.noInheritance && !value.hasOwnProperty(props[i]))) {
+                    return undefined;
+                }
+                value = value[props[i]];
+            }
+            options.validPath = 1;
+            return value;
+        } catch (e) {
+            error('Object.getProperty', e);
+        }
+    });
+    _ao("getValue" ,function (args, dflt) {
+        /*|{
+         "info": "Object class extension to retrieve value of an object property",
+         "category": "Object",
+         "parameters":[],
+
+         "overloads":[
+         {"parameters":[
+         {"dflt": "(Mixed) Default value to return if context is not a function"}]},
+         {"parameters":[
+         {"args": "(Mixed[]) An array of arguments to pass to context when it is a function"},
+         {"delimiter": "(Char) Separator used to parse path"},
+         {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
+         "returnType": "(Mixed)"
+         }|*/
+        try {
+            if (!$c.isFunction(this)) {
+                if (args && !dflt) {
+                    dflt = args;
+                }
+                return isNull(this, dflt) || this;
+            }
+            var args = arguments;
+            if (typeof obj != 'undefined') { // this is needed to check if this function was called using $c.getValue
+                args = [];
+                for (var i = 1, len = arguments.length; i < len; i++) {
+                    args[i] = arguments[i];
+                }
+            }
+            var rtn = this.apply(this, args);
+            return rtn === undefined ? dflt : rtn;
+        } catch (e) {
+            error('Object.getValue', e);
         }
     });
     _ao("has", function(){
@@ -8044,81 +8750,6 @@ if (__thisIsNewer) {
             return objtmp;
         } catch (e) {
             error('Object.merge', e);
-        }
-    });
-    _ao("getProperty", function (path, delimiter, options) {
-        /*|{
-            "info": "Object class extension to retrieve nested properties without error when property path does not exist",
-            "category": "Object",
-            "featured": true,
-            "parameters":[
-                {"path": "(String) Path to nested property"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"path": "(String) Path to nested property"},
-                    {"delimiter": "(Char) Separator used to parse path"}]},
-                {"parameters":[
-                    {"path": "(String) Path to nested property"},
-                    {"delimiter": "(Char) Separator used to parse path"},
-                    {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
-            "returnType": "(Mixed)"
-        }|*/
-        try {
-            options = options || {};
-            delimiter = delimiter || ".";
-            var props = path.split(delimiter);
-            var value = this;
-            for (var i = 0, len = props.length; i < len; i++) {
-                if (isNull(value[props[i]])
-                    || (options.noInheritance && !value.hasOwnProperty(props[i]))) {
-                    return undefined;
-                }
-                value = value[props[i]];
-            }
-            options.validPath = 1;
-            return value;
-        } catch (e) {
-            error('Object.getProperty', e);
-        }
-    });
-    _ao("getValue" ,function (args, dflt) {
-        /*|{
-            "info": "Object class extension to retrieve value of an object property",
-            "category": "Object",
-            "parameters":[],
-
-            "overloads":[
-                {"parameters":[
-                    {"dflt": "(Mixed) Default value to return if context is not a function"}]},
-                {"parameters":[
-                    {"args": "(Mixed[]) An array of arguments to pass to context when it is a function"},
-                    {"delimiter": "(Char) Separator used to parse path"},
-                    {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
-            "returnType": "(Mixed)"
-        }|*/
-        try {
-            if (!$c.isFunction(this)) {
-                if (args && !dflt) {
-                    dflt = args;
-                }
-                return isNull(this, dflt) || this;
-            }
-            var args = arguments;
-            if (typeof obj != 'undefined') { // this is needed to check if this function was called using $c.getValue
-                args = [];
-                for (var i = 1, len = arguments.length; i < len; i++) {
-                    args[i] = arguments[i];
-                }
-            }
-            var rtn = this.apply(this, args);
-            return rtn === undefined ? dflt : rtn;
-        } catch (e) {
-            error('Object.getValue', e);
         }
     });
     _ao("setProperty", function (path, value, delimiter, options) {
@@ -9532,7 +10163,7 @@ if (__thisIsNewer) {
             "\x00\x00" +
                 // disk number start
             "\x00\x00" +
-                // internal file attributes TODO
+                // internal file attributes TO DO
             "\x00\x00" +
                 // external file attributes
             (this.files[name].dir===true?"\x10\x00\x00\x00":"\x00\x00\x00\x00")+
