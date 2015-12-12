@@ -309,41 +309,54 @@ if (__thisIsNewer) {
         }
         var ttc = $c.TEMPLATE_TAG_CONFIG;
         code = code.replace_all(ttc.IGNORE_CHARS,['']);
-        var ifor = code.indexOfAlt(ttc.FOR.begin),
-            iforeach = code.indexOfAlt(ttc.FOREACH.begin),
-            iwhile = code.indexOfAlt(ttc.WHILE.begin),
-            iif = code.indexOfAlt(ttc.IF.begin),
-            iswitch = code.indexOfAlt(ttc.SWITCH.begin),
-            itry = code.indexOfAlt(ttc.TRY.begin),
-            first = [ifor,iforeach,iwhile,iif,iswitch,itry].filter(function(i){return i !=-1;}).sort(function(a,b){return a-b;})[0],
-            keyword = "";
+        //var ifor = code.indexOfAlt(ttc.FOR.begin),
+        //    iforeach = code.indexOfAlt(ttc.FOREACH.begin),
+        //    iwhile = code.indexOfAlt(ttc.WHILE.begin),
+        //    iif = code.indexOfAlt(ttc.IF.begin),
+        //    iswitch = code.indexOfAlt(ttc.SWITCH.begin),
+        //    itry = code.indexOfAlt(ttc.TRY.begin),
+        //    first = [ifor,iforeach,iwhile,iif,iswitch,itry].filter(function(i){return i !=-1;}).sort(function(a,b){return a-b;})[0],
+        //    keyword = "";
+        var indexes = [],logic = {};
+        for (var prop in ttc) {
+            if (!ttc.has(prop) || !ttc[prop].begin) { continue; }
+            var index = code.indexOfAlt(ttc[prop].begin);
+            indexes.push(index);
+            logic[index] = ttc[prop];
+        }
+        var index = Math.min.apply(Math,indexes.condense([-1]));
 
-
-        switch (true) {
-            case (iif > -1 && iif == first):
-                keyword = "IF";
-                break;
-            case (ifor > -1 && ifor == first):
-                keyword = "FOR";
-                break;
-            case (iforeach > -1 && iforeach == first):
-                keyword = "FOREACH";
-                break;
-            case (iwhile > -1 && iwhile == first):
-                keyword = "WHILE";
-                break;
-            case (iswitch > -1 && iswitch == first):
-                keyword = "SWITCH";
-                break;
-            case (itry > -1 && itry == first):
-                keyword = "TRY";
-                break;
-            default:
-                return code;
-                break;
+        if (!logic[index]) {
+            return code;
         }
 
-        return code.substring(0,first) + ttc[keyword].parser(code.substring(first));
+        return code.substring(0,index) + logic[index].parser(code.substring(index));
+
+        //switch (true) {
+        //    case (iif > -1 && iif == first):
+        //        keyword = "IF";
+        //        break;
+        //    case (ifor > -1 && ifor == first):
+        //        keyword = "FOR";
+        //        break;
+        //    case (iforeach > -1 && iforeach == first):
+        //        keyword = "FOREACH";
+        //        break;
+        //    case (iwhile > -1 && iwhile == first):
+        //        keyword = "WHILE";
+        //        break;
+        //    case (iswitch > -1 && iswitch == first):
+        //        keyword = "SWITCH";
+        //        break;
+        //    case (itry > -1 && itry == first):
+        //        keyword = "TRY";
+        //        break;
+        //    default:
+        //        return code;
+        //        break;
+        //}
+
+        //return code.substring(0,first) + ttc[keyword].parser(code.substring(first));
     }
     function __on_observable_change (changes) {
         try {
@@ -1070,7 +1083,7 @@ if (__thisIsNewer) {
     function _condense (obj, check_values) {
         try {
             var skip = [], arr = [], without = false;
-            if ($c.isArray(check_values)) {
+            if (check_values && check_values.constructor == Array) {
                 without = true;
             }
             for (var i = 0, len = obj.length; i < len; i++) {
@@ -1088,7 +1101,7 @@ if (__thisIsNewer) {
                     }
 
                 }
-                (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && obj[i] && arr.push(obj[i]);
+                (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && !isNull(obj[i]) && arr.push(obj[i]);
             }
             return arr;
         } catch (e) {
@@ -1395,7 +1408,7 @@ if (__thisIsNewer) {
     }
     function _getFuncArgs (func) {
         try {
-            return _condense(_trim(_strip(func.toString(), '(')).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(','));
+            return _condense(_trim(_strip(func.toString(), '(')).replace(/\s*/gi, '').replace(/\/\*.*?\*\//g,'').replace(/.*?\((.*?)\).*/, '$1').split(',')) || [];
         } catch (e) {
             error('_getFuncArgs', e);
         }
@@ -1662,10 +1675,11 @@ if (__thisIsNewer) {
             var str = this;
             for (var i = 0, len = replace.length; i < len; i++)
             {
-                if (!str.contains(replace[i])) {
+                var reg = new RegExp(__convert_regex_safe(replace[i]), flag)
+                if (!str.contains(reg)) {
                     continue;
                 }
-                str = str.replace(new RegExp(__convert_regex_safe(replace[i]), flag), subject[i] || subject[0]);
+                str = str.replace(reg, subject[i] || subject[0]);
             }
             return str.toString();
         } catch (e) {
@@ -2278,7 +2292,6 @@ if (__thisIsNewer) {
             arr.hasNext = function () { return currentIndex <  props.length; };
             arr.next = function () {
                 this.current = this[props[currentIndex]];
-                //return this[props[currentIndex++]];
                 return {value:this[props[currentIndex++]], done:currentIndex >= this.size()};
             };
             arr.reset = function () { currentIndex = 0; };
@@ -2309,7 +2322,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             sorter = sorter || function(a,b){if (a < b) {return -1;}if (a > b) {return 1;}return 0;};
-            var arr = $c.copyObject(records || []).sort(sorter), order, nextIndex = 0;
+            var arr = $c.copyObject(records || []).sort(sorter), nextIndex = 0;
             arr.add = function(value){
                 if (!this.length) { return this.push(value); }
                 var index = _orderListHelper(value, sorter, this);
@@ -2318,6 +2331,7 @@ if (__thisIsNewer) {
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
+            arr.hasNext = function () { return nextIndex < this.size(); };
             arr.size = function(){return this.length;};
             return arr;
         } catch (e) {
@@ -2347,6 +2361,7 @@ if (__thisIsNewer) {
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
+            arr.hasNext = function () { return nextIndex < this.size(); };
             arr.size = function(){return this.length;};
             return arr;
         } catch (e) {
@@ -2379,7 +2394,9 @@ if (__thisIsNewer) {
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
+            arr.hasNext = function () { return nextIndex < this.size(); };
             arr.size = function(){return this.length;};
+            arr.clean();
             return arr;
         } catch (e) {
             error('Set', e);
@@ -2744,19 +2761,24 @@ if (__thisIsNewer) {
         }|*/
         try {
             options = options || {};
-            var c = $d.cookie, path = "", domain = "";
+            var c = $d.cookie, path = "", domain = "",keys = [], values=[];
             options.cookie && (c = options.cookie);
             if($c.isObject(key)) {
+                options = value;
                 for (var prop in key) {
                     if (!key.hasOwnProperty(prop)) { continue; }
-                    options = value;
-                    value = key[prop];
-                    key = prop;
-                    break;
+                    //value = key[prop];
+                    //key = prop;
+                    //break;
+                    value.push(JSON.stringify(key[prop]));
+                    keys.push(prop);
                 }
+            } else if (arguments.length > 1) {
+                keys.push(key);
+                values.push(JSON.stringify(value));
             }
 
-            if (!c && !value) {return;}
+            if (!c && !values.length) { return {}; }
             if (options.path && $c.isString(options.path)) {path = 'path=' + options.path + ';'}
             if (options.domain && $c.isString(options.domain)) {domain = 'domain=' + options.domain + ';'}
             if (options.delete) {
@@ -2764,20 +2786,19 @@ if (__thisIsNewer) {
                 return true;
             }
 
-            if (value) {
+            if (values.length) {
                 var expires = "";
                 if ($c.isInt(options.expiration)) {
                     var dt = new Date();
                     dt.setDate(dt.getDate() + options.expiration);
                     expires = ";expires=" + dt.toUTCString();
                 }
-//                if ($c.isString(options.path)) {
-//                    path = "; path=/" + options.path;
-//                }
-                key = encodeURIComponent(key);
-                value = encodeURIComponent(value);
-                $d.cookie = key + "=" + value + expires + path + domain;
-                return;
+                for (var j = 0, jlen = keys.length; j < jlen; j++) {
+                    //key = encodeURIComponent(keys[i]);
+                    //value = encodeURIComponent(values[i]);
+                    $d.cookie = encodeURIComponent(keys[j]) + "=" + encodeURIComponent(values[j]) + expires + path + domain;
+                }
+                return true;
             }
             var cookies = {},
                 arr = c.split(/[,;]/);
@@ -2787,9 +2808,9 @@ if (__thisIsNewer) {
 //                name = decodeURIComponent($c.ltrim(parts[0])),
                     name = decodeURIComponent(parts[0] && parts[0].ltrim && parts[0].ltrim() || ""),
                     value = parts.length > 1 ? decodeURIComponent($c.rtrim(parts[1])) : null;
-                cookies[name] = value;
+                cookies[name] = tryEval(value) || value;
                 if (key && key == name) {
-                    return value;
+                    return cookies[name];
                 }
             }
 
@@ -3179,7 +3200,9 @@ if (__thisIsNewer) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
     }
-    function fillTemplate (htmlTemplate, objs, offset, max, bound) {// TODO Test DECLARE and logic parsers in fillTemplate -> make sure all returns run through parser
+    function fillTemplate (htmlTemplate, objs, offset, max, bound) {
+        // TODO Test DECLARE and logic parsers in fillTemplate -> make sure all returns run through parser
+        // TODO allow mix of logic and bind
         /*|{
             "info": "Function for templetizing",
             "category": "Global",
@@ -3209,7 +3232,7 @@ if (__thisIsNewer) {
             "returnType": "(String)"
         }|*/
         try {
-            fillTemplate.declared = {};
+            fillTemplate.declared = fillTemplate.declared || {};
             if (!htmlTemplate) {
                 return "";
             }
@@ -3258,7 +3281,7 @@ if (__thisIsNewer) {
             var props = (htmlTemplate.match(vsyntax) || []).condense(true);
             if (bound) {
                 var nodes = htmlTemplate.toDomElement();
-                function __setBindAttribute(n,value) {
+                function __setBindAttribute(n,value,id) {
                     var prop, k = 0;
                     while (prop = props[k++]) {
                         if (value.contains(prop)) {
@@ -3274,7 +3297,7 @@ if (__thisIsNewer) {
                     for (var i = 0, len = n.attributes.length; i < len; i++) {
 //                        var attrValue = n.attributes[i].value;
 //                        if (props.contains(attrValue)) {
-                        __setBindAttribute(n,n.attributes[i].value);
+                        __setBindAttribute(n,n.attributes[i].value,id);
 //                            var currentAttribute = n.getAttribute("data-craydent-bind") || "",
 //                                property = $c.isFunction(vnsyntax) ? vnsyntax(props[i]) : vnsyntax.exec && vnsyntax.exec(props[i]);
 //                            !currentAttribute.contains("${craydent_bind}." + property) && n.setAttribute("data-craydent-bind", (currentAttribute ? currentAttribute + "," : id + ":") + "${craydent_bind}." + property);
@@ -3283,7 +3306,7 @@ if (__thisIsNewer) {
                     var child, j = 0;
                     while (child = n.childNodes[j++]) {
                         if (child.nodeType == 3) { // is text node
-                            __setBindAttribute(n,child.nodeValue);
+                            __setBindAttribute(n,child.nodeValue,id);
 //                            var prop, k = 0;
 //                            while (prop = props[k++]) {
 //                                if (child.nodeValue.contains(prop)) {
@@ -4673,17 +4696,23 @@ if (__thisIsNewer) {
                     IGNORE_CHARS:['\n'],
                     /* loop config */
                     FOR:{
-                        begin:/(?:\$\{for \((.*?)\);\((.*?)\);\((.*?)\)\})|(?:\{\{for \((.*?)\);\((.*?)\);\((.*?)\)\}\})/i,///\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
+                        begin:/(?:\$\{for (.*?);(.*?);(.*?\}?)\})|(?:\{\{for (.*?);(.*?);(.*?\}?)\}\})/i,
                         end:/(\$\{end for\})|(\{\{end for\}\})/i,
                         helper:function(code, body){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
-                                FOR = ttc.FOR,
-                                fsyntax = FOR.begin,
-                                mresult = code.match(fsyntax),
-                                condition = mresult[2] || mresult[5],
-                                exec = mresult[3] || mresult[6],
-                                dvars = (mresult[1] || mresult[4]).split(','),
-                                vars = "", ovars = {},code_result = "";
+                                mresult = code.match(ttc.FOR.begin),
+                                condition, exec, dvars, vars = "", ovars = {},code_result = "";
+
+                            for (var j = 1, jlen = mresult.length; j < jlen; j++) {
+                                if (!mresult[j]) {
+                                    continue;
+                                }
+                                mresult[j] = mresult[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                            }
+
+                                condition = mresult[2] || mresult[5];
+                                exec = mresult[3] || mresult[6];
+                                dvars = (mresult[1] || mresult[4]).split(',');
                             for (var i = 0, len = dvars.length; i < len; i++) {
                                 var parts = ttc.VARIABLE_NAME(dvars[i]).split('=');
                                 vars += "var " + parts[0] + "=" + parts[1] + ";";
@@ -4699,124 +4728,47 @@ if (__thisIsNewer) {
                         },
                         parser:function (code){
                             var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
-                                fsyntax = FOR.begin,
-                                efsyntax = FOR.end,
-                                formatch = code.match(fsyntax);
+                                blocks = __processBlocks(FOR.begin, FOR.end, code),
+                                code_result = "";
 
-                            var blocks = __processBlocks(fsyntax, efsyntax, code);
-
-
-                            var code_result = "";
                             for (var i = 0, len = blocks.length; i < len; i++) {
                                 var obj = blocks[i],
                                     block = obj.block,
                                     id = obj.id;
 
-
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) {
-                                    continue;
-                                }
+                                if (!code_result.contains(obj.id)) { continue; }
                                 code_result = code_result.replace_all(id,FOR.helper(block,obj.body));
                             }
 
-                            return code_result;
-                            //var vars = "";
-                            //for (var prop in fillTemplate.declared) {
-                            //    if (!code.contains("${"+prop+"}")) { continue; }
-                            //    vars += "var " + prop + "=" + fillTemplate.declared[prop] + ";";
-                            //}
-                            //eval(vars);
-                            //var matches = code_result.match(ttc.VARIABLE);
-                            //matches.map(function (var_match) {
-                            //    var var_match_name = ttc.VARIABLE_NAME(var_match),
-                            //        var_match_index = code_result.indexOf(var_match);
-                            //    if (tryEval("var "+ var_match_name +";") !== null) {
-                            //        var_match_index += var_match.length;
-                            //    }
-                            //
-                            //
-                            //    pre = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name)),
-                            //        post = code_result.substring(code_result.indexOf(var_match) + var_match.length);
-                            //    code_result = pre + post;
-                            //});
-                            //
-                            //
-                            //return code_result;
-                            //
-                            //
-                            //
-                            //
-                            //
-                            //
-                            //
-                            //var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
-                            //    fsyntax = FOR.begin,
-                            //    efsyntax = FOR.end,
-                            //    formatch = code.match(fsyntax);
-                            //
-                            //// verify that there is an for
-                            //if (!formatch) { return code; }
-                            //
-                            //formatch = formatch.condense();
-                            //
-                            //var forindex = 1,//code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_BEGIN.syntax),
-                            //    endindex = 0,// = code.indexOfAlt($c.TEMPLATE_TAG_CONFIG.FOR_END.syntax),
-                            //    beginCount = 1,
-                            //    endCount = 0,
-                            //    forlength = formatch[0].length,
-                            //    endlength = code.match(efsyntax)[0].length,
-                            //    str = "";
-                            //while (beginCount != endCount /*&& forindex != -1 && endindex != -1*/) {
-                            //    forindex = code.indexOfAlt(fsyntax, forindex + 1);
-                            //    endindex = code.indexOfAlt(efsyntax, endindex + 1);
-                            //
-                            //    if (forindex != -1) { beginCount++; }
-                            //    if (endindex != -1) { endCount++; }
-                            //    if (forindex == -1 && endindex == -1) { break; }
-                            //}
-                            //// if true syntax error, start end missmatch
-                            //if (endindex == -1) { return code; }
-                            //
-                            //for (var i = 1, len = formatch.length; i < len; i++) {
-                            //    formatch[i] = formatch[i].replace_all(['\\[','\\]'],['[',']']).toString();
-                            //}
-                            //var block = code.substring(forlength, endindex);
-                            //code = code.substring(endindex + endlength);
-                            //
-                            //var components = FOR.helper.apply(this,formatch.splice(1))
-                            //    || {variables:{},condition:foo,execute:foo};
-                            //while(components.condition()){
-                            //    str += fillTemplate(block,components.variables);
-                            //    components.execute();
-                            //}
-                            //str = str.replace(/\\?\[.*?\\?\]\[\d+\]/g,function(m){return tryEval(m.replace_all(['\\[','\\]'],['[',']']).toString())||"";});
-                            //return __logic_parser(str + code);
-
+                            return __logic_parser(code_result);
                         }
                     },
                     FOREACH:{
-                        begin:/(?:\$\{foreach (.*?)\s+in\s+(\[\s*\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\[\s*\{.*:.*?\}\s*\])\s*\}\})/i,
+                        begin:/(?:\$\{foreach (.*?)\s+in\s+(\\?\[\s*\\?\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
                         end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
                         helper:function (code, body,rtnObject,uid) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
-                                fsyntax = FOREACH.begin,
-                                mresult = code.match(fsyntax),
-                                //condition = mresult[2] || mresult[5],
-                                obj_str = mresult[2] || mresult[4],
-                                objs = tryEval(obj_str),
-                                dvar = mresult[1] || mresult[3],
-                                var_name = ttc.VARIABLE_NAME(dvar),
-                                ovars = {},code_result = "";
+                                mresult = code.match(FOREACH.begin),
+                                objs = tryEval(mresult[2] || mresult[4]),
+                                var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]),
+                                code_result = "";
+
+                            for (var j = 1, jlen = mresult.length; j < jlen; j++) {
+                                if (!mresult[j]) {
+                                    continue;
+                                }
+                                mresult[j] = mresult[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                            }
+                            objs = tryEval(mresult[2] || mresult[4]);
+                            var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]);
 
                             rtnObject = rtnObject || {};
                             rtnObject[uid] += "var " + var_name + "s," + var_name + ";";
                             rtnObject[var_name+"s"] = objs;
                             if ($c.isArray(objs)) {
                                 for (var i = 0, len = objs.length; i < len; i++) {
-                                    //eval(var_name + "=" + obj_str + "[" + i + "]");
-
                                     code_result += "${i="+i+","+var_name+"="+var_name+"s[i],null}" + body;
                                 }
                             }
@@ -4827,27 +4779,23 @@ if (__thisIsNewer) {
                         parser:function (code){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
-                                fsyntax = FOREACH.begin,
-                                efsyntax = FOREACH.end,
-                                uid = cuid(),
-                                formatch = code.match(fsyntax),result_obj = {};
+                                uid = "##"+cuid()+"##",
+                                result_obj = {},
+                                code_result = "", post = "",
+                                blocks = __processBlocks(FOREACH.begin, FOREACH.end, code);
 
                             result_obj[uid] = "";
 
-                            var blocks = __processBlocks(fsyntax, efsyntax, code);
-
-
-                            var code_result = "";
                             for (var i = 0, len = blocks.length; i < len; i++) {
                                 var obj = blocks[i],
                                     block = obj.block,
-                                    id = obj.id;
-
-
-                                code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) {
-                                    continue;
+                                    id = obj.id, index;
+                                if (!i && (index = obj.code.lastIndexOf("##")) != -1) {
+                                    post = obj.code.substring(index + 2);
+                                    obj.code = obj.code.substring(0,index + 2);
                                 }
+                                code_result = code_result || obj.code;
+                                if (!code_result.contains(obj.id)) { continue; }
                                 code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid));
                             }
                             eval(result_obj[uid]);
@@ -4867,7 +4815,7 @@ if (__thisIsNewer) {
 
                             });
 
-                            return code_result;
+                            return __logic_parser(code_result + post);
                         }
                     },
                     WHILE: {
@@ -4876,19 +4824,24 @@ if (__thisIsNewer) {
                         helper: function (code,body) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
-                                wsyntax = WHILE.begin,
-                                mresult = code.match(wsyntax),
-                                condition = mresult[1] || mresult[2],
-                                vars = "", ovars = {},code_result = "";
-                            for (var prop in fillTemplate.declared) {
-                                if (!code.contains("${"+prop+"}")) { continue; }
-                                var val = fillTemplate.declared[prop];
+                                mresult = code.match(WHILE.begin),
+                                vars = "", ovars = {},code_result = "",
+                                declared = fillTemplate.declared,
+                                loop_limit = 100000;
+                            for (var prop in declared) {
+                                if (!code.contains("${"+prop+"}") || !declared.hasOwnProperty(prop)) { continue; }
+                                var val = declared[prop];
                                 vars += "var " + prop + "=" + val + ";";
                                 ovars[prop] = prop;
                             }
                             eval(vars);
-                            var declared = fillTemplate.declared;
-                            while (eval(fillTemplate(condition,ovars))) {
+                            while (eval(fillTemplate(mresult[1] || mresult[2],ovars))) {
+                                loop_limit--;
+                                if (loop_limit < 1) {
+                                    var msg = "fillTemplate While only support up to 100,000 iterations.  Possible infinite loop?";
+                                    console.error(msg);
+                                    throw msg;
+                                }
                                 code_result += body;
                                 (body.match(ttc.VARIABLE)||[]).map(function(var_matches){ eval(ttc.VARIABLE_NAME(var_matches)); });
                             }
@@ -4896,8 +4849,9 @@ if (__thisIsNewer) {
 
                             for (var prop in ovars) {
                                 if (!ovars.hasOwnProperty(prop)) { continue; }
-                                var ovar = ovars[prop];
-                                code_result += "${" + prop + "=" + fillTemplate.declared[prop] + ",null}";
+                                //var ovar = ovars[prop];
+                                code_result += "${" + prop + "=" + declared[prop] + ",null}";
+                                //declared[prop] = eval(ovars[prop]);
                             }
 
                             return code_result;
@@ -4905,49 +4859,47 @@ if (__thisIsNewer) {
                         parser: function (code) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
-                                wsyntax = WHILE.begin,
-                                esyntax = WHILE.end,
-                                lookups = {};
+                                lookups = {},
+                                blocks = __processBlocks(WHILE.begin, WHILE.end, code, lookups),
+                                code_result = "", vars = "", declared = fillTemplate.declared, post = "";
 
-                            var blocks = __processBlocks(wsyntax, esyntax, code, lookups);
-
-
-                            var code_result = "";
                             for (var i = 0, len = blocks.length; i < len; i++) {
                                 var obj = blocks[i],
                                     block = obj.block,
                                     id = obj.id;
 
+                                if (!i && (index = obj.code.lastIndexOf("##")) != -1) {
+                                    post = obj.code.substring(index + 2);
+                                    obj.code = obj.code.substring(0,index + 2);
+                                }
 
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) {
-                                    continue;
-                                }
+                                if (!code_result.contains(obj.id)) { continue; }
                                 code_result = code_result.replace_all(id,WHILE.helper(block,obj.body));
                             }
 
-                            var vars = ""
-                            for (var prop in fillTemplate.declared) {
+                            for (var prop in declared) {
                                 if (!code.contains("${"+prop+"}")) { continue; }
-                                vars += "var " + prop + "=" + fillTemplate.declared[prop] + ";";
+                                vars += "var " + prop + "=" + declared[prop] + ";";
                             }
                             eval(vars);
                             var matches = code_result.match(ttc.VARIABLE);
                             matches.map(function (var_match) {
                                 var var_match_name = ttc.VARIABLE_NAME(var_match),
-                                    var_match_index = code_result.indexOf(var_match);
-                                    if (tryEval("var "+ var_match_name +";") !== null) {
-                                        var_match_index += var_match.length;
-                                    }
+                                    var_match_index = code_result.indexOf(var_match),
+                                    before, after;
+                                if (tryEval("var "+ var_match_name +";") !== null) {
+                                    var_match_index += var_match.length;
+                                }
 
 
-                                    pre = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name)),
-                                    post = code_result.substring(code_result.indexOf(var_match) + var_match.length);
-                                code_result = pre + post;
+                                before = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name));
+                                after = code_result.substring(code_result.indexOf(var_match) + var_match.length);
+                                code_result = before + after;
                             });
 
 
-                            return code_result;
+                            return __logic_parser(code_result + post);
 
                         }
                     },
@@ -4961,35 +4913,25 @@ if (__thisIsNewer) {
                         end:/\$\{end if\}|\{\{end if\}\}/i,
                         helper:function (code) {
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
-                                isyntax = IF.begin,
-                                esyntax = IF.end,
-                                eisyntax = IF.elseif,
-                                elsyntax = IF.else,
-                                ifmatch = (code.match(isyntax) || []).condense(),
-                                iflength = (ifmatch[0] || "").length,
-                                endlength = code.match(esyntax)[0].length,
-                                startindex = code.indexOfAlt(isyntax),
-                                endindex = code.indexOfAlt(esyntax);
-
+                                ifmatch = (code.match(IF.begin) || []).condense(),
+                                endlength = code.match(IF.end)[0].length,
+                                startindex = code.indexOfAlt(IF.begin),
+                                endindex = code.indexOfAlt(IF.end);
 
                             if (ifmatch.length) {
-
                                 for (var j = 1, jlen = ifmatch.length; j < jlen; j++) {
                                     ifmatch[j] = ifmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
                                 }
-                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength);
-                                //code = code.substring(startindex + switchlength, endindex);
-                                var //condition = tryEval(ifmatch[2]) || ifmatch[2],
-                                    ifsyntax = new RegExp(isyntax.source+"|"+eisyntax.source+"|"+elsyntax.source,'i'),
-                                    elfsyntax = new RegExp(eisyntax.source+"|"+elsyntax.source,'ig'),
-                                    elf = code.match(elfsyntax);
+                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
+                                    ifsyntax = new RegExp(IF.begin.source+"|"+IF.elseif.source+"|"+IF.else.source,'i');
 
-                                if (!elf) {
-
+                                if (!code.match(new RegExp(IF.elseif.source+"|"+IF.else.source,'ig'))) {
+                                    if ("undefined" == ifmatch[1] || !tryEval(ifmatch[1])) {
+                                        return pre + post;
+                                    }
                                     return pre + code.substring(startindex + ifmatch[0].length, endindex) + post;
                                 }
                                 ifmatch = (code.match(ifsyntax.addFlags('g')) || []).condense();
-                                //var brk = SWITCH.break, dflt = SWITCH.default, found = false;
                                 for (var i = 0, len = ifmatch.length; i < len; i++) {
                                     var ife = ifmatch[i].match(ifsyntax).condense(),
                                         condition = ife[1],
@@ -4997,144 +4939,33 @@ if (__thisIsNewer) {
                                         sindex = code.indexOf(ifmatch[i]) + ifmatch[i].length;
 
                                     if (value !== undefined && value) {
-                                        var //sindex = code.indexOf(ifmatch[i]) + ifmatch[i].length,
-                                            eindex = code.indexOf(ifmatch[i + 1]);
+                                        var eindex = code.indexOf(ifmatch[i + 1]);
                                         if (eindex == -1) {
                                             return pre + code.substring(sindex) + post;
                                         }
                                         return pre + code.substring(sindex, eindex) + post;
-                                    } else if (ifmatch[i].match(elsyntax)) {
+                                    } else if (ifmatch[i].match(IF.else)) {
                                         return pre + code.substring(sindex,endindex) + post;
                                     }
-                                    //if (val == cvalue) {
-                                    //    var cindex = code.indexOf(cases[i]),
-                                    //        bindex = code.indexOfAlt(brk, cindex);
-                                    //    bindex = bindex == -1 ? code.length : bindex;
-                                    //    return pre + code.substring(cindex + cases[i].length, bindex).replace(cgsyntax, '') + post;
-                                    //}
                                 }
-                                //var dindex = code.indexOfAlt(dflt);
-                                //if (!found && dindex != -1) {
-                                //    return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
-                                //}
                                 return pre + post;
                             }
                             return code;
-
-
-
-
-
-                            var value = "undefined" == condition ? false : tryEval(condition);
-
-                            if (isNull(value)) {
-                                logit(condition + " is not valid boolean expression");
-                                value = false;
-                            }
-                            return value;
                         },
                         parser:function (code){
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
-                                isyntax = IF.begin,
-                                esyntax = IF.end;
-
-                            var blocks = __processBlocks(isyntax, esyntax, code);
-
-                            var code_result = "";
+                                blocks = __processBlocks(IF.begin, IF.end, code),
+                                code_result = "";
                             for (var i = 0, len = blocks.length; i < len; i++) {
                                 var obj = blocks[i],
                                     block = obj.block,
                                     id = obj.id;
 
-
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) {
-                                    continue;
-                                }
+                                if (!code_result.contains(obj.id)) { continue; }
                                 code_result = IF.helper(code_result.replace(id, block));
                             }
-                            return code_result;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            var IF = $c.TEMPLATE_TAG_CONFIG.IF,
-                                ifsyntax = IF.begin,
-                                ifmatch = code.match(ifsyntax);
-                            // verify that there is an if
-                            if (!ifmatch) {
-                                return code;
-                            }
-
-                            var elseifsyntax = IF.elseif,
-                                elsesyntax = IF.else,
-                                endsyntax = IF.end,
-                                ifreg = ifsyntax.toString(),
-                                elseifreg = elseifsyntax.toString(),
-                                elsereg = elsesyntax.toString(),
-                                endreg = endsyntax.toString();
-                            ifreg = ifreg.substring(1, ifreg.lastIndexOf('/'));
-                            elseifreg = elseifreg.substring(1, elseifreg.lastIndexOf('/'));
-                            elsereg = elsereg.substring(1, elsereg.lastIndexOf('/'));
-                            endreg = endreg.substring(1, endreg.lastIndexOf('/'));
-
-                            var ifblock = new RegExp("("+ifreg+")|("+elseifreg+")|("+elsereg+")|("+endreg+")"),
-                                parts = code.split(ifblock).filter(function(defined){return defined}),
-                                block = "", ifcount = 0, endcount = 0, condition = false, skipblock = false;
-
-                            for (var i = 0, len = parts.length; i < len; i++) {
-                                var part = parts[i];
-                                if (ifsyntax.test(part)) {
-                                    if (ifcount == endcount) {
-                                        condition = IF.begin.helper.call(this, parts[i + 1]);
-                                        if (!condition) {
-                                            skipblock = true;
-                                        }
-                                    } else {
-                                        block += part;
-                                    }
-                                    ifcount++;
-                                } else if (elseifsyntax.test(part) || elsesyntax.test(part)) {
-                                    // this is the outermost else or elseif
-                                    if (ifcount - 1 == endcount) {
-                                        skipblock = condition;
-                                        if (!skipblock && elseifsyntax.test(part)) {
-                                            condition = IF.helper.call(this, parts[i + 1]);
-                                            if (!condition) {
-                                                skipblock = true;
-                                            }
-                                        }
-                                    } else {
-                                        block += part;
-                                    }
-                                } else if (endsyntax.test(part)) {
-                                    endcount++;
-                                    if (endcount == ifcount) {
-                                        skipblock = condition = false;
-                                    } else {
-                                        block += part;
-                                    }
-                                } else if (!skipblock) {
-                                    block += part;
-                                }
-                                if (ifsyntax.test(part) || elseifsyntax.test(part)) {
-                                    i++;
-                                }
-                            }
-
-                            return __logic_parser(block);
-
-
+                            return __logic_parser(code_result);
                         }
                     },
                     SWITCH: {
@@ -5145,15 +4976,12 @@ if (__thisIsNewer) {
                         break: /(\$\{break\})|(\{\{break\}\})/i,
                         helper: function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                                ssyntax = SWITCH.begin,
-                                essyntax = SWITCH.end,
                                 csyntax = SWITCH.case,
-                            //switchmatch = code.match(ssyntax),
-                                switchmatch = (code.match(ssyntax) || []).condense(),
-                                switchlength = (switchmatch[0] || "").length,
-                                endlength = code.match(essyntax)[0].length,
-                                startindex = code.indexOfAlt(ssyntax),
-                                endindex = code.indexOfAlt(essyntax);
+                                switchmatch = (code.match(SWITCH.begin) || []).condense(),
+                                endlength = code.match(SWITCH.end)[0].length,
+                                startindex = code.indexOfAlt(SWITCH.begin),
+                                endindex = code.indexOfAlt(SWITCH.end),
+                                brk = SWITCH.break, dflt = SWITCH.default;
 
 
                             if (switchmatch.length) {
@@ -5161,18 +4989,17 @@ if (__thisIsNewer) {
                                 for (var j = 1, jlen = switchmatch.length; j < jlen; j++) {
                                     switchmatch[j] = switchmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
                                 }
-                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength);
-                                code = code.substring(startindex + switchlength, endindex);
-                                var val = tryEval(switchmatch[2]) || switchmatch[2],
-                                    cgsyntax = csyntax.addFlags("g"),
+                                var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
+                                    val = tryEval(switchmatch[2]) || switchmatch[2],
+                                    cgsyntax = SWITCH.case.addFlags("g"),
                                     cases = code.match(cgsyntax);
+                                code = code.substring(startindex + (switchmatch[0] || "").length, endindex);
 
                                 if (!cases) {
                                     return pre + code.cut(startindex, endindex + endlength) + post;
                                 }
-                                var brk = SWITCH.break, dflt = SWITCH.default, found = false;
                                 for (var i = 0, len = cases.length; i < len; i++) {
-                                    var cs = cases[i].match(csyntax),
+                                    var cs = cases[i].match(SWITCH.case),
                                         cvalue = cs[1] || cs[2];
                                     if (val == cvalue) {
                                         var cindex = code.indexOf(cases[i]),
@@ -5182,7 +5009,7 @@ if (__thisIsNewer) {
                                     }
                                 }
                                 var dindex = code.indexOfAlt(dflt);
-                                if (!found && dindex != -1) {
+                                if (dindex != -1) {
                                     return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
                                 }
 
@@ -5191,22 +5018,16 @@ if (__thisIsNewer) {
                         },
                         parser: function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                                ssyntax = SWITCH.begin,
-                                essyntax = SWITCH.end;
+                                blocks = __processBlocks(SWITCH.begin, SWITCH.end, code),
+                                code_result = "";
 
-                            var blocks = __processBlocks(ssyntax, essyntax, code);
-
-                            var code_result = "";
                             for (var i = 0, len = blocks.length; i < len; i++) {
                                 var obj = blocks[i],
                                     block = obj.block,
                                     id = obj.id;
 
-
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) {
-                                    continue;
-                                }
+                                if (!code_result.contains(obj.id)) { continue; }
                                 code_result = SWITCH.helper(code_result.replace(id, block));
                             }
                             return __logic_parser(code_result);
@@ -5226,20 +5047,13 @@ if (__thisIsNewer) {
                                 eindex = code.indexOfAlt(SCRIPT.end),
                                 elen = code.match(SCRIPT.end)[0].length;
 
-                            if (eindex == -1) {
-                                eindex = undefined;
-                            }
-                            var block = code.substring(sindex + slen,eindex),
-
-                            echo = function (value) {
-                                echo.out += value;
-                            }, str = "";
+                            if (eindex == -1) { eindex = undefined; }
+                            var block = code.substring(sindex + slen,eindex), str = "",
+                            echo = function (value) { echo.out += value; };
                             echo.out = "";
-
                             str = eval("(function(){"+block+";return echo.out;})()");
 
                             return __logic_parser(code.cut(sindex,eindex+elen, str));
-
                         }
 
                     },
@@ -5248,34 +5062,41 @@ if (__thisIsNewer) {
                         catch: /(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
                         finally: /(\$\{finally\})|(\{\{finally\}\})/i,
                         end: /(\$\{end try\})|(\{\{end try\}\})/i,
-                        helper: function (code, lookups) {
+                        helper: function (code, lookups, exec) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
-                                tsyntax = TRY.begin,
-                                csyntax = TRY.catch,
-                                fsyntax = TRY.finally,
-                                tindex = code.indexOfAlt(tsyntax),
-                                cindex = code.indexOfAlt(csyntax),
-                                findex = code.indexOfAlt(fsyntax),
+                                cindex = code.indexOfAlt(TRY.catch),
+                                findex = code.indexOfAlt(TRY.finally),
                                 eindex = code.indexOfAlt(TRY.end),
-                                tlen = code.match(tsyntax)[0].length,
-                                flen = code.match(fsyntax)[0].length,
                                 tend = cindex;
 
                             if (tend == -1) {
                                 tend = findex != -1 ? findex : eindex;
                             }
 
-                            var body = code.substring(tindex + tlen, tend),
-                                match = body.match(/\$\{[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\}/i),
+                            var tindex = code.indexOfAlt(TRY.begin),
+                                body = code.substring(tindex + code.match(TRY.begin)[0].length, tend),
+                                pre = code.substring(0,tindex), post = code.substring(eindex + code.match(TRY.end)[0].length),
+                                regex = /##[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}##/i,
+                                match = body.match(regex), str = "", id,
                                 echo = function (value) {
                                     echo.out += value;
-                                }, str = "";
+                                };
                             echo.out = "";
-                            if (match) {
-                                var id = match[0];
+                            while(match && match.length){
+                                id = match.splice(0)[0];
                                 body = body.replace(id, ";echo('" + TRY.helper(lookups[id], lookups) + "');");
                             }
-
+                            match = pre.match(regex);
+                            while(match && match.length) {
+                                id = match.splice(0)[0];
+                                pre = pre.replace(id, TRY.helper(lookups[id], lookups));
+                            }
+                            match = post.match(regex);
+                            while(match && match.length) {
+                                id = match.splice(0)[0];
+                                post = post.replace(id, TRY.helper(lookups[id], lookups));
+                            }
+                            exec && eval(exec);
                             try {
                                 str = eval("(function(){" + body + ";return echo.out; })()");
                             } catch (e) {
@@ -5283,152 +5104,54 @@ if (__thisIsNewer) {
                                     echo.out = "";
                                     tend = findex != -1 ? findex : eindex;
                                     var catchBlock = code.substring(cindex, tend),
-                                        catchLine = catchBlock.match(csyntax);
-                                    catchBlock = catchBlock.replace(catchLine[0], '');
-                                    str = eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})('" + e.message + "')");
+                                        catchLine = catchBlock.match(TRY.catch);
+                                    catchBlock = catchBlock.replace(catchLine[0], ''),
+                                    errorString = JSON.stringify(e);
+
+                                    match = catchBlock.match(regex);
+                                    while(match && match.length) {
+                                        id = match.splice(0)[0];
+                                        catchBlock = catchBlock.replace(id, ";echo('" + TRY.helper(lookups[id], lookups,"var " + catchLine[1] + "=" + errorString + ";") + "');");
+                                    }
+                                    str += eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})('" + errorString + "')");
                                 }
                             } finally {
                                 if (findex != -1) {
                                     echo.out = "";
-                                    var finalBlock = code.substring(findex + flen, eindex);
-                                    str += eval("(function(){" + finalBlock + ";return echo.out; })()");
+                                    str += eval("(function(){" + code.substring(findex + code.match(TRY.finally)[0].length, eindex) + ";return echo.out; })()");
                                 }
                             }
-                            return str;
+                            return pre + str + post;
                         },
                         parser: function (code) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
-                                tsyntax = TRY.begin,
-                                esyntax = TRY.end,
-                                lookups = {};
-
-                            var blocks = __processBlocks(tsyntax, esyntax, code, lookups);
-
+                                lookups = {}, code_result,
+                                blocks = __processBlocks(TRY.begin, TRY.end, code, lookups);
 
                             var obj = blocks[0],
                                 block = obj.block,
                                 id = obj.id;
 
                             return __logic_parser(TRY.helper(obj.code.replace(id, block), lookups));
-
+                            //return __logic_parser(code_result);
                         }
 
                     },
                     /* end error handling config */
 
-                    //FOR_BEGIN:{
-                    //    syntax:/\$\{for (.*?);(.*?);(.*?)\}|\{\{for (.*?);(.*?);(.*?)\}\}/i,
-                    //    handler:function (variables, condition, execute/*, block*/) {
-                    //        eval(variables);
-                    //        if (variables.indexOf("var ") == 0) {
-                    //            variables = variables.substring(4);
-                    //        }
-                    //        variables = variables.split(',');
-                    //        var vars = {};
-                    //        for (var i = 0, len = variables.length; i < len; i++) {
-                    //            var parts = variables[i].split("="),
-                    //                v = parts[0].trim();
-                    //            vars[v] = parts[1].trim();
-                    //            execute += "," + execute.replace(v,"this.variables." + v);
-                    //        }
-                    //        return {
-                    //            variables:vars,
-                    //            condition:function(){
-                    //                return eval(condition);
-                    //            },
-                    //            execute:function(){
-                    //                eval(execute);
-                    //            }
-                    //        }
-                    //    }
-                    //},
-                    //FOR_END:/(\$\{end for\})|(\{\{end for\}\})/i,
-                    //FOREACH_BEGIN:{
-                    //    syntax:/\$\{foreach (.*?)\s+in\s+(.*?)\}/i,
-                    //    handler:function (prop_variable, obj, value) {
-                    //        var o = {};
-                    //        o[prop_variable] = value;
-                    //        return o;
-                    //    }
-                    //},
-                    //FOREACH_END:/(\$\{end foreach\})|(\{\{end foreach\}\})/i,
-                    //
-                    //WHILE_BEGIN:{
-                    //    syntax:/\$\{while\s*\((.*?)\)\s*\}/i,
-                    //    handler:function(){
-                    //
-                    //    }
-                    //},
-                    //WHILE_END:/(\$\{end while\})|(\{\{end while\}\})/i,
-                     
-                    /* end loop config*/
-
-                    /* conditional config*/
-                    // if and else if conditions must be wrapped in capturing ()
-                    //IF_BEGIN:{
-                    //    syntax:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                    //    handler:function (condition) {
-                    //        var value = "undefined" == condition ? false : tryEval(condition);
-                    //
-                    //        if (isNull(value)) {
-                    //            logit(condition + " is not valid boolean expression");
-                    //            value = false;
-                    //        }
-                    //        return value;
-                    //    }
-                    //},
-                    //ELSE_IF:{
-                    //    syntax:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                    //    handler:function (condition) {
-                    //        var value = "undefined" == condition ? false : tryEval(condition);
-                    //
-                    //        if (isNull(value)) {
-                    //            logit(condition + " is not valid boolean expression");
-                    //            value = false;
-                    //        }
-                    //        return value;
-                    //    }
-                    //},
-                    //ELSE:/\$\{else\}|\{\{else\}\}/i,
-                    //IF_END:/\$\{end if\}|\{\{end if\}\}/i,
-                    //
-                    //SWITCH_BEGIN: {
-                    //    syntax: /(\$\{switch\s+\((.*?)\)\s*\})|(\{\{switch\s+\((.*?)\)\s*\}\})/i,
-                    //        handler: function (condition) {
-                    //     }
-                    //},
-                    //SWITCH_END:/(\$\{end switch\})|(\{\{end switch\}\})/i,
-                    //CASE:/(?:\$\{case\s+(.*?)\s*?:\})|(?:\{\{case\s+(.*?)\s*?:\}\})/i,
-                    //DEFAULT:/(\$\{default\})|(\{\{default\}\})/i,
-                    //BREAK:/(\$\{break\})|(\{\{break\}\})/i,
-                    /* end conditional config*/
-
-                    /* error handling config */
-                    
-                    //TRY_BEGIN:/(\$\{try\})|(\{\{try\}\})/i,
-                    //CATCH:/(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
-                    //FINALLY:/(\$\{finally\})|(\{\{finally\}\})/i,
-                    //TRY_END:/(\$\{end try\})|(\{\{end try\}\})/i,
-                     
-                    /* end error handling config */
-
                     /* tokens config */
                     VARIABLE:/(?:\$\{((?!\$).)*?\})|(?:\{\{((?!\{\{).)*?\}\})/gi,
                     VARIABLE_NAME:function(match){
-                        var endi = match.contains('}}') ? -2 : -1;
-                        return  match.slice(2,endi);
-                    },/*,
-                     BREAK:/(\$\{break\})|(\{\{break\}\})/i,
-                     THROW:/(\$\{throw\})|(\{\{throw\}\})/i,
-                     CONTINUE:/(\$\{continue\})|(\{\{continue\}\})/i
-                     */
+                        return  match.slice(2,match.contains('}}') ? -2 : -1);
+                    },
                     DECLARE:{
-                        syntax: /(?:\$\{DECLARE (.*?)\})|(?:\{\{DECLARE (.*?)\}\})/i,
+                        syntax: /(?:\$\{DECLARE (.*?);?\})|(?:\{\{DECLARE (.*?);?\}\})/i,
                         parser: function (htmlTemplate, declare){
                             var matches = declare.match($c.TEMPLATE_TAG_CONFIG.DECLARE.syntax),
                                 var_nameValue = (matches[1]||matches[2]).strip(';').split("=");
 
-                            fillTemplate.declared[var_nameValue[0]] = var_nameValue[1];
+                            //fillTemplate.declared[var_nameValue[0]] = var_nameValue[1];
+                            $c.merge(fillTemplate.declared, tryEval("({"+matches[1].replace_all('=',":")+"})"));
                             return htmlTemplate.replace_all(declare,'');
                         }
                     }
@@ -5447,6 +5170,9 @@ if (__thisIsNewer) {
                     $ = setTo || _$overwrite;
                     return tmp;
                 },
+
+                // methods
+
                 $COOKIE:$COOKIE,
                 $GET:$GET,
                 $SET:$SET,
@@ -5655,6 +5381,32 @@ if (__thisIsNewer) {
             return (this.match(word) || []).length;
         } catch (e) {
             error("String.count", e);
+        }
+    }, true);
+    _ext(String, 'cut', function (si, ei, replacement) {
+        /*|{
+            "info": "String class extension to remove between the provided indexes",
+            "category": "String",
+            "parameters":[
+                {"start_index": "(Integer) Start index to cut"},
+                {"end_index": "(Integer) End index to cut"}],
+
+            "overloads":[{
+                "parameters":[
+                    {"start_index": "(Integer) Start index to cut"},
+                    {"end_index": "(Integer) End index to cut"},
+                    {"replacement": "(String) String to put in place of the cut"}]}],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.cut",
+            "returnType": "(String)"
+        }|*/
+        try {
+            if (isNull(si) || isNull(si)) {
+                return this;
+            }
+            return this.slice(0, si) + (replacement || "")+ this.slice(ei);
+        } catch (e) {
+            error("String.cut", e);
         }
     }, true);
     _ext(String, 'ellipsis', function (before, after) {
@@ -6085,7 +5837,9 @@ if (__thisIsNewer) {
             if (/\d\d\d\d-\d\d-\d\d/.test(strDatetime)) {
                 strDatetime = this.replace("-","/").replace("-","/");
             }
-            strDatetime = strDatetime.replace(/(am|pm)/i,' $1');
+            if ($c.isString(strDatetime)) {
+                strDatetime = strDatetime.replace(/(am|pm)/i,' $1');
+            }
             var dt = new Date(strDatetime);
             if (!dt.getDate()) {
                 var parts = [],
@@ -6197,32 +5951,6 @@ if (__thisIsNewer) {
             error("String.trim", e);
         }
     }, true);
-    _ext(String, 'cut', function (si, ei, replacement) {
-        /*|{
-            "info": "String class extension to remove between the provided indexes",
-            "category": "String",
-            "parameters":[
-                 {"start_index": "(Integer) Start index to cut"},
-                 {"end_index": "(Integer) End index to cut"}],
-
-            "overloads":[{
-            "parameters":[
-                {"start_index": "(Integer) Start index to cut"},
-                {"end_index": "(Integer) End index to cut"},
-                {"replacement": "(String) String to put in place of the cut"}]}],
-
-            "description": "http://www.craydent.com/library/1.8.0/docs#string.cut",
-            "returnType": "(String)"
-        }|*/
-        try {
-            if (isNull(si) || isNull(si)) {
-                return this;
-            }
-            return this.slice(0, si) + this.slice(ei);
-        } catch (e) {
-            error("String.cut", e);
-        }
-    }, true)
 
     /*----------------------------------------------------------------------------------------------------------------
      /-	Array class Extensions
@@ -8227,24 +7955,24 @@ if (__thisIsNewer) {
     });
     _ao("getProperty", function (path, delimiter, options) {
         /*|{
-         "info": "Object class extension to retrieve nested properties without error when property path does not exist",
-         "category": "Object",
-         "featured": true,
-         "parameters":[
-         {"path": "(String) Path to nested property"}],
+            "info": "Object class extension to retrieve nested properties without error when property path does not exist",
+            "category": "Object",
+            "featured": true,
+            "parameters":[
+                {"path": "(String) Path to nested property"}],
 
-         "overloads":[
-         {"parameters":[
-         {"path": "(String) Path to nested property"},
-         {"delimiter": "(Char) Separator used to parse path"}]},
-         {"parameters":[
-         {"path": "(String) Path to nested property"},
-         {"delimiter": "(Char) Separator used to parse path"},
-         {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
+            "overloads":[
+                {"parameters":[
+                    {"path": "(String) Path to nested property"},
+                    {"delimiter": "(Char) Separator used to parse path"}]},
+                {"parameters":[
+                    {"path": "(String) Path to nested property"},
+                    {"delimiter": "(Char) Separator used to parse path"},
+                    {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
-         "returnType": "(Mixed)"
-         }|*/
+            "description": "http://www.craydent.com/library/1.8.0/docs#object.getProperty",
+            "returnType": "(Mixed)"
+        }|*/
         try {
             options = options || {};
             delimiter = delimiter || ".";
