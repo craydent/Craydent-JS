@@ -3201,7 +3201,6 @@ if (__thisIsNewer) {
         }
     }
     function fillTemplate (htmlTemplate, objs, offset, max, bound) {
-        // TODO Test DECLARE and logic parsers in fillTemplate -> make sure all returns run through parser
         // TODO allow mix of logic and bind
         /*|{
             "info": "Function for templetizing",
@@ -5463,6 +5462,52 @@ if (__thisIsNewer) {
             error('String.fillTemplate', e);
         }
     });
+    _ext(String, 'highlight', function (search, clazz, tag) {
+        /*|{
+            "info": "String class extension to surround search words with the given tag(default span) and class (default chighlight)",
+            "category": "String",
+            "parameters":[
+                {"search": "(String) String to search"}],
+
+            "overloads":[
+                {"parameters":[
+                    {"search": "(RegExp) Regular expression to search"},
+                    {"clazz": "(String) Class to add for highlighting"}]},
+                {"parameters":[
+                    {"search": "(RegExp) Regular expression to search"},
+                    {"clazz": "(String) Class to add for highlighting"}]},
+                {"parameters":[
+                    {"search": "(String) String to search"},
+                    {"clazz": "(String) Class to add for highlighting"},
+                    {"tag": "(String) Tag to use to surround the search"}]}
+                {"parameters":[
+                    {"search": "(String) String to search"},
+                    {"clazz": "(String) Class to add for highlighting"},
+                    {"tag": "(String) Tag to use to surround the search"}]}],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#string.cut",
+            "returnType": "(String)"
+        }|*/
+        try {
+            clazz = clazz || "chighlight";
+            tag = tag || "span";
+            var txt = "", flags = "g";
+            if ($c.isRegExp(search) && !search.source.contains("(")) {
+                txt = "(" + search.source + ")";
+                if (search.ignoreCase) {
+                    flags += "i";
+                }
+                if (search.multiline) {
+                    flags += "m";
+                }
+            } else if (!search.contains("(")) {
+                txt = "(" + search + ")";
+            }
+            return this.replace((new RegExp(txt)).addFlags(flags),"<" + tag + " class=\"" + clazz + "\">$1</" + tag + ">");
+        } catch (e) {
+            error("String.highlight", e);
+        }
+    }, true);
     _ext(String, 'indexOfAlt', function(regex, pos) {
         /*|{
             "info": "String class extension to find the index based on a regular expression",
