@@ -358,6 +358,18 @@ if (__thisIsNewer) {
 
         //return code.substring(0,first) + ttc[keyword].parser(code.substring(first));
     }
+    function __observe_helper (obj, callback, acceptList) {
+        try {
+            if ($c.isObject(obj)) { return observe(obj, callback, acceptList); }
+            if (!$c.isArray(obj)) { return; }
+            for (var i = 0, len = obj.length; i < len; i++) {
+                if (!$c.isObject(obj[i])) { continue; }
+                observe(obj[i], callback, acceptList);
+            }
+        } catch(e) {
+            error('observe.observe_helper', e);
+        }
+    }
     function __on_observable_change (changes) {
         try {
             var change = changes[0], obj = change.object, prop = change.name, value = change.oldValue;
@@ -3243,7 +3255,8 @@ if (__thisIsNewer) {
                 offset = 0;
             }
 
-            $c.isDomElement(htmlTemplate) && (htmlTemplate = htmlTemplate.toString());
+            var domRef;
+            $c.isDomElement(htmlTemplate) && (domRef = htmlTemplate, htmlTemplate = htmlTemplate.toString());
             if (htmlTemplate.trim() == "") {
                 return "";
             }
@@ -3277,6 +3290,37 @@ if (__thisIsNewer) {
             max = max || objs.length;
             offset = offset || 0;
 
+            //var props = [],ttc = $c.TEMPLATE_TAG_CONFIG;
+            //var htmlStripped = htmlTemplate.replace(
+            //    new RegExp(
+            //        $c.TEMPLATE_TAG_CONFIG.FOR.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.FOR.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.FOREACH.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.FOREACH.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.SWITCH.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.case.source+"|"+$c.TEMPLATE_TAG_CONFIG.SWITCH.default.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.break.source+"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.WHILE.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.WHILE.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.IF.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.IF.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.IF.elseif.source+"|"+$c.TEMPLATE_TAG_CONFIG.IF.else.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.SCRIPT.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.SCRIPT.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.TRY.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.TRY.end.source +"|"+
+            //        $c.TEMPLATE_TAG_CONFIG.TRY.begin.catch+"|"+$c.TEMPLATE_TAG_CONFIG.TRY.finally.source
+            //        ,'gi'),'');
+            //var htmlStripped = "", regReplace = "";/*($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate).concat(
+            //    ($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate)
+            //    ($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate)
+            //);*/
+            //for (var word in ttc) {
+            //    if (!ttc.has(word) || !ttc[word].extract_variables) { continue; }
+            //    props = props.concat(ttc[word].extract_variables(htmlTemplate));
+            //    for (var regex in ttc[word]) {
+            //        if (!ttc[word].has(regex) || !$c.isRegExp(ttc[word][regex])) { continue; }
+            //        regReplace += ttc[word][regex].source+"|";
+            //    }
+            //}
+            //htmlStripped = htmlTemplate.replace(new RegExp(regReplace.strip('|'),'gi',''));
+
+
+            //var props = (props.concat((htmlStripped.match(vsyntax) || []))).condense(true);
             var props = (htmlTemplate.match(vsyntax) || []).condense(true);
             if (bound) {
                 var nodes = htmlTemplate.toDomElement();
@@ -3318,7 +3362,7 @@ if (__thisIsNewer) {
                             __processNodes(child);
                         }
                     }
-                    $c._micro_templates[id] = {template:n.toString()};
+                    fillTemplate._micro_templates[id] = {template:n.toString()};
 
                 }
                 if (!nodes.length) { nodes = [nodes]; }
@@ -3339,8 +3383,8 @@ if (__thisIsNewer) {
 
                 if (bound) {
                     $c.observe(obj);
-                    var bind = $c._observing["hash_"+$c._observing.indexOf(obj)];
-                    $c._observing[bind] = {item:obj,template:bindTemplate};
+                    var bind = fillTemplate._observing["hash_"+fillTemplate._observing.indexOf(obj)];
+                    fillTemplate._observing[bind] = {item:obj,template:bindTemplate};
                     template = template.replace_all("${craydent_bind}",bind);
                 }
 
@@ -3403,8 +3447,12 @@ if (__thisIsNewer) {
                     }
                 }
 
-                template = __logic_parser(template);
+                template = __logic_parser(template.replace_all(['\\[','\\]'],['[',']']));
                 html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
+            }
+
+            if (domRef) {
+                domRef.parentNode.replaceChild(html.toDomElement(),domRef);
             }
 
             return html;
@@ -3582,21 +3630,33 @@ if (__thisIsNewer) {
             "returnType": "(void)"
         }|*/
         try {
-            callback = callback || foo;
-            acceptList = acceptList || ["add", "update", "delete", "reconfigure", "setPrototype", "preventExtensions"];
-
-            if ($w["_$observer_overwrite"]) {
-                return $w["_$observer_overwrite"].call(Object, objs, function(changes){
-                    __on_observable_change(changes);
-                    callback(changes);
-                }, acceptList);
-            }
-
+            if (!$c.isArray(objs)) { objs = [objs]; }
             var i = 0,obj,
                 _observing = fillTemplate._observing,
                 _observing_previous = fillTemplate._observing_previous,
                 _observing_poll = fillTemplate._observing_poll;
-            if (!$c.isArray(objs)) { objs = [objs]; }
+            callback = callback || foo;
+            acceptList = acceptList || ["add", "update", "delete", "reconfigure", "setPrototype", "preventExtensions"];
+
+            if ($w["_$observer_overwrite"]) {
+                while (obj = objs[i++]) {
+                    if (fillTemplate._observing.contains(obj)) {
+                        continue;
+                    }
+                    _observing["hash_" + _observing.length] = cuid();
+                    _observing.push(obj);
+                    $w["_$observer_overwrite"].call(Object, obj, function(changes){
+                        __on_observable_change(changes);
+                        callback(changes);
+                    }, acceptList);
+                    for (var prop in obj) {
+                        if (!obj.hasOwnProperty(prop)) { continue; }
+                        __observe_helper(obj[prop], callback, acceptList);
+                    }
+                }
+                return;
+            }
+
             if (!_observing_poll) {
                 function __observe_delta(){
                     __clean_micro_templates();
@@ -3625,12 +3685,11 @@ if (__thisIsNewer) {
                 _observing_poll = setTimeout(__observe_delta,$c.OBSERVE_CHECK_INTERVAL);
             }
             while (obj = objs[i++]){
-                if (_observing.contains(obj)) {
-                    continue;
-                }
-                if (Object.defineProperty) {
-                    for (var prop in obj) {
-                        if (!obj.hasOwnProperty(prop)) { continue; }
+                if (_observing.contains(obj)) { continue; }
+
+                for (var prop in obj) {
+                    if (!obj.hasOwnProperty(prop)) { continue; }
+                    if (Object.defineProperty) {
                         if (obj[prop].constructor == Function) { obj[prop] = (obj[prop]).bind(obj);}
                         Object.defineProperty(obj,"_"+prop,{
                             enumerable:false,
@@ -3649,6 +3708,7 @@ if (__thisIsNewer) {
                             return val;\
                         })"));
                     }
+                    __observe_helper(obj[prop], callback, acceptList);
                 }
                 var dup = {};
                 $c.duplicate(dup,obj);
@@ -4745,6 +4805,7 @@ if (__thisIsNewer) {
                     },
                     FOREACH:{
                         begin:/(?:\$\{foreach (.*?)\s+in\s+(\\?\[\s*\\?\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
+                        //begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?\}?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
                         end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
                         helper:function (code, body,rtnObject,uid) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
@@ -5139,7 +5200,7 @@ if (__thisIsNewer) {
                     /* end error handling config */
 
                     /* tokens config */
-                    VARIABLE:/(?:\$\{((?!\$).)*?\})|(?:\{\{((?!\{\{).)*?\}\})/gi,
+                    VARIABLE:/(?:\$\{((?!\$)\S)*?\})|(?:\{\{((?!\{\{)\S)*?\}\})/gi,
                     VARIABLE_NAME:function(match){
                         return  match.slice(2,match.contains('}}') ? -2 : -1);
                     },
