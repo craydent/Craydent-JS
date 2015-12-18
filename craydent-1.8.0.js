@@ -303,7 +303,7 @@ if (__thisIsNewer) {
             error('fillTemplate.interpreter', e);
         }
     }
-    function __logic_parser (code) {
+    function __logic_parser (code,obj) {
         if (!code) {
             return "";
         }
@@ -330,7 +330,7 @@ if (__thisIsNewer) {
             return code;
         }
 
-        return code.substring(0,index) + logic[index].parser(code.substring(index));
+        return code.substring(0,index) + logic[index].parser(code.substring(index),obj);
 
         //switch (true) {
         //    case (iif > -1 && iif == first):
@@ -3290,37 +3290,6 @@ if (__thisIsNewer) {
             max = max || objs.length;
             offset = offset || 0;
 
-            //var props = [],ttc = $c.TEMPLATE_TAG_CONFIG;
-            //var htmlStripped = htmlTemplate.replace(
-            //    new RegExp(
-            //        $c.TEMPLATE_TAG_CONFIG.FOR.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.FOR.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.FOREACH.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.FOREACH.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.SWITCH.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.case.source+"|"+$c.TEMPLATE_TAG_CONFIG.SWITCH.default.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.SWITCH.break.source+"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.WHILE.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.WHILE.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.IF.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.IF.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.IF.elseif.source+"|"+$c.TEMPLATE_TAG_CONFIG.IF.else.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.SCRIPT.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.SCRIPT.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.TRY.begin.source+"|"+$c.TEMPLATE_TAG_CONFIG.TRY.end.source +"|"+
-            //        $c.TEMPLATE_TAG_CONFIG.TRY.begin.catch+"|"+$c.TEMPLATE_TAG_CONFIG.TRY.finally.source
-            //        ,'gi'),'');
-            //var htmlStripped = "", regReplace = "";/*($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate).concat(
-            //    ($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate)
-            //    ($c.TEMPLATE_TAG_CONFIG.FOR.extract_variables || foo)(htmlTemplate)
-            //);*/
-            //for (var word in ttc) {
-            //    if (!ttc.has(word) || !ttc[word].extract_variables) { continue; }
-            //    props = props.concat(ttc[word].extract_variables(htmlTemplate));
-            //    for (var regex in ttc[word]) {
-            //        if (!ttc[word].has(regex) || !$c.isRegExp(ttc[word][regex])) { continue; }
-            //        regReplace += ttc[word][regex].source+"|";
-            //    }
-            //}
-            //htmlStripped = htmlTemplate.replace(new RegExp(regReplace.strip('|'),'gi',''));
-
-
-            //var props = (props.concat((htmlStripped.match(vsyntax) || []))).condense(true);
             var props = (htmlTemplate.match(vsyntax) || []).condense(true);
             if (bound) {
                 var nodes = htmlTemplate.toDomElement();
@@ -3338,26 +3307,12 @@ if (__thisIsNewer) {
                 function __processNodes(n) {
                     var id = cuid();
                     for (var i = 0, len = n.attributes.length; i < len; i++) {
-//                        var attrValue = n.attributes[i].value;
-//                        if (props.contains(attrValue)) {
                         __setBindAttribute(n,n.attributes[i].value,id);
-//                            var currentAttribute = n.getAttribute("data-craydent-bind") || "",
-//                                property = $c.isFunction(vnsyntax) ? vnsyntax(props[i]) : vnsyntax.exec && vnsyntax.exec(props[i]);
-//                            !currentAttribute.contains("${craydent_bind}." + property) && n.setAttribute("data-craydent-bind", (currentAttribute ? currentAttribute + "," : id + ":") + "${craydent_bind}." + property);
-//                        }
                     }
                     var child, j = 0;
                     while (child = n.childNodes[j++]) {
                         if (child.nodeType == 3) { // is text node
                             __setBindAttribute(n,child.nodeValue,id);
-//                            var prop, k = 0;
-//                            while (prop = props[k++]) {
-//                                if (child.nodeValue.contains(prop)) {
-//                                    var currentAttribute = n.getAttribute("data-craydent-bind") || "",
-//                                        property = $c.isFunction(vnsyntax) ? vnsyntax(prop) : vnsyntax.exec && vnsyntax.exec(prop);
-//                                    !currentAttribute.contains("${craydent_bind}." + property) && n.setAttribute("data-craydent-bind", (currentAttribute ? currentAttribute + "," : id + ":") + "${craydent_bind}." + property);
-//                                }
-//                            }
                         } else {
                             __processNodes(child);
                         }
@@ -3400,11 +3355,9 @@ if (__thisIsNewer) {
                 var objval;
                 for (var j = 0, jlen = props.length; j < jlen; j++) {
                     var property = $c.isFunction(vnsyntax) ? vnsyntax(props[j]) : vnsyntax.exec && vnsyntax.exec(props[j]);
-                    if (!obj.hasOwnProperty(property)) {
-                        continue;
-                    }
+                    if (!obj.hasOwnProperty(property)) { continue; }
                     var expression = props[j];
-                    if (template.contains(expression) && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true})) /*&& (objval = obj[property])*/) {
+                    if (template.contains(expression) && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true}))) {
                         objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
                         if (objval.contains('${')) {
                             objval = fillTemplate(objval,[obj]);
@@ -3447,7 +3400,7 @@ if (__thisIsNewer) {
                     }
                 }
 
-                template = __logic_parser(template.replace_all(['\\[','\\]'],['[',']']));
+                template = __logic_parser(template.replace_all(['\\[','\\]'],['[',']']), obj);
                 html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
             }
 
@@ -4785,7 +4738,7 @@ if (__thisIsNewer) {
 
                             return code_result;
                         },
-                        parser:function (code){
+                        parser:function (code, obj){
                             var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
                                 blocks = __processBlocks(FOR.begin, FOR.end, code),
                                 code_result = "";
@@ -4807,12 +4760,11 @@ if (__thisIsNewer) {
                         begin:/(?:\$\{foreach (.*?)\s+in\s+(\\?\[\s*\\?\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
                         //begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?\}?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
                         end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
-                        helper:function (code, body,rtnObject,uid) {
+                        helper:function (code, body,rtnObject,uid, obj) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 mresult = code.match(FOREACH.begin),
-                                objs = tryEval(mresult[2] || mresult[4]),
-                                var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]),
+                                objs, var_name,
                                 code_result = "";
 
                             for (var j = 1, jlen = mresult.length; j < jlen; j++) {
@@ -4836,7 +4788,7 @@ if (__thisIsNewer) {
                             return code_result;
 
                         },
-                        parser:function (code){
+                        parser:function (code, obj){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 uid = "##"+cuid()+"##",
@@ -4856,7 +4808,7 @@ if (__thisIsNewer) {
                                 }
                                 code_result = code_result || obj.code;
                                 if (!code_result.contains(obj.id)) { continue; }
-                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid));
+                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid,obj));
                             }
                             eval(result_obj[uid]);
                             delete result_obj[uid];
