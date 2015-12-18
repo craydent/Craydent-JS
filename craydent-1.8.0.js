@@ -3515,15 +3515,19 @@ if (__thisIsNewer) {
             error('logit', e);
         }
     }
-    function namespace (name, clazz) {
+    function namespace (name, clazz, fn) {
         /*|{
             "info": "Adds the class to a namespace instead of the global space",
             "category": "Global",
             "parameters":[
-                {"name":"(String) Name of the namespace to add to."}
+                {"name":"(String) Name of the namespace to add to."},
                 {"clazz":"(Class) Class to add to the given namespace"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"name":"(String) Name of the namespace to add to."},
+                    {"clazz":"(Class) Class to add to the given namespace"},
+                    {"fn":"(Function) Method to call after the class has been added to the namespace"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#namespace",
             "returnType":"(void)"
@@ -3532,6 +3536,7 @@ if (__thisIsNewer) {
             var className = clazz.getName();
             $w[className] = namespace[className] || clazz;
             $w.setProperty(name + "." + className, clazz);
+            fn && fn.call(clazz);
         } catch (e) {
             error('namespace', e);
         }
@@ -7729,13 +7734,17 @@ if (__thisIsNewer) {
             error("Function.getName", e);
         }
     }, true);
-    _ext(Function, 'extends',function(extendee, inherit){
+    _ext(Function, 'extends',function(extendee, inheritAsOwn){
         /*|{
-            "info": "Function class extension to get the name of the function",
+            "info": "Function class extension to extend another class",
             "category": "Function",
-            "parameters":[],
+            "parameters":[
+                {"extendee":"(Object) Class to extend"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"extendee":"(Object) Class to extend"},
+                    {"inheritAsOwn":"(Boolean) Flag to inherit and for values hasOwnProperty to be true."}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#function.getName",
             "returnType": "(String)"
@@ -7744,9 +7753,15 @@ if (__thisIsNewer) {
             var className = this.getName(),
                 cls = new extendee();
             namespace[className] = $w[className];
-            for (var prop in cls) {
-                if (!cls.hasOwnProperty(prop) && !inherit) { continue; }
-                this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+            if (inheritAsOwn) {
+                for (var prop in cls) {
+                    if (!cls.hasOwnProperty(prop)) { continue; }
+                    this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+                }
+                for (var prop in extendee) {
+                    if (!extendee.hasOwnProperty(prop)) { continue; }
+                    this[prop] = this[prop] || extendee[prop];
+                }
             }
 
             this.prototype.construct = this.prototype.construct || cls.construct || foo;
