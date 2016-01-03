@@ -128,6 +128,17 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	private methods
      /---------------------------------------------------------------------------------------------------------------*/
+    function __add_fillTemplate_ref (obj){
+        try {
+            var uid = suid();
+            fillTemplate.refs["ref_" + fillTemplate.refs.length] = uid;
+            fillTemplate.refs[uid] = obj;
+            fillTemplate.refs.push(obj);
+            return uid;
+        } catch (e) {
+            error('fillTemplate.__add_fillTemplate_ref', e);
+        }
+    }
     function __and (){
         try {
             var len = arguments.length;
@@ -138,7 +149,7 @@ if (__thisIsNewer) {
             }
             return arguments[len - 1];
         } catch (e) {
-            error('fillTemplate.__or', e);
+            error('fillTemplate.__and', e);
         }
     }
     function __andNotHelper (record, query, operands, index) {
@@ -303,68 +314,31 @@ if (__thisIsNewer) {
             error('fillTemplate.interpreter', e);
         }
     }
-    function __logic_parser (code,obj) {
+    function __logic_parser (code, obj, bind) {
         if (!code) {
             return "";
         }
-        var ttc = $c.TEMPLATE_TAG_CONFIG;
+        var ttc = $c.TEMPLATE_TAG_CONFIG, indexes = [], logic = {};
         code = code.replace_all(ttc.IGNORE_CHARS,['']);
-        //var ifor = code.indexOfAlt(ttc.FOR.begin),
-        //    iforeach = code.indexOfAlt(ttc.FOREACH.begin),
-        //    iwhile = code.indexOfAlt(ttc.WHILE.begin),
-        //    iif = code.indexOfAlt(ttc.IF.begin),
-        //    iswitch = code.indexOfAlt(ttc.SWITCH.begin),
-        //    itry = code.indexOfAlt(ttc.TRY.begin),
-        //    first = [ifor,iforeach,iwhile,iif,iswitch,itry].filter(function(i){return i !=-1;}).sort(function(a,b){return a-b;})[0],
-        //    keyword = "";
-        var indexes = [],logic = {};
-        for (var prop in ttc) {
-            if (!ttc.has(prop) || !ttc[prop].begin) { continue; }
-            var index = code.indexOfAlt(ttc[prop].begin);
+        $c.eachProperty(ttc, function (value) {
+            if (!value.begin) { return; }
+            var index = code.indexOfAlt(value.begin);
             indexes.push(index);
-            logic[index] = ttc[prop];
-        }
+            logic[index] = value;
+        });
         var index = Math.min.apply(Math,indexes.condense([-1]));
 
-        if (!logic[index]) {
-            return code;
-        }
+        if (!logic[index]) { return code; }
 
-        return code.substring(0,index) + logic[index].parser(code.substring(index),obj);
-
-        //switch (true) {
-        //    case (iif > -1 && iif == first):
-        //        keyword = "IF";
-        //        break;
-        //    case (ifor > -1 && ifor == first):
-        //        keyword = "FOR";
-        //        break;
-        //    case (iforeach > -1 && iforeach == first):
-        //        keyword = "FOREACH";
-        //        break;
-        //    case (iwhile > -1 && iwhile == first):
-        //        keyword = "WHILE";
-        //        break;
-        //    case (iswitch > -1 && iswitch == first):
-        //        keyword = "SWITCH";
-        //        break;
-        //    case (itry > -1 && itry == first):
-        //        keyword = "TRY";
-        //        break;
-        //    default:
-        //        return code;
-        //        break;
-        //}
-
-        //return code.substring(0,first) + ttc[keyword].parser(code.substring(first));
+        return code.substring(0,index) + logic[index].parser(code.substring(index),obj, bind);
     }
-    function __observe_helper (obj, callback, acceptList) {
+    function __observe_helper (obj, callback, acceptList, parent) {
         try {
-            if ($c.isObject(obj)) { return observe(obj, callback, acceptList); }
+            if ($c.isObject(obj)) { return observe(obj, callback, acceptList, parent); }
             if (!$c.isArray(obj)) { return; }
             for (var i = 0, len = obj.length; i < len; i++) {
                 if (!$c.isObject(obj[i])) { continue; }
-                observe(obj[i], callback, acceptList);
+                observe(obj[i], callback, acceptList, parent);
             }
         } catch(e) {
             error('observe.observe_helper', e);
@@ -379,16 +353,22 @@ if (__thisIsNewer) {
             if (obj[prop] != value) {
                 var id_index = _observing.indexOf(obj);
                 var hash = _observing["hash_"+id_index],
-                    nodes = $CSS("[data-craydent-bind*='"+hash+"."+prop+"']");
+                    pattern = new RegExp(hash+"[a-zA-Z0-9,]*\."+prop+";?|$"),
+                    //nodes = $CSS("[data-craydent-bind*='"+hash+"."+prop+"']");
+                    nodes = Array.prototype.slice.call($CSS("[data-craydent-bind*='"+hash+"']")||[]).filter(function(node){
+                        return pattern.test(node.getAttribute("data-craydent-bind"));
+                    });
 
                 if (!$CSS("[data-craydent-bind*='"+hash+"']").length) {
-                    delete _observing["hash" + id_index];
+                    delete _observing["hash_" + id_index];
                     return;
                 }
                 for (var i = 0, len = nodes.length; i < len; i++) {
                     if (nodes[i].isOrphan()) { continue; }
-                    var id = nodes[i].getAttribute("data-craydent-bind").split(":")[0];
-                    nodes[i].replace(fillTemplate(_micro_templates[id].template.replace_all("${craydent_bind}",hash),obj).toDomElement());
+                    var id = nodes[i].getAttribute("data-craydent-bind").split(":")[0],
+                        tobj = $c.getProperty(_observing,"parents_"+id_index + ".0") || obj;
+
+                    nodes[i].replace(fillTemplate(_micro_templates[id].template.replace_all("${craydent_bind}",hash),tobj).toDomElement());
                 }
             }
         } catch(e) {
@@ -442,7 +422,7 @@ if (__thisIsNewer) {
 
         var endlength = code.match(end)[0].length;
         for (var k = 0, len = pairs.size(); k < len; k++) {
-            var uid = "##" + cuid() + "##",
+            var uid = "##" + suid() + "##",
                 block = code.slice(pairs[k].begin, pairs[k].end + endlength),
                 beginLength = block.match(start)[0].length,
                 body = code.slice(pairs[k].begin + beginLength, pairs[k].end);
@@ -1058,7 +1038,10 @@ if (__thisIsNewer) {
                     if (funcValue[i].contains("${")) {
                         funcValue[i] = fillTemplate(funcValue[i], obj);
                     }
-                    try {funcValue[i] = eval("(" + funcValue[i].replace_all([';\\','\\[','\\]'], [';','[',']']) + ")");} catch (e) {}
+                    try {
+                        //funcValue[i] = eval("(" + funcValue[i].replace_all([';\\','\\[','\\]'], [';','[',']']) + ")");
+                        funcValue[i] = eval("(" + funcValue[i].replace_all([';\\'], [';']) + ")");
+                    } catch (e) {}
                 }
 
                 template = template.contains(match[1]) ? template.replace(match[1], (match[1] = match[1].replace_all(['\\[', '\\]'], ['[', ']']))) : template;
@@ -3243,10 +3226,14 @@ if (__thisIsNewer) {
             "returnType": "(String)"
         }|*/
         try {
-            fillTemplate.declared = fillTemplate.declared || {};
-            if (!htmlTemplate) {
-                return "";
+            var nested = true;
+            if (!fillTemplate.binding && !fillTemplate.declared && !fillTemplate.refs) {
+                nested = false;
+                fillTemplate.binding = {original:[],replacer:[]};
+                fillTemplate.declared = {};
+                fillTemplate.refs = [];
             }
+            if (!htmlTemplate) { return ""; }
             if ($c.isBoolean(offset)) {
                 bound = offset;
                 max = offset = 0;
@@ -3291,6 +3278,7 @@ if (__thisIsNewer) {
             offset = offset || 0;
 
             var props = (htmlTemplate.match(vsyntax) || []).condense(true);
+            // prep template to allow binding
             if (bound) {
                 var nodes = htmlTemplate.toDomElement();
                 function __setBindAttribute(n,value,id) {
@@ -3305,7 +3293,7 @@ if (__thisIsNewer) {
                     }
                 }
                 function __processNodes(n) {
-                    var id = cuid();
+                    var id = suid();
                     for (var i = 0, len = n.attributes.length; i < len; i++) {
                         __setBindAttribute(n,n.attributes[i].value,id);
                     }
@@ -3331,25 +3319,35 @@ if (__thisIsNewer) {
                     htmlTemplate += node.toString();
                 }
             }
-            var bindTemplate = {html: htmlTemplate};
+            var bindTemplate = {html: htmlTemplate}, _observing = fillTemplate._observing;
 
             for (var i = offset; i < max; i++) {
-                var obj = objs[i], regex, template = htmlTemplate,match;
+                var obj = objs[i], regex, template = htmlTemplate, match, bind = "";
 
                 if (bound) {
                     $c.observe(obj);
-                    var bind = fillTemplate._observing["hash_"+fillTemplate._observing.indexOf(obj)];
-                    fillTemplate._observing[bind] = {item:obj,template:bindTemplate};
-                    template = template.replace_all("${craydent_bind}",bind);
+                    bind = _observing["hash_"+_observing.indexOf(obj)];
+                    _observing[bind] = {item:obj,template:bindTemplate};
+                    template = template.replace_all("${craydent_bind}", bind);
                 }
 
                 if (template.contains("${this}")) {
-                    template = template.replace_all(["${this}","${index}"],[parseRaw(obj, true).replace_all([';','[',']'], [';\\','\\[','\\]']),i]);
+                    var uid = __add_fillTemplate_ref(obj);
+                    //template = template.replace_all(["${this}","${index}"],[parseRaw(obj, true).replace_all([';','[',']'], [';\\','\\[','\\]']),i]);
+                    template = template.replace_all(["${this}","${index}"],["fillTemplate.refs['" + uid + "']",i]);
                 }
 
 
                 while (template.contains("${this.") && (match=/\$\{this\.(.+?)\}/.exec(template))) {
-                    value = parseRaw($c.getProperty(obj, match[1]), true);
+                    value = $c.getProperty(obj, match[1]);
+                    if (typeof value == "object") {
+                        value = "fillTemplate.refs['" + __add_fillTemplate_ref(value) + "']";
+                    } else {
+                        value = parseRaw(value, $c.isString(value));
+                    }
+                    //value = parseRaw($c.getProperty(obj, match[1]), true);
+
+                    //template= template.replace_all("${this."+match[1]+"}", value);
                     template= template.replace_all("${this."+match[1]+"}", value);
                 }
                 var objval;
@@ -3358,7 +3356,14 @@ if (__thisIsNewer) {
                     if (!obj.hasOwnProperty(property)) { continue; }
                     var expression = props[j];
                     if (template.contains(expression) && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true}))) {
-                        objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
+                        //objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';','[',']'],['<br />',';\\','\\[','\\]']);
+                        if (typeof objval == "object") {
+                            objval = "fillTemplate.refs['" + __add_fillTemplate_ref(objval) + "']";
+                        } else {
+                            objval = parseRaw(objval, $c.isString(objval));
+                        }
+                        //objval = parseRaw(objval, $c.isString(objval)).replace_all(['\n',';'],['<br />',';\\']);
+                        objval = objval.replace_all(['\n',';'],['<br />',';\\']);
                         if (objval.contains('${')) {
                             objval = fillTemplate(objval,[obj]);
                         }
@@ -3400,14 +3405,17 @@ if (__thisIsNewer) {
                     }
                 }
 
-                template = __logic_parser(template.replace_all(['\\[','\\]'],['[',']']), obj);
+                template = __logic_parser(template, obj, bind);
                 html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
             }
 
             if (domRef) {
                 domRef.parentNode.replaceChild(html.toDomElement(),domRef);
             }
-
+            html = html.replace_all(fillTemplate.binding.original, fillTemplate.binding.replacer);
+            if (!nested) {
+                fillTemplate.binding = fillTemplate.declared = fillTemplate.refs = undefined;
+            }
             return html;
         } catch (e) {
             error('fillTemplate', e);
@@ -3558,7 +3566,7 @@ if (__thisIsNewer) {
             return format ? (new Date()).format(format) : new Date();
         } catch (e) { error('now', e); }
     }
-    function observe(objs, callback, acceptList){
+    function observe(objs, callback, acceptList, parent){
         /*|{
             "info": "Track and trigger events when the object(s) change",
             "category": "Global",
@@ -3592,25 +3600,27 @@ if (__thisIsNewer) {
             var i = 0,obj,
                 _observing = fillTemplate._observing,
                 _observing_previous = fillTemplate._observing_previous,
-                _observing_poll = fillTemplate._observing_poll;
+                _observing_poll = fillTemplate._observing_poll,
+                index = _observing.length;
             callback = callback || foo;
             acceptList = acceptList || ["add", "update", "delete", "reconfigure", "setPrototype", "preventExtensions"];
+            if (parent) {
+                _observing["parents_" + index] = _observing["parents_" + index] || [];
+                _observing["parents_" + index].push(parent);
+            }
 
             if ($w["_$observer_overwrite"]) {
                 while (obj = objs[i++]) {
-                    if (fillTemplate._observing.contains(obj)) {
-                        continue;
-                    }
-                    _observing["hash_" + _observing.length] = cuid();
+                    if (_observing.contains(obj)) { continue; }
+                    _observing["hash_" + index] = suid();
                     _observing.push(obj);
                     $w["_$observer_overwrite"].call(Object, obj, function(changes){
                         __on_observable_change(changes);
                         callback(changes);
                     }, acceptList);
-                    for (var prop in obj) {
-                        if (!obj.hasOwnProperty(prop)) { continue; }
-                        __observe_helper(obj[prop], callback, acceptList);
-                    }
+                    $c.eachProperty(obj, function (value) {
+                        __observe_helper(value, callback, acceptList, obj);
+                    });
                 }
                 return;
             }
@@ -3634,8 +3644,7 @@ if (__thisIsNewer) {
                                     acceptList.contains(option) && callback.call(obj,[changes]);
                                 }
                             }
-                            _observing_previous[j] = {};
-                            $c.duplicate(_observing_previous[j],obj);
+                            _observing_previous[j] = $c.duplicate(obj);
                         }
                         _observing_poll = setTimeout(__observe_delta,$c.OBSERVE_CHECK_INTERVAL);
                     }
@@ -3644,15 +3653,18 @@ if (__thisIsNewer) {
             }
             while (obj = objs[i++]){
                 if (_observing.contains(obj)) { continue; }
+                _observing["hash_" + _observing.length] = suid();
+                _observing.push(obj);
 
-                for (var prop in obj) {
-                    if (!obj.hasOwnProperty(prop)) { continue; }
+                //for (var prop in obj) {
+                $c.eachProperty(obj, function (value, prop) {
+                    if (!value) { return; }
                     if (Object.defineProperty) {
-                        if (obj[prop].constructor == Function) { obj[prop] = (obj[prop]).bind(obj);}
+                        if (value.constructor == Function) { value = obj[prop] = (obj[prop]).bind(obj);}
                         Object.defineProperty(obj,"_"+prop,{
                             enumerable:false,
                             writable:true,
-                            value:obj[prop]
+                            value:value
                         });
                         obj.__defineGetter__(prop, eval("(function(){ return $c.getValue(this._"+prop+"); })"));
                         obj.__defineSetter__(prop,eval("(\
@@ -3666,13 +3678,9 @@ if (__thisIsNewer) {
                             return val;\
                         })"));
                     }
-                    __observe_helper(obj[prop], callback, acceptList);
-                }
-                var dup = {};
-                $c.duplicate(dup,obj);
-                _observing_previous.push(dup);
-                _observing["hash_" + _observing.length] = cuid();
-                _observing.push(obj);
+                    __observe_helper(value, callback, acceptList, obj);
+                });
+                _observing_previous.push($c.duplicate(obj));
             }
         } catch (e) {
             error('observe', e);
@@ -3755,7 +3763,7 @@ if (__thisIsNewer) {
                 if (index == -1) {
                     if (saveCircular) {
                         __windowVars.push(value);
-                        __windowVarNames.push(cuid());
+                        __windowVarNames.push(suid());
                     }
                     raw = "{";
                     for (var prop in value) {
@@ -3809,6 +3817,32 @@ if (__thisIsNewer) {
             return (num2 - num1)*Math.random() + num1;
         } catch (e) {
             error('rand', e);
+        }
+    }
+    function suid(length) {
+        /*|{
+            "info": "Creates a short Craydent/Global Unique Identifier",
+            "category": "Global",
+            "parameters":[],
+
+            "overloads":[
+                {"parameters":[
+                    {"length": ("Integer) Custom length of the short unique identifier"}]}],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#suid",
+            "returnType": "(String)"
+        }|*/
+        try {
+            //noinspection CommaExpressionJS
+            length = length || 10;
+            var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", id = "";
+            while (id.length < length) {
+                id += chars[parseInt(rand(0,62))];
+            }
+
+            return id;
+        } catch (e) {
+            error('suid', e);
         }
     }
     function tryEval(expression, evaluator) {
@@ -4743,7 +4777,7 @@ if (__thisIsNewer) {
 
                             return code_result;
                         },
-                        parser:function (code, obj){
+                        parser:function (code, obj, bind){
                             var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
                                 blocks = __processBlocks(FOR.begin, FOR.end, code),
                                 code_result = "";
@@ -4762,10 +4796,10 @@ if (__thisIsNewer) {
                         }
                     },
                     FOREACH:{
-                        begin:/(?:\$\{foreach (.*?)\s+in\s+(\\?\[\s*\\?\{.*:.*?\}\s*\])\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
+                        begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(.*?)\s*\}\})/i,
                         //begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?\}?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
                         end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
-                        helper:function (code, body,rtnObject,uid, obj) {
+                        helper:function (code, body,rtnObject,uid, obj, bind, ref_obj) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 mresult = code.match(FOREACH.begin),
@@ -4781,25 +4815,36 @@ if (__thisIsNewer) {
                             objs = tryEval(mresult[2] || mresult[4]);
                             var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]);
 
+                            //fillTemplate.binding.original.push(bind+"."+var_name);
+                            //fillTemplate.binding.replacer.push(fillTemplate.refs["ref_" + fillTemplate.refs.indexOf(objs)]);
+
                             rtnObject = rtnObject || {};
                             rtnObject[uid] += "var " + var_name + "s," + var_name + ";";
                             rtnObject[var_name+"s"] = objs;
                             if ($c.isArray(objs)) {
+                                fillTemplate.binding.original.push(bind + "." + var_name);
+                                var bindingCuids = "";
                                 for (var i = 0, len = objs.length; i < len; i++) {
+                                    if (typeof objs[i] == "object") {
+
+                                        bindingCuids += "," + fillTemplate._observing["hash_" + fillTemplate._observing.indexOf(objs[i])];
+                                    }
                                     code_result += "${i="+i+","+var_name+"="+var_name+"s[i],null}" + body;
                                 }
+                                fillTemplate.binding.replacer.push(bindingCuids.substring(1));
                             }
 
                             return code_result;
 
                         },
-                        parser:function (code, obj){
+                        parser:function (code, ref_obj, bind){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
-                                uid = "##"+cuid()+"##",
+                                uid = "##"+suid()+"##",
                                 result_obj = {},
                                 code_result = "", post = "",
                                 blocks = __processBlocks(FOREACH.begin, FOREACH.end, code);
+                                //bindReplacers = {original:[],treplacer:[]};
 
                             result_obj[uid] = "";
 
@@ -4813,7 +4858,7 @@ if (__thisIsNewer) {
                                 }
                                 code_result = code_result || obj.code;
                                 if (!code_result.contains(obj.id)) { continue; }
-                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid,obj));
+                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid,obj,bind,ref_obj));
                             }
                             eval(result_obj[uid]);
                             delete result_obj[uid];
@@ -4832,7 +4877,7 @@ if (__thisIsNewer) {
 
                             });
 
-                            return __logic_parser(code_result + post);
+                            return __logic_parser(code_result + post, obj, bind);
                         }
                     },
                     WHILE: {
@@ -4873,7 +4918,7 @@ if (__thisIsNewer) {
 
                             return code_result;
                         },
-                        parser: function (code) {
+                        parser: function (code, ref_obj, bind) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
                                 lookups = {},
@@ -4969,7 +5014,7 @@ if (__thisIsNewer) {
                             }
                             return code;
                         },
-                        parser:function (code){
+                        parser:function (code, obj, bind){
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
                                 blocks = __processBlocks(IF.begin, IF.end, code),
                                 code_result = "";
@@ -5033,7 +5078,7 @@ if (__thisIsNewer) {
                             }
                             return code;
                         },
-                        parser: function (code) {
+                        parser: function (code, obj, bind) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
                                 blocks = __processBlocks(SWITCH.begin, SWITCH.end, code),
                                 code_result = "";
@@ -5057,7 +5102,7 @@ if (__thisIsNewer) {
                     SCRIPT: {
                         begin: /(\$\{script\})|(\{\{script\}\})/i,
                         end: /(\$\{end script\})|(\{\{end script\}\})/i,
-                        parser: function (code) {
+                        parser: function (code, obj, bind) {
                             var SCRIPT = $c.TEMPLATE_TAG_CONFIG.SCRIPT,
                                 sindex = code.indexOfAlt(SCRIPT.begin),
                                 slen = code.match(SCRIPT.begin)[0].length,
@@ -5140,7 +5185,7 @@ if (__thisIsNewer) {
                             }
                             return pre + str + post;
                         },
-                        parser: function (code) {
+                        parser: function (code, obj, bind) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
                                 lookups = {}, code_result,
                                 blocks = __processBlocks(TRY.begin, TRY.end, code, lookups);
@@ -6337,16 +6382,16 @@ if (__thisIsNewer) {
     }, true);
     _ext(Array, 'group', function(params) {
         /*|{
-         "info": "Array class extension to group records by fields",
-         "category": "Array",
-         "parameters":[
-         {"params": "(Object) specs with common properties:<br />(Object) key<br />(Mixed) cond<br />(Function) reduce<br />(Object) initial"}],
+            "info": "Array class extension to group records by fields",
+            "category": "Array",
+            "parameters":[
+                {"params": "(Object) specs with common properties:<br />(Object) key<br />(Mixed) cond<br />(Function) reduce<br />(Object) initial"}],
 
-         "overloads":[],
+            "overloads":[],
 
-         "description": "http://www.craydent.com/library/1.8.0/docs#array.group",
-         "returnType": "(Array)"
-         }|*/
+            "description": "http://www.craydent.com/library/1.8.0/docs#array.group",
+            "returnType": "(Array)"
+        }|*/
 
         /*         *    parameters:[
          *        {fields: "(Mixed) Fields to use as the projection and to group by"}],
@@ -6385,7 +6430,7 @@ if (__thisIsNewer) {
 
             var props = $c.keys(initial),
                 key = $c.keys(key),
-                arr = [], result = {}, id = cuid();
+                arr = [], result = {}, id = suid();
             _whereHelper(this, condition,function (obj, i) {
                 // _groupFieldHelper creates a grouping string based on the field value pairs
                 var fields = key;
@@ -7935,6 +7980,27 @@ if (__thisIsNewer) {
             return _duplicate({}, this, recursive);
         } catch (e) {
             error('Object.duplicate', e);
+        }
+    });
+    _ao("eachProperty", function (callback) {
+        /*|{
+            "info": "Object class extension to loop through all properties where hasOwnValue is true.",
+            "category": "Object",
+            "parameters":[
+                {"callback": "(Function) Function to call for each property.  Callback will have two arguments (the value of the object and the property name) passed"}],
+
+            "overloads":[],
+
+            "description": "http://www.craydent.com/library/1.8.0/docs#object.eachProperty",
+            "returnType": "(Object)"
+        }|*/
+        try {
+            for (var prop in this) {
+                if (!this.has(prop)) { continue; }
+                if (callback.call(this, this[prop], prop)) { break; }
+            }
+        } catch (e) {
+            error('Object.eachProperty', e);
         }
     });
     _ao("equals", function (compare, props){
