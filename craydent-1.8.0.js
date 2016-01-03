@@ -3196,7 +3196,6 @@ if (__thisIsNewer) {
         }
     }
     function fillTemplate (htmlTemplate, objs, offset, max, bound) {
-        // TODO allow mix of logic and bind
         /*|{
             "info": "Function for templetizing",
             "category": "Global",
