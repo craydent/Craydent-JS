@@ -2235,8 +2235,6 @@ if (__thisIsNewer) {
             "returnType": "(void)"
         }|*/
         try {
-            this._start;
-            this._end;
             this.executionTime = 0;
             this.start = function () {
                 this._start = new Date();
@@ -2622,28 +2620,25 @@ if (__thisIsNewer) {
          "description": "http://www.craydent.com/library/1.8.0/docs#Request",
          "returnType": "(XMLHttpRequest)"}
          |*/
+        var ajaxHttpCaller;
         try {
-            var ajaxHttpCaller;
+            //request object for mozilla
+            ajaxHttpCaller = new XMLHttpRequest();
+        } catch (ex) {
+            //request object for IE
             try {
-                //request object for mozilla
-                ajaxHttpCaller = new XMLHttpRequest();
+                ajaxHttpCaller = new ActiveXObject("Msxml2.XMLHTTP");
             } catch (ex) {
-                //request object for IE
                 try {
-                    ajaxHttpCaller = new ActiveXObject("Msxml2.XMLHTTP");
-                } catch (ex) {
-                    try {
-                        ajaxHttpCaller = new ActiveXObject("Microsoft.XMLHTTP");
-                    } catch (ex) //noinspection JSConstructorReturnsPrimitive
-                    {
-                        return null;
-                    }
+                    ajaxHttpCaller = new ActiveXObject("Microsoft.XMLHTTP");
+                } catch (ex) //noinspection JSConstructorReturnsPrimitive
+                {
+                    error("Request", e);
+                    return null;
                 }
             }
-            return ajaxHttpCaller;
-        } catch (e) {
-            error("Request", e);
         }
+        return ajaxHttpCaller;
     }
     /*Responsivizer*/
     /* Responsive actions for 3 tiers
@@ -3666,16 +3661,16 @@ if (__thisIsNewer) {
                             value:value
                         });
                         obj.__defineGetter__(prop, eval("(function(){ return $c.getValue(this._"+prop+"); })"));
-                        obj.__defineSetter__(prop,eval("(\
-                        function(val){\
-                            if (val.constructor == Function) { val = (val).bind(this); }\
-                            var oldVal = this['"+prop+"'];\
-                            this._"+prop+"=val;\
-                            var changes = [{name:'"+prop+"',object:this,type:'update',oldVal:oldVal}];\
-                            __on_observable_change(changes);\
-                            acceptList.contains('update') && callback.call(changes);\
-                            return val;\
-                        })"));
+                        obj.__defineSetter__(prop,eval("("+
+                            "function(val){"+
+                            "if (val.constructor == Function) { val = (val).bind(this); }"+
+                            "var oldVal = this['"+prop+"'];"+
+                            "this._"+prop+"=val;"+
+                            "var changes = [{name:'"+prop+"',object:this,type:'update',oldVal:oldVal}];"+
+                            "__on_observable_change(changes);"+
+                            "acceptList.contains('update') && callback.call(changes);"+
+                            "return val;"+
+                            "})"));
                     }
                     __observe_helper(value, callback, acceptList, obj);
                 });
@@ -4426,15 +4421,11 @@ if (__thisIsNewer) {
             "description": "http://www.craydent.com/library/1.8.0/docs#isNull",
             "returnType": "()"
         }|*/
-        try {
-            var isnull = value == null || value == undefined;
-            if (defaultValue == null || defaultValue == undefined) {
-                return isnull;
-            }
-            return isnull ? defaultValue : value;
-        } catch (e) {
-            error("isNull", e);
+        var isnull = value == null || value == undefined;
+        if (defaultValue == null || defaultValue == undefined) {
+            return isnull;
         }
+        return isnull ? defaultValue : value;
     }
     function isOpera(){
         /*|{
@@ -6774,6 +6765,7 @@ if (__thisIsNewer) {
         }
     }, true);
     _ext(Array, 'mapReduce', function(map, reduce, options) {
+        // TODO: implement mapReduce
         /*|{
          "info": "Array class extension to run map-reduce aggregation over records",
          "category": "Array",
