@@ -573,9 +573,9 @@ if (__thisIsNewer) {
                 thenStatement = condition[1];
                 elseStatement = condition[2];
             } else {
-                boolExpression = condition.if;
-                thenStatement = condition.then;
-                elseStatement = condition.else;
+                boolExpression = condition["if"];
+                thenStatement = condition["then"];
+                elseStatement = condition["else"];
             }
             //return [doc].where(boolExpression).length ? thenStatement : elseStatement;
             return __processExpression(doc, boolExpression) ? thenStatement : elseStatement;
@@ -787,7 +787,7 @@ if (__thisIsNewer) {
                 case "$map":
                     var input = __processExpression(doc, expr[field].input),
                         v_as = "$" + expr[field].as,
-                        v_in = expr[field].in;
+                        v_in = expr[field]["in"];
 
                     for (var i = 0, len = input.length; i < len; i++) {
                         doc[v_as] = input[i];
@@ -805,7 +805,7 @@ if (__thisIsNewer) {
                         doc["$" + prop] = __processExpression(doc, vars[prop]);
                         rmProps.push(prop);
                     }
-                    rtn = __processExpression(doc, expr[field].in);
+                    rtn = __processExpression(doc, expr[field]["in"]);
                     for (var i = 0, len = rmProps.length; i < len; i++) {
                         delete doc[rmProps[i]];
                     }
@@ -2058,10 +2058,10 @@ if (__thisIsNewer) {
                 };
             if (characters) {
                 if (_isArray(characters)) {
-                    var char = "", i = 0;
+                    var ch, i = 0;
                     trimChars = {};
-                    while (char = characters[i++]) {
-                        trimChars[char] = 1;
+                    while (ch = characters[i++]) {
+                        trimChars[ch] = 1;
                     }
                 } else if (_isString(characters)) {
                     trimChars = eval('({"'+characters+'":1})');
@@ -2771,7 +2771,7 @@ if (__thisIsNewer) {
             if (!c && !values.length) { return {}; }
             if (options.path && $c.isString(options.path)) {path = 'path=' + options.path + ';'}
             if (options.domain && $c.isString(options.domain)) {domain = 'domain=' + options.domain + ';'}
-            if (options.delete) {
+            if (options["delete"]) {
                 $d.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;' + path + domain;
                 return true;
             }
@@ -4737,9 +4737,9 @@ if (__thisIsNewer) {
                     IGNORE_CHARS:['\n'],
                     /* loop config */
                     FOR:{
-                        begin:/(?:\$\{for (.*?);(.*?);(.*?\}?)\})|(?:\{\{for (.*?);(.*?);(.*?\}?)\}\})/i,
-                        end:/(\$\{end for\})|(\{\{end for\}\})/i,
-                        helper:function(code, body){
+                        "begin":/(?:\$\{for (.*?);(.*?);(.*?\}?)\})|(?:\{\{for (.*?);(.*?);(.*?\}?)\}\})/i,
+                        "end":/(\$\{end for\})|(\{\{end for\}\})/i,
+                        "helper":function(code, body){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 mresult = code.match(ttc.FOR.begin),
                                 condition, exec, dvars, vars = "", ovars = {},code_result = "";
@@ -4767,7 +4767,7 @@ if (__thisIsNewer) {
 
                             return code_result;
                         },
-                        parser:function (code, obj, bind){
+                        "parser":function (code, obj, bind){
                             var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
                                 blocks = __processBlocks(FOR.begin, FOR.end, code),
                                 code_result = "";
@@ -4786,10 +4786,10 @@ if (__thisIsNewer) {
                         }
                     },
                     FOREACH:{
-                        begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(.*?)\s*\}\})/i,
+                        "begin":/(?:\$\{foreach (.*?)\s+in\s+(.*?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(.*?)\s*\}\})/i,
                         //begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?\}?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
-                        end:/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
-                        helper:function (code, body,rtnObject,uid, obj, bind, ref_obj) {
+                        "end":/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
+                        "helper":function (code, body,rtnObject,uid, obj, bind, ref_obj) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 mresult = code.match(FOREACH.begin),
@@ -4827,7 +4827,7 @@ if (__thisIsNewer) {
                             return code_result;
 
                         },
-                        parser:function (code, ref_obj, bind){
+                        "parser":function (code, ref_obj, bind){
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 uid = "##"+suid()+"##",
@@ -4871,9 +4871,9 @@ if (__thisIsNewer) {
                         }
                     },
                     WHILE: {
-                        begin: /(?:\$\{while\s*\((.*?)\)\s*\})|(?:\{\{while\s*\((.*?)\)\s*\}\})/i,
-                        end: /(?:\$\{end while\})|(?:\{\{end while\}\})/i,
-                        helper: function (code,body) {
+                        "begin": /(?:\$\{while\s*\((.*?)\)\s*\})|(?:\{\{while\s*\((.*?)\)\s*\}\})/i,
+                        "end": /(?:\$\{end while\})|(?:\{\{end while\}\})/i,
+                        "helper": function (code,body) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
                                 mresult = code.match(WHILE.begin),
@@ -4908,7 +4908,7 @@ if (__thisIsNewer) {
 
                             return code_result;
                         },
-                        parser: function (code, ref_obj, bind) {
+                        "parser": function (code, ref_obj, bind) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
                                 lookups = {},
@@ -4959,11 +4959,11 @@ if (__thisIsNewer) {
 
                     /* conditional config*/
                     IF:{
-                        begin:/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        elseif:/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        else:/\$\{else\}|\{\{else\}\}/i,
-                        end:/\$\{end if\}|\{\{end if\}\}/i,
-                        helper:function (code) {
+                        "begin":/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        "elseif":/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        "else":/\$\{else\}|\{\{else\}\}/i,
+                        "end":/\$\{end if\}|\{\{end if\}\}/i,
+                        "helper":function (code) {
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
                                 ifmatch = (code.match(IF.begin) || []).condense(),
                                 endlength = code.match(IF.end)[0].length,
@@ -4975,9 +4975,9 @@ if (__thisIsNewer) {
                                     ifmatch[j] = ifmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
                                 }
                                 var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
-                                    ifsyntax = new RegExp(IF.begin.source+"|"+IF.elseif.source+"|"+IF.else.source,'i');
+                                    ifsyntax = new RegExp(IF.begin.source+"|"+IF.elseif.source+"|"+IF["else"].source,'i');
 
-                                if (!code.match(new RegExp(IF.elseif.source+"|"+IF.else.source,'ig'))) {
+                                if (!code.match(new RegExp(IF.elseif.source+"|"+IF["else"].source,'ig'))) {
                                     if ("undefined" == ifmatch[1] || !tryEval(ifmatch[1])) {
                                         return pre + post;
                                     }
@@ -4996,7 +4996,7 @@ if (__thisIsNewer) {
                                             return pre + code.substring(sindex) + post;
                                         }
                                         return pre + code.substring(sindex, eindex) + post;
-                                    } else if (ifmatch[i].match(IF.else)) {
+                                    } else if (ifmatch[i].match(IF["else"])) {
                                         return pre + code.substring(sindex,endindex) + post;
                                     }
                                 }
@@ -5004,7 +5004,7 @@ if (__thisIsNewer) {
                             }
                             return code;
                         },
-                        parser:function (code, obj, bind){
+                        "parser":function (code, obj, bind){
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
                                 blocks = __processBlocks(IF.begin, IF.end, code),
                                 code_result = "";
@@ -5021,19 +5021,19 @@ if (__thisIsNewer) {
                         }
                     },
                     SWITCH: {
-                        begin: /(\$\{switch\s+\((.*?)\)\s*\})|(\{\{switch\s+\((.*?)\)\s*\}\})/i,
-                        end: /(\$\{end switch\})|(\{\{end switch\}\})/i,
-                        case: /(?:\$\{case\s+(.*?)\s*?:\})|(?:\{\{case\s+(.*?)\s*?:\}\})/i,
-                        default: /(\$\{default\})|(\{\{default\}\})/i,
-                        break: /(\$\{break\})|(\{\{break\}\})/i,
-                        helper: function (code) {
+                        "begin": /(\$\{switch\s+\((.*?)\)\s*\})|(\{\{switch\s+\((.*?)\)\s*\}\})/i,
+                        "end": /(\$\{end switch\})|(\{\{end switch\}\})/i,
+                        "case": /(?:\$\{case\s+(.*?)\s*?:\})|(?:\{\{case\s+(.*?)\s*?:\}\})/i,
+                        "default": /(\$\{default\})|(\{\{default\}\})/i,
+                        "break": /(\$\{break\})|(\{\{break\}\})/i,
+                        "helper": function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                                csyntax = SWITCH.case,
+                                csyntax = SWITCH["case"],
                                 switchmatch = (code.match(SWITCH.begin) || []).condense(),
                                 endlength = code.match(SWITCH.end)[0].length,
                                 startindex = code.indexOfAlt(SWITCH.begin),
                                 endindex = code.indexOfAlt(SWITCH.end),
-                                brk = SWITCH.break, dflt = SWITCH.default;
+                                brk = SWITCH["break"], dflt = SWITCH["default"];
 
 
                             if (switchmatch.length) {
@@ -5043,7 +5043,7 @@ if (__thisIsNewer) {
                                 }
                                 var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
                                     val = tryEval(switchmatch[2]) || switchmatch[2],
-                                    cgsyntax = SWITCH.case.addFlags("g"),
+                                    cgsyntax = SWITCH["case"].addFlags("g"),
                                     cases = code.match(cgsyntax);
                                 code = code.substring(startindex + (switchmatch[0] || "").length, endindex);
 
@@ -5051,7 +5051,7 @@ if (__thisIsNewer) {
                                     return pre + code.cut(startindex, endindex + endlength) + post;
                                 }
                                 for (var i = 0, len = cases.length; i < len; i++) {
-                                    var cs = cases[i].match(SWITCH.case),
+                                    var cs = cases[i].match(SWITCH["case"]),
                                         cvalue = cs[1] || cs[2];
                                     if (val == cvalue) {
                                         var cindex = code.indexOf(cases[i]),
@@ -5068,7 +5068,7 @@ if (__thisIsNewer) {
                             }
                             return code;
                         },
-                        parser: function (code, obj, bind) {
+                        "parser": function (code, obj, bind) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
                                 blocks = __processBlocks(SWITCH.begin, SWITCH.end, code),
                                 code_result = "";
@@ -5090,9 +5090,9 @@ if (__thisIsNewer) {
 
                     /* error handling and execution config */
                     SCRIPT: {
-                        begin: /(\$\{script\})|(\{\{script\}\})/i,
-                        end: /(\$\{end script\})|(\{\{end script\}\})/i,
-                        parser: function (code, obj, bind) {
+                        "begin": /(\$\{script\})|(\{\{script\}\})/i,
+                        "end": /(\$\{end script\})|(\{\{end script\}\})/i,
+                        "parser": function (code, obj, bind) {
                             var SCRIPT = $c.TEMPLATE_TAG_CONFIG.SCRIPT,
                                 sindex = code.indexOfAlt(SCRIPT.begin),
                                 slen = code.match(SCRIPT.begin)[0].length,
@@ -5110,15 +5110,15 @@ if (__thisIsNewer) {
 
                     },
                     TRY: {
-                        begin: /(\$\{try\})|(\{\{try\}\})/i,
-                        catch: /(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
-                        finally: /(\$\{finally\})|(\{\{finally\}\})/i,
-                        end: /(\$\{end try\})|(\{\{end try\}\})/i,
-                        helper: function (code, lookups, exec) {
+                        "begin": /(\$\{try\})|(\{\{try\}\})/i,
+                        "catch": /(?:\$\{catch\s+\((.*)?\)\s*\})|(?:\{\{catch\s+\((.*)?\)\s*\}\})/i,
+                        "finally": /(\$\{finally\})|(\{\{finally\}\})/i,
+                        "end": /(\$\{end try\})|(\{\{end try\}\})/i,
+                        "helper": function (code, lookups, exec) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
-                                cindex = code.indexOfAlt(TRY.catch),
-                                findex = code.indexOfAlt(TRY.finally),
-                                eindex = code.indexOfAlt(TRY.end),
+                                cindex = code.indexOfAlt(TRY["catch"]),
+                                findex = code.indexOfAlt(TRY["finally"]),
+                                eindex = code.indexOfAlt(TRY["end"]),
                                 tend = cindex;
 
                             if (tend == -1) {
@@ -5156,7 +5156,7 @@ if (__thisIsNewer) {
                                     echo.out = "";
                                     tend = findex != -1 ? findex : eindex;
                                     var catchBlock = code.substring(cindex, tend),
-                                        catchLine = catchBlock.match(TRY.catch);
+                                        catchLine = catchBlock.match(TRY["catch"]);
                                     catchBlock = catchBlock.replace(catchLine[0], ''),
                                     errorString = JSON.stringify(e);
 
@@ -5170,12 +5170,12 @@ if (__thisIsNewer) {
                             } finally {
                                 if (findex != -1) {
                                     echo.out = "";
-                                    str += eval("(function(){" + code.substring(findex + code.match(TRY.finally)[0].length, eindex) + ";return echo.out; })()");
+                                    str += eval("(function(){" + code.substring(findex + code.match(TRY["finally"])[0].length, eindex) + ";return echo.out; })()");
                                 }
                             }
                             return pre + str + post;
                         },
-                        parser: function (code, obj, bind) {
+                        "parser": function (code, obj, bind) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
                                 lookups = {}, code_result,
                                 blocks = __processBlocks(TRY.begin, TRY.end, code, lookups);
@@ -5197,8 +5197,8 @@ if (__thisIsNewer) {
                         return  match.slice(2,match.contains('}}') ? -2 : -1);
                     },
                     DECLARE:{
-                        syntax: /(?:\$\{DECLARE (.*?);?\})|(?:\{\{DECLARE (.*?);?\}\})/i,
-                        parser: function (htmlTemplate, declare){
+                        "syntax": /(?:\$\{DECLARE (.*?);?\})|(?:\{\{DECLARE (.*?);?\}\})/i,
+                        "parser": function (htmlTemplate, declare){
                             var matches = declare.match($c.TEMPLATE_TAG_CONFIG.DECLARE.syntax),
                                 var_nameValue = (matches[1]||matches[2]).strip(';').split("=");
 
@@ -5293,18 +5293,18 @@ if (__thisIsNewer) {
             $c = Craydent,
             __$$ = [
                 {
-                    func: '$',
-                    selector: 'getElementById',
-                    overwrite: '_$overwrite'
+                    "func": '$',
+                    "selector": 'getElementById',
+                    "overwrite": '_$overwrite'
                 },{
-                    func: '$CSS',
-                    selector: 'querySelectorAll',
-                    overwrite: '_$CSSoverwrite',
-                    default: '_querySelectorAll'
+                    "func": '$CSS',
+                    "selector": 'querySelectorAll',
+                    "overwrite": '_$CSSoverwrite',
+                    "default": '_querySelectorAll'
                 },{
-                    func: '$TAG',
-                    selector: 'getElementsByTagName',
-                    overwrite: '_$TAGoverwrite'
+                    "func": '$TAG',
+                    "selector": 'getElementsByTagName',
+                    "overwrite": '_$TAGoverwrite'
                 }];
 
 
