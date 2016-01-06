@@ -1,8 +1,8 @@
 /*/---------------------------------------------------------/*/
 /*/ Craydent LLC v1.8.0                                     /*/
-/*/	Copyright 2011 (http://craydent.com/about)          /*/
+/*/	Copyright 2011 (http://craydent.com/about)              /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
-/*/	(http://craydent.com/license)                       /*/
+/*/	(http://craydent.com/license)                           /*/
 /*/---------------------------------------------------------/*/
 
 /*----------------------------------------------------------------------------------------------------------------
