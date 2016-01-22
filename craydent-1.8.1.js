@@ -8287,7 +8287,16 @@ if (__thisIsNewer) {
          "returnType": "(Bool)"
          }|*/
         try {
-            return _isEmpty (obj);
+            if ($c.isArray(this) || $c.isString(this)) {
+                return this.length == 0;
+            }
+            if ($c.isObject(this)) {
+                return $c.itemCount(this) == 0;
+            }
+            if ($c.isFunction(this)) {
+                return /function.*?\(.*?\)\{\}/.test(this.toString().replace(/[\n ]/g,''));
+            }
+            return false;
         } catch (e) {
             error("Object.isEmpty", e);
             return false;
