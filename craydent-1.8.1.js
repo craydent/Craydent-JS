@@ -7813,7 +7813,6 @@ if (__thisIsNewer) {
         }
     }, true);
 
-
     /*----------------------------------------------------------------------------------------------------------------
      /-	RegExp class Extensions
      /---------------------------------------------------------------------------------------------------------------*/
@@ -8276,6 +8275,24 @@ if (__thisIsNewer) {
             error('Object.isDomElement', e);
         }
     });
+    _ao('isEmpty', function() {
+        /*|{
+         "info": "Object class extension to check if it is empty",
+         "category": "Object",
+         "parameters":[],
+
+         "overloads":[],
+
+         "description": "http://www.craydent.com/library/1.8.0/docs#object.isEmpty",
+         "returnType": "(Bool)"
+         }|*/
+        try {
+            return _isEmpty (obj);
+        } catch (e) {
+            error("Object.isEmpty", e);
+            return false;
+        }
+    }, true);
     _ao("isFloat", function() {
         /*|{
             "info": "Object class extension to check if object is a float",
