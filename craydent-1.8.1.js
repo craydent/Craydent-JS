@@ -5312,7 +5312,7 @@ if (__thisIsNewer) {
 
         $w._onload = $w.onload || foo;
         $w.onload = function () {
-            $c.browser.SCROLLBAR_WIDTH = (function() {
+            $c.BROWSER.SCROLLBAR_WIDTH = (function() {
                 try {
                     var sizer_element, sizer_child, width;
                     sizer_element = '<div style="width:50px;height:50px;overflow:auto"><div></div></div>'.toDomElement();
@@ -6000,7 +6000,7 @@ if (__thisIsNewer) {
             var div = $d.createElement('div'), children;
 
             // ie special case when creating options
-            if ($c.browser.IE && $c.browser.IE_VERSION < 10 && this.startsWith("<option")) {
+            if ($c.BROWSER.IE && $c.BROWSER.IE_VERSION < 10 && this.startsWith("<option")) {
                 div = $d.createElement('select');
                 var parts = this.match(/<option(.*?)>(.*?)<\/option>/i),
                     attrs = parts[1].trim(),
