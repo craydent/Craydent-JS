@@ -1046,7 +1046,7 @@ if (__thisIsNewer) {
 
                 template = template.contains(match[1]) ? template.replace(match[1], (match[1] = match[1].replace_all(['\\[', '\\]'], ['[', ']']))) : template;
                 template = template.replace_all("${" + pre + match[1] + post +"}",
-                    $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : (tryEval("("+func+")")||foo)() || "");
+                    $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : (tryEval("("+func+")")||foo).apply(obj, funcValue) || "");
             }
             return template;
         } catch (e) {
