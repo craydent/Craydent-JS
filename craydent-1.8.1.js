@@ -14,7 +14,6 @@ var __version = "1.8.1",
     $g = $w,
     $d = typeof document != "undefined" ? document : {},
     $l = $w.location;
-
 if ($w.__craydentLoaded || typeof($c) != "undefined") {
     var __current = ($w.__craydentVersion||$c.VERSION||"").split("."),
         __thisVersion = __version.split(".");
