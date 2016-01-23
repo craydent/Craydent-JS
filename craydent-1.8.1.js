@@ -6074,7 +6074,6 @@ if (__thisIsNewer) {
         try {
             var rtn = this;
             for (var i = 0, len = pipelines.length; i < len; i++) {
-                //if (pipelines.hasOwnProperty(prop)) { continue; }
                 rtn = __processStage(rtn, pipelines[i]);
             }
             return rtn;
