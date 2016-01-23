@@ -6448,6 +6448,7 @@ if (__thisIsNewer) {
             });
 
             for (var i = 0, len = arr.length; i < len; i++) {
+                //var prop = _groupFieldHelper(arr[i], $c.getKeys(arr[i]));
                 arr[i] = finalize($c.merge(arr[i],result[arr[i][id]]));
             }
             return arr;
