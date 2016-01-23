@@ -5520,7 +5520,7 @@ if (__thisIsNewer) {
             error('String.fillTemplate', e);
         }
     });
-    _ext(String, 'highlight', function (search, clazz, tag) {
+    _ext(String, 'highlight', function (search, cssClass, tag) {
         /*|{
             "info": "String class extension to surround search words with the given tag(default span) and class (default chighlight)",
             "category": "String",
@@ -5530,17 +5530,17 @@ if (__thisIsNewer) {
             "overloads":[
                 {"parameters":[
                     {"search": "(RegExp) Regular expression to search"},
-                    {"clazz": "(String) Class to add for highlighting"}]},
+                    {"cssClass": "(String) Class to add for highlighting"}]},
                 {"parameters":[
                     {"search": "(RegExp) Regular expression to search"},
-                    {"clazz": "(String) Class to add for highlighting"}]},
+                    {"cssClass": "(String) Class to add for highlighting"}]},
                 {"parameters":[
                     {"search": "(String) String to search"},
-                    {"clazz": "(String) Class to add for highlighting"},
+                    {"cssClass": "(String) Class to add for highlighting"},
                     {"tag": "(String) Tag to use to surround the search"}]},
                 {"parameters":[
                     {"search": "(String) String to search"},
-                    {"clazz": "(String) Class to add for highlighting"},
+                    {"cssClass": "(String) Class to add for highlighting"},
                     {"tag": "(String) Tag to use to surround the search"}]}],
 
             "description": "http://www.craydent.com/library/1.8.0/docs#string.cut",
