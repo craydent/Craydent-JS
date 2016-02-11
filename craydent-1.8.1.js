@@ -4859,7 +4859,7 @@ if (__thisIsNewer) {
                                 eval(prop + "=" + "result_obj['" + prop + "']");
                             }
 
-                            var matches = code_result.match(ttc.VARIABLE);
+                            var matches = code_result.match(ttc.VARIABLE) || [];
                             matches.map(function (var_match) {
                                 var var_match_name = ttc.VARIABLE_NAME(var_match),
                                     str = "";
@@ -4937,7 +4937,7 @@ if (__thisIsNewer) {
                                 vars += "var " + prop + "=" + declared[prop] + ";";
                             }
                             eval(vars);
-                            var matches = code_result.match(ttc.VARIABLE);
+                            var matches = code_result.match(ttc.VARIABLE) || [];
                             matches.map(function (var_match) {
                                 var var_match_name = ttc.VARIABLE_NAME(var_match),
                                     var_match_index = code_result.indexOf(var_match),
