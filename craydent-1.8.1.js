@@ -3397,7 +3397,7 @@ if (__thisIsNewer) {
                         }
                     }
                 }
-
+                template = template.contains(/\$\{.*?(\|.*?)+?\}/) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
                 template = __logic_parser(template, obj, bind);
                 html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
             }
