@@ -3857,6 +3857,7 @@ if (__thisIsNewer) {
             if (value === undefined && expression != "undefined") {
                 throw '';
             }
+            return value;
         } catch(e) {
             try {
                 return eval("("+expression+")");
