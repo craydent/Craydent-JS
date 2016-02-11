@@ -1095,7 +1095,7 @@ if (__thisIsNewer) {
                     }
 
                 }
-                obj[i] != "" && !isNull(obj[i]) && (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && arr.push(obj[i]);
+                obj[i] !== "" && !isNull(obj[i]) && (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && arr.push(obj[i]);
             }
             return arr;
         } catch (e) {
