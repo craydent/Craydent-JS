@@ -2776,7 +2776,7 @@ if (__thisIsNewer) {
             }
 
             if (values.length) {
-                var expires = "";
+                var expires = ";";
                 if ($c.isInt(options.expiration)) {
                     var dt = new Date();
                     dt.setDate(dt.getDate() + options.expiration);
@@ -8710,8 +8710,9 @@ if (__thisIsNewer) {
             var str = '';
             for (var prop in this) {
                 if (this.hasOwnProperty(prop)) {
+                    var value = $c.isObject(this[prop]) ? JSON.stringify(this[prop]) : this[prop];
                     urlEncode &&
-                    (str += prefix + encodeURIComponent(prop) + delimiter + encodeURIComponent(this[prop])) || (str += prefix + prop + delimiter + this[prop]);
+                    (str += prefix + encodeURIComponent(prop) + delimiter + encodeURIComponent(value)) || (str += prefix + prop + delimiter + value);
                 }
             }
             return str;
