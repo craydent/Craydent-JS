@@ -140,13 +140,12 @@ if (__thisIsNewer) {
     }
     function __and (){
         try {
-            var a = 0, arg;
-            while (arg = arguments[a++]) {
-                if(!arg){
-                    return arguments[a - 2] || "";
+		var a = 0;
+		for (len = arguments.length; a < len; a++) {
+			var arg = arguments[a];
+			if (!arg) { return ""; }
                 }
-            }
-            return arguments[arguments.length - 1];
+		return arguments[a - 1];
         } catch (e) {
             error('fillTemplate.__and', e);
         }
@@ -159,7 +158,7 @@ if (__thisIsNewer) {
                     if (!q.hasOwnProperty(prop)) { continue; }
                     if (!(prop in operands
                             && _subQuery(record, q[prop], prop, index)
-                            || _subQuery(record, q[prop], "$equals", prop, index)
+						|| _subQuery(record, q[prop], $c.isObject(q[prop]) ? undefined : "$equals", prop, index)
                         )) {
                         return false;
                     }
@@ -175,6 +174,42 @@ if (__thisIsNewer) {
         for (var id in _micro_templates) {
             if (!_micro_templates.hasOwnProperty(id)) { continue; }
             if (!$CSS("[data-craydent-bind*='"+id+"']").length) { delete _micro_templates[id]; }
+        }
+    }
+    function __contextualizeMethods (ctx) {
+        try {
+            ctx = ctx || {};
+            ctx.Benchmarker = Benchmarker;
+            ctx.Cursor = Cursor;
+            ctx.JSZip = JSZip;
+            ctx.OrderedList = OrderedList;
+            ctx.Queue = Queue;
+            ctx.Set = Set;
+            ctx.addObjectPrototype = addObjectPrototype;
+            ctx.ajax = ajax;
+            ctx.cout = cout;
+            ctx.cuid = cuid;
+            ctx.emit = emit;
+            ctx.error = error;
+            ctx.fillTemplate = fillTemplate;
+            ctx.foo = foo;
+            ctx.isNull = isNull;
+            ctx.logit = logit;
+            ctx.namespace = namespace;
+            ctx.next = next;
+            ctx.now = now;
+            ctx.parseBoolean = parseBoolean;
+            ctx.parseRaw = parseRaw;
+            ctx.rand = rand;
+            ctx.suid = suid;
+            ctx.syncroit = syncroit;
+            ctx.tryEval = tryEval;
+            ctx.wait = wait;
+            ctx.xmlToJson = xmlToJson;
+            ctx.zipit = zipit;
+            return ctx;
+        } catch (e) {
+            error('__contextualizeMethods', e);
         }
     }
     function __convert_regex_safe(reg_str) {
@@ -225,92 +260,23 @@ if (__thisIsNewer) {
                 str = "";
             if ($c.isArray(obj)) {
                 props = obj.slice(0);
-            }
-            if ($c.isObject(obj)) {
-                for (var prop in obj) {
-                    if (obj.hasOwnProperty(prop)) {
-                        props.push(prop);
-                    }
-                }
-            }
-		var i = 0, prop;
-		while (prop = props[i++]) {
-			var pre = prePost[0].replace_all(['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]),
-				post = prePost[1].replace_all(['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]);
-			str += pre + prop + post + delimiter;
-            }
-            return str.slice(0,-1*delimiter.length);
+			} else if ($c.isObject(obj)) {
+	            for (var prop in obj) {
+	                if (obj.hasOwnProperty(prop)) {
+	                    props.push(prop);
+	                }
+	            }
+	        }
+			for (var i = 0, len = props.length; i < len; i++) {
+			//while (prop = props[i++]) {
+				var prop = props[i];
+				var pre = $c.replace_all(prePost[0],['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]),
+					post = $c.replace_all(prePost[1],['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]);
+					str += pre + prop + post + delimiter;
+	        }
+	        return str.slice(0,-1*delimiter.length);
         } catch (e) {
             error('fillTemplate.enum', e);
-        }
-    }
-    function __interpreter (template, obj) {
-        try {
-            var codeBlock = /\$\{if .*?\}([\s\S]*)\$\{end_if\}/g.exec(template),
-                ifb = "${if(",
-                efb = "${end_if}";
-//            if (!codeBlock) {
-//                return template;
-//            }
-//            codeBlock = codeBlock[0];
-
-            template = template.replace_all(['${if (',') }'],['${if(',')}']);
-            var ifcount = 0;
-            var efcount = 0;
-            var ifindex = template.indexOf(ifb),
-                efindex = template.indexOf(efb);
-
-            if (ifindex == -1) {
-                return template;
-            }
-            //noinspection CommaExpressionJS
-            ifcount++, efcount++;
-
-
-            var before = template.substring(0,ifindex);
-            template = template.substring(ifindex);
-            ifindex = 0;
-            var blockstart = template.indexOf(')}'),
-                cond = template.substring(5, blockstart).strip();
-
-
-
-            while (ifcount == 1 || ifcount != efcount) {
-                ifindex = template.indexOf(ifb,ifindex+1);
-                if (ifindex > -1) {
-                    if (ifindex < efindex) {
-                        ifcount++;
-                    } else {
-                        efcount++;
-                        efindex = template.indexOf(efb,efindex+1);
-                    }
-                } else {
-                    efindex++;
-                    break;
-                }
-            }
-            if (ifcount == 1) {
-                efindex = template.indexOf(efb);
-            }
-            var block = template.substring(blockstart + 2, efindex),
-                statement = template.substring(0,efindex + efb.length);
-
-            if (cond.contains('${')) {
-                cond = fillTemplate(cond.replace_all(['${','}'],['"${','}"']), obj);
-            }
-            if(!tryEval(cond)) {
-                template = before + template.replace(statement, '');
-            } else {
-//                template = before + template.replace(block, __interpreter(block,obj));
-                template = before + template.replace(statement, __interpreter(block,obj));
-            }
-
-            return __interpreter(template,obj);
-
-
-
-        } catch (e) {
-            error('fillTemplate.interpreter', e);
         }
     }
     function __logic_parser (code, obj, bind) {
@@ -318,14 +284,14 @@ if (__thisIsNewer) {
             return "";
         }
         var ttc = $c.TEMPLATE_TAG_CONFIG, indexes = [], logic = {};
-        code = code.replace_all(ttc.IGNORE_CHARS,['']);
+        code = $c.replace_all(code,ttc.IGNORE_CHARS,['']);
         $c.eachProperty(ttc, function (value) {
             if (!value.begin) { return; }
-            var index = code.indexOfAlt(value.begin);
+            var index = $c.indexOfAlt(code,value.begin);
             indexes.push(index);
             logic[index] = value;
         });
-        var index = Math.min.apply(Math,indexes.condense([-1]));
+        var index = Math.min.apply(Math,$c.condense(indexes,[-1]));
 
         if (!logic[index]) { return code; }
 
@@ -378,8 +344,8 @@ if (__thisIsNewer) {
     }
     function __or (){
         try {
-		var a = 0, arg;
-		while (arg = arguments[a++]) {
+		for (var a = 0, len = arguments.length; a < len; a++) {
+			var arg = arguments[a];
 			if(arg){ return arg; }
             }
             return "";
@@ -390,7 +356,7 @@ if (__thisIsNewer) {
     function __processBlocks (start, end, code, lookups) {
         lookups = lookups || {};
         var blocks = [], sindexes = [], sindex = 0, eindexes = [], eindex = 0;
-        while ((sindex = code.indexOfAlt(start, sindex)) != -1 && (eindex = code.indexOfAlt(end, eindex)) != -1) {
+        while ((sindex = $c.indexOfAlt(code,start, sindex)) != -1 && (eindex = $c.indexOfAlt(code,end, eindex)) != -1) {
             sindex != -1 && (sindexes.push(sindex), sindex++);
             eindex != -1 && (eindexes.push(eindex), eindex++);
         }
@@ -414,8 +380,8 @@ if (__thisIsNewer) {
             }
             e--;
             pairs.add({begin: sindexes[e], end: eindexes[0]});
-            sindexes.removeAt(e);
-            eindexes.removeAt(0);
+            $c.removeAt(sindexes,e);
+			$c.removeAt(eindexes,0);
         }
 
 
@@ -431,12 +397,12 @@ if (__thisIsNewer) {
             blocks.push({id: uid, block: block, body: body, code: code});
             lookups[uid] = block;
 
-			var i = k + 1, pair2;
+			var i = k, pair2;
 			while (pair2 = pairs[i++]) {
                 var offset = block.length - uid.length;
-			pair2.end -= offset;
-			if (pair2.begin > pair.end) {
-				pair2.begin -= offset;
+                pair2.end -= offset;
+                if (pair2.begin > pair.end) {
+                    pair2.begin -= offset;
                 }
             }
         }
@@ -460,7 +426,7 @@ if (__thisIsNewer) {
                     value = 1;
                     var i = 0, sexp;
 				while (sexp = expr["$multiply"][i++]) {
-					value *= __processExpression(doc, sexp);
+					value *= __processExpression(doc, sexp) || 0;
                     }
                     return value;
                 case "$divide":
@@ -476,7 +442,7 @@ if (__thisIsNewer) {
         try {
             switch (field) {
                 case "$size":
-                    return (__processExpression(doc, expr, field) || []).length;
+				return (__processExpression(doc, expr[field], field) || []).length;
             }
         } catch (e) {
             error('aggregate.__parseArrayExpr', e);
@@ -531,7 +497,7 @@ if (__thisIsNewer) {
             if (value1 < value2) { cmp = -1; }
             if (value1 > value2) { cmp = 1; }
 
-            if (isNull(cmp)) {
+		if ($c.isNull(cmp)) {
 			value1 = sortOrder.indexOf([null, undefined].indexOf(value1) != -1 ? value1 : value1.constructor);
 			value2 = sortOrder.indexOf([null, undefined].indexOf(value2) != -1 ? value2 : value2.constructor);
 
@@ -623,7 +589,7 @@ if (__thisIsNewer) {
                     return dt.getMilliseconds();
                 case "$dateToString":
                     dt = __processExpression(doc, expr[field].date);
-                    return dt.format(expr[field].format)
+                    return $c.format(dt,expr[field].format)
             }
         } catch (e) {
             error('aggregate.__parseDateExpr', e);
@@ -642,11 +608,11 @@ if (__thisIsNewer) {
                             throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
                             (typeof (!$c.isArray(set1) ? set1 : set2)).captialize();
                         }
-                        set1.toSet();
-                        set2.toSet();
+                        $c.toSet(set1);
+						$c.toSet(set2);
                         if (set1.length != set2.length) { return false; }
-					while (st = set1[j++]) {
-						if (set2.indexOf(st) == -1) { return false; }
+					for (var jlen = set1.length; j < jlen; j++) {
+						if (set2.indexOf(set1[j]) == -1) { return false; }
                         }
                     }
                     return true;
@@ -657,21 +623,21 @@ if (__thisIsNewer) {
                         //noinspection ExceptionCaughtLocallyJS
                         throw errorMessage + (typeof rtnSet).captialize();
                     }
-                    rtnSet.toSet();
+                    $c.toSet(rtnSet);
 				while (exp = expr[field][i++]) {
 					var set1 = $c.duplicate(__processExpression(doc, exp));
                         if (!$c.isArray(set1)){
                             //noinspection ExceptionCaughtLocallyJS
                             throw errorMessage + + (typeof set1).captialize();
                         }
-                        set1.toSet();
+                        $c.toSet(set1);
                         if (set1.length < rtnSet.length) {
                             var settmp = set1;
                             set1 = rtnSet;
                             rtnSet = settmp;
                         }
-					while (st = rtnSet[j++]) {
-						if (set1.indexOf(st) == -1) { rtnSet.removeAt(--j); }
+					for (var jlen = rtnSet.length; j < jlen; j++) {
+						if (set1.indexOf(rtnSet[j]) == -1) { $c.removeAt(rtnSet,j--); jlen--; }
                         }
                         if (!rtnSet.length) { return rtnSet; }
                     }
@@ -691,7 +657,7 @@ if (__thisIsNewer) {
                         }
                         rtnSet = rtnSet.concat(arr);
                     }
-                    return rtnSet.toSet();
+                    $c.toSet(rtnSet);
                 case "$setDifference":
                     var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
                         arr2 = $c.duplicate(__processExpression(doc, expr[field][1])),
@@ -701,7 +667,8 @@ if (__thisIsNewer) {
                         throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
                         (typeof (!$c.isArray(arr1) ? arr1 : arr2)).captialize();
                     }
-				while (st = arr1[j++]) {
+				for (var jlen = arr1.length; j < jlen; j++) {
+					var st = arr1[j];
 					if (arr2.indexOf(st) == -1 && rtnSet.indexOf(st) == -1) {
 						rtnSet.push(st);
                         }
@@ -729,8 +696,8 @@ if (__thisIsNewer) {
                     var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
                         falseCondition = [undefined,null,0,false];
 
-					while (st = arr1[j++]) {
-						if (falseCondition.indexOf(st) != -1) { return false; }
+				for (var jlen = arr1.length; j < jlen; j++) {
+					if (falseCondition.indexOf(arr1[j]) != -1) { return false; }
                     }
                     return true;
             }
@@ -777,11 +744,11 @@ if (__thisIsNewer) {
                 case "$map":
                     var input = __processExpression(doc, expr[field].input),
                         v_as = "$" + expr[field].as,
-						v_in = expr[field]["in"], i = 0, item;
+					v_in = expr[field]["in"];
 
-					while (item = input[i++]) {
-						doc[v_as] = item;
-						input[i - 1] = __processExpression(doc, v_in);
+				for (var i = 0, len = input.length; i < len; i++) {
+					doc[v_as] = input[i];
+					input[i] = __processExpression(doc, v_in);
                         delete doc[v_as];
                     }
                     return input;
@@ -796,8 +763,8 @@ if (__thisIsNewer) {
                         rmProps.push(prop);
                     }
                     rtn = __processExpression(doc, expr[field]["in"]);
-					while (rmprop = rmProps[i++]) {
-						delete doc[rmprop];
+				for (var i = 0, len = rmProps.length; i < len; i++) {
+					delete doc[rmProps[i]];
                     }
                     return rtn;
             }
@@ -808,36 +775,118 @@ if (__thisIsNewer) {
     }
     function __processAccumulator (doc,accumulator,previousValue,meta) {
         try {
-            var value = __processExpression(doc, accumulator["$sum"] || accumulator["$avg"] || accumulator["$first"] || accumulator["$last"] || accumulator["$max"] || accumulator["$min"] || accumulator["$push"] || accumulator["$addToSet"]);
+		var value = __processExpression(doc,
+				accumulator["$sum"] ||
+				accumulator["$avg"] ||
+				accumulator["$first"] ||
+				accumulator["$last"] ||
+				accumulator["$max"] ||
+				accumulator["$min"] ||
+				accumulator["$push"] ||
+				accumulator["$addToSet"] ||
+				accumulator["$stdDevPop"] ||
+				accumulator["$stdDevSamp"]
+		);
             switch (true) {
                 case !!accumulator["$sum"]:
-                    return value + (previousValue || 0);
+				return (value || 0) + (previousValue || 0);
                 case !!accumulator["$avg"]:
-                    previousValue = previousValue || {n:0,avg:0};
-                    //if (isNull(previousValue)) {
-                    //    (previousValue = 0).n = 0;
-                    //}
-                    previousValue.avg = ((previousValue.avg / (previousValue.n || 1)) + value) / previousValue.n;
-                    if (meta.length == meta.index + 1) { previousValue = previousValue.avg; }
+				previousValue = previousValue || [];
+				//previousValue.avg = ((previousValue.avg / (previousValue.n || 1)) + value) / previousValue.n;
+				if (!$c.isNull(value)) { previousValue.push(value); }
+				if (meta.length == meta.index + 1) { previousValue = $c.average(previousValue); }
                     return previousValue;
                 case !!accumulator["$first"]:
-                    if(isNull(previousValue)) { previousValue = value; }
+				if($c.isNull(previousValue)) { previousValue = value; }
                     return previousValue;
                 case !!accumulator["$last"]:
-                    return value;
+				return $c.isNull(value) ? previousValue : value;
                 case !!accumulator["$max"]:
-                    return Math.max(value, (previousValue || -9007199254740991));
+				if ($c.isNull(previousValue)) { previousValue = -9007199254740991; }
+				if ($c.isNull(value)) { value = -9007199254740991 }
+				if (meta.length == meta.index + 1 && value == previousValue == -9007199254740991) { return undefined; }
+				return Math.max(value, previousValue);
                 case !!accumulator["$min"]:
+				if ($c.isNull(previousValue)) { previousValue = 9007199254740991; }
+				if ($c.isNull(value)) { value = 9007199254740991 }
+				if (meta.length == meta.index + 1 && value == previousValue == 9007199254740991) { return undefined; }
                     return Math.min(value, (previousValue || 9007199254740991));
                 case !!accumulator["$push"]:
-                    return (previousValue || []).push(value);
+				previousValue = previousValue || [];
+				if (!$c.isNull(value)) { previousValue.push(value); }
+				return previousValue;
                 case !!accumulator["$addToSet"]:
                     previousValue = previousValue || [];
-				if (previousValue.indexOf(value) == -1) { previousValue.push(value); }
+				if (!$c.isNull(value) && previousValue.indexOf(value) == -1) { previousValue.push(value); }
                     return previousValue;
+			case !!accumulator["$stdDevSamp"]:
+				if (meta.sample && meta.sample.indexOf(doc) != -1) {
+					if (!$c.isNull(value)) {
+						previousValue = previousValue || [];
+						previousValue.push(value);
+					}
+				}
+				if (meta.length == meta.index + 1) {
+					previousValue = $c.stdev(previousValue || []);
+				}
+				return $c.isNull(previousValue) ? null : previousValue;
+			case !!accumulator["$stdDevPop"]:
+				if (!$c.isNull(value)) {
+					previousValue = previousValue || [];
+					previousValue.push(value); }
+				if (meta.length == meta.index + 1) {
+					previousValue = $c.stdev(previousValue);
+				}
+				return $c.isNull(previousValue) ? null : previousValue;
             }
         } catch (e) {
             error('aggregate.__processAccumulator', e);
+        }
+    }
+    function __processAttributes(node) {
+        try {
+            var obj = {},
+                tagend = node.indexOf('>'),
+                tag = node.substring(1, tagend),
+                attIndex = $c.indexOfAlt(tag,/\s|>/),
+                nodename = attIndex == -1 ? tag : tag.substring(0, $c.indexOfAlt(tag,/\s|>/)),
+                attr = attIndex == -1 ? "" : tag.substring($c.indexOfAlt(tag,/\s|>/)),
+                text = node.substring(tagend + 1, node.indexOf('<', tagend));
+
+            if (attr) {
+                obj['#text'] = text;
+                var attributes = attr.split(' ');
+                for (var i = 0, len = attributes.length; i < len; i++) {
+                    var attribute = attributes[i];
+                    if (!attribute) { continue; }
+                    var key_val = attribute.split('=');
+                    obj['@attributes'] = obj['@attributes'] || {};
+                    obj['@attributes'][key_val[0].trim()] = $c.tryEval(key_val[1]) || key_val[1].trim();
+                }
+            }
+            return obj;
+        } catch (e) {
+            error('xmlToJson.__processAttributes', e);
+        }
+    }
+    function __processChildren(nodename, children) {
+        try {
+            var child, i = 0, obj = {};
+            while (child = children[i++]) {
+                var index = child.indexOf('>'),
+                    lindex = child.lastIndexOf('</'),
+                    attributes = __processAttributes(child),
+                    childXML = $c.strip(child.substring(index + 1, lindex),'\n').trim();
+                if (children.length == 1) {
+                    obj[nodename] = $c.merge(xmlToJson(childXML), attributes);
+                } else {
+                    obj[nodename] = obj[nodename] || [];
+                    obj[nodename].push($c.merge(attributes,$c.xmlToJson(childXML)));
+                }
+            }
+            return obj;
+        } catch (e) {
+            error('xmlToJson.__processChildren', e);
         }
     }
     function __processExpression (doc,expr) {
@@ -903,9 +952,9 @@ if (__thisIsNewer) {
     }
     function __processGroup (docs, expr) {
         try {
-            var _ids = expr._id, i = 0, groupings = {}, results = [], meta = {index:0,length:docs.length/*,stop:false*/}, doc;
+		var _ids = expr._id, i = 0, groupings = {}, results = [], meta = {index:0,length:docs.length, sample:docs.sample/*,stop:false*/}, doc;
             while(doc = docs[meta.index = i++]) {
-                var result, key = "null", keys;
+			var result, key = "null", keys = null;
                 if (_ids) {
                     keys = {};
                     for (var prop in _ids) {
@@ -922,13 +971,53 @@ if (__thisIsNewer) {
                 }
                 for (var prop in expr) {
                     if (!expr.hasOwnProperty(prop) || prop == "_id") { continue; }
-                    result[prop] = __processAccumulator(doc, expr[prop],result[prop], meta);
-                    //if (meta.stop) { break; }
+                    result[prop] = __processAccumulator(doc, expr[prop],result.hasOwnProperty(prop) ? result[prop] : undefined, meta);
                 }
             }
             return results;
         } catch (e) {
             error('aggregate.__processGroup', e);
+        }
+    }
+    function __processSiblings(xml) {
+        try {
+            var parts = xml.split('<'), obj = {},
+                tag = "", node = "", etag;
+            obj['#text'] = obj['#text'] || "";
+            for (var i = 0; i < parts.length; i++) {
+                var part = parts[i];
+                if (!part) {
+                    continue;
+                }
+                if (!tag) {
+                    etag = part.indexOf('>');
+                    if (etag == -1) {
+                        if (!i) {
+                            obj['#text'] += $c.strip(part, ['\n', ' ']);
+                        } else {
+                            node += part;
+                        }
+                        continue;
+                    }
+                    tag = part.split(/\s|>/)[0];
+                    node += "<" + part;
+                } else if ((etag = part.indexOf('/' + tag + '>')) != -1) {
+                    var text = $c.strip(part.substr(etag + tag.length + 2),['\n', ' ']);
+                    if (text) {
+                        obj['#text'] += text;
+                    }
+                    node += "<" + part.substring(0, etag + tag.length + 2);
+                    obj = $c.merge(obj, xmlToJson(node));
+                    tag = "", node = "";
+                }
+
+            }
+            if (!obj['#text']) {
+                delete obj['#text'];
+            }
+            return obj;
+        } catch (e) {
+            error('xmlToJson.__processSiblings', e);
         }
     }
     function __processStage(docs, stage) {
@@ -947,24 +1036,9 @@ if (__thisIsNewer) {
             }
             switch (opts) {
                 case "$project":
-				var i = 0, dc;
-					while (dc = docs[i++]) {
-                        var doc = {};
-                        for (var prop in value) {
-                            if (!value.hasOwnProperty(prop)) {
-                                continue;
-                            }
-                            if ($c.parseBoolean(value[prop])) {
-								doc[prop] = dc;
-                            } else {
-                                doc[prop] = __processExpression(dc, value[prop]);
-                            }
-                        }
-                        docs.replaceAt(i - 1, doc);
-                    }
-                    return docs.where({}, value);
+                    return $c.where(docs,{}, value);
                 case "$match":
-                    return docs.where(value);
+                    return $c.where(docs,value);
                 case "$redact":
                     return _redact(docs, value);
                 case "$limit":
@@ -985,22 +1059,49 @@ if (__thisIsNewer) {
                         }
                         sorter.push(pre+prop);
                     }
-                    return docs.sortBy(sorter);
+                    return $c.sortBy(docs,sorter);
                 //case "$geoNear":
                 //    break;
                 case "$out":
                     var rtnDocs = $c.duplicate(docs,true);
                     if ($c.isString(value)) {
-                        $w[value] = rtnDocs;
+						$g[value] = rtnDocs;
                     } else if ($c.isArray(value)) {
-                        value.removeAll();
-                        $c.merge(value,rtnDocs);
+                        $c.removeAll(value);
+						rtnDocs = $c.merge(value,rtnDocs);
                     }
                     return rtnDocs;
+			case "$sample":
+				var arr = [], i = 0, eindex = docs.length - 1;
+				while (i < value.size) {
+					arr.push(docs[Math.round($c.rand(0,eindex,true))]);
+					i++;
+				}
+				docs.sample = arr;
+				return docs;
+			case "$lookup":
+				var i = 0, doc, arr = value.from,key = value.localField, fkey = value.foreignField, prop = value.as;
+				while(doc = docs[i++]) {
+					var query = {};
+					query[fkey] = doc[key] || {$exists:false};
+					doc[prop] = $c.where(arr,query);
+				}
             }
             return docs;
         } catch (e) {
             error('aggregate.__processStage', e);
+        }
+    }
+    function __pullHelper(target, lookup) {
+        for (var i = 0, len = lookup.length; i < len; i++) {
+            var value = lookup[i];
+            for (var j = 0, jlen = target.length; j < jlen; j++) {
+                if ($c.equals(value, target[j])) {
+                    $c.removeAt(target, j);
+                    j--, jlen--;
+                }
+            }
+
         }
     }
 	function __queryNestedProperty(obj, path/*, value*/) {
@@ -1010,9 +1111,9 @@ if (__thisIsNewer) {
 			if (!obj.hasOwnProperty(prop)) { return []; }
 			if ($c.isArray(obj[prop])) {
 				if ($c.isNull(parts[i])) { return obj[prop]; }
-				var subPath = parts.slice(i).join('.'), j = 0, item;
-				while (item = obj[prop][j++]) {
-					values = values.concat(__queryNestedProperty(item, subPath));
+				var subPath = parts.slice(i).join('.'), items = obj[prop];
+				for (var j = 0, jlen = items.length; j < jlen; j++) {
+					values = values.concat(__queryNestedProperty(items[j], subPath));
 				}
 				return values;
 			}
@@ -1060,32 +1161,69 @@ if (__thisIsNewer) {
                 var funcValue = [],
                     func = "";
 
-                funcValue = match[1].replace_all(['\\[','\\]'],['[',']']).split(split_param);
-                while (funcValue[0].count("{") != funcValue[0].count("}")) {
-				if (tryEval(funcValue[0])) { break; }
-				funcValue[0]+= ($c.isString(split_param)?split_param:";")+funcValue[1];
+                funcValue = $c.replace_all(match[1],['\\[','\\]'],['[',']']).split(split_param);
+				while ($c.count(funcValue[0],"{") != $c.count(funcValue[0],"}")) {
+					if ($c.tryEval(funcValue[0])) { break; }
+					funcValue[0]+= ($c.isString(split_param)?split_param:";")+funcValue[1];
                     funcValue.splice(1,1);
                 }
-                func = funcValue.splice(0,1)[0].strip(";");
-				var i = 0, fv;
-			while (fv = funcValue[i++]) {
-				if (fv.indexOf("${") != -1) {
-					funcValue[i - 1] = fillTemplate(fv, obj);
+                func = $c.strip(funcValue.splice(0,1)[0],";");
+				for (var i = 0, len = funcValue.length; i < len; i++) {
+					var fv = funcValue[i];
+					if (fv.indexOf("${") != -1) {
+						funcValue[i] = fillTemplate(fv, obj);
                     }
                     try {
-					funcValue[i - 1] = eval("(" + fv.replace_all([';\\'], [';']) + ")");
+						funcValue[i] = eval("(" + $c.replace_all(fv,[';\\'], [';']) + ")");
                     } catch (e) {}
                 }
-
-			template = template.indexOf(match[1]) != -1 ? template.replace(match[1], (match[1] = match[1].replace_all(['\\[', '\\]'], ['[', ']']))) : template;
-                template = template.replace_all("${" + pre + match[1] + post +"}",
-                    $w.getProperty(func) ? $w.getProperty(func).apply(obj, funcValue) : (tryEval("("+func+")")||foo).apply(obj, funcValue) || "");
+				funcValue = funcValue.map(function(item){ return $c.tryEval(item) || item; });
+				template = template.indexOf(match[1]) != -1 ? template.replace(match[1], (match[1] = $c.replace_all(match[1],['\\[', '\\]'], ['[', ']']))) : template;
+				template = $c.replace_all(template,"${" + pre + match[1] + post +"}",
+					$c.getProperty($g, func) ? $c.getProperty($g, func).apply(obj, funcValue) : ($c.tryEval("("+func+")")||foo).apply(obj,funcValue) || "");
             }
             return template;
         } catch (e) {
             error('fillTemplate.__run_replace', e);
         }
     }
+	function __universal_trim(chars) {
+		/*|{
+			"info": "Array class extension to remove all white space/chars from the beginning and end of all string values in the array & String class extension to remove characters from the beginning and end of the string.",
+			"category": "Array",
+			"parameters":[],
+	
+			"overloads":[
+				{"parameters":[
+					{"ref":"(Boolean) Whether or not to mutate the original array."}]},
+				{"parameters":[
+					{"character": "(Char[]) Character to remove in the String"}]}],
+	
+			"url": "http://www.craydent.com/library/1.8.1/docs#String.trim",
+			"returnType": "(Bool)"
+		}|*/
+		try {
+			if ($c.isString(this)) {
+				return _trim(this, undefined, chars);
+			}
+			if ($c.isArray(this)) {
+				var ref = chars,
+						arr = [],
+						alter = false;
+				if ($c.isBoolean(ref)) { alter = true; }
+	
+				for (var i = 0, len = this.length; i < len; i++) {
+					var item = this[i];
+					$c.isString(item) && (arr[i] = item.toString().trim()) || (arr[i] = item);
+					alter && (this[i] = arr[i]);
+				}
+				return arr;
+			}
+		} catch (e) {
+			error($c.getName(this.constructor) + ".trim", e);
+			return false;
+		}
+	}
 
     function _ajaxServerResponse(response) {
         try {
@@ -1114,21 +1252,21 @@ if (__thisIsNewer) {
             if (check_values && check_values.constructor == Array) {
                 without = true;
             }
-			var i = 0, obj;
-			while (obj = objs[i++]) {
+			for (var i = 0, len = objs.length; i < len; i++) {
+				var obj = objs[i];
                 if (check_values) {
-                    var index = i - 1;
+				var index = i;
 					if (without && check_values.indexOf(obj) != -1) {
-                        skip.push(i - 1);
+					skip.push(i);
                         continue;
                     }
-                    if (skip.indexOf(i - 1) != -1) { continue; }
+				if (skip.indexOf(i) != -1) { continue; }
                     while ((index = objs.indexOf(obj,index+1)) != -1) {
                         skip.push(index);
                     }
 
                 }
-                obj !== "" && !isNull(obj) && (skip.indexOf && skip.indexOf(i - 1) || _indexOf(skip, i - 1)) == -1 && arr.push(obj);
+				obj !== "" && !$c.isNull(obj) && (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && !$c.isNull(obj) && arr.push(obj);
             }
             return arr;
         } catch (e) {
@@ -1136,7 +1274,7 @@ if (__thisIsNewer) {
             return false;
         }
     }
-    function _copyWithProjection(projection, record) {
+	function _copyWithProjection(projection, record, preserveProperties) {
         var copy = {}, len = 0;
         projection = projection || "*";
         if ($c.isString(projection)) {
@@ -1157,18 +1295,24 @@ if (__thisIsNewer) {
         }
         for (var prop in projection) {
 		if (projection.hasOwnProperty(prop) && projection[prop]) {
-                if (prop == "*") {
-//                    _copyWithProjectionHelper(record,copy);
-                    copy = $c.duplicate(record);
-                } else if (record[prop] && !$c.isArray(record[prop])) {
-                    copy[prop] = record[prop];
-                } else if (record[prop]) {
+			var val = $c.getProperty(record,prop) || null;
+			if (prop == "*") {
+				copy = $c.duplicate(record,true);
+			} else if ($c.parseBoolean(projection[prop])) {
+				if (preserveProperties || !$c.isNull(val)) {
+					$c.setProperty(copy, prop, val);
+				}
+			} else if (!$c.isObject(projection[prop]) && !val) {
+				copy[prop] = projection[prop];
+			} else if ($c.isObject(projection[prop]) || val && !$c.isArray(val)) {
+				copy[prop] = __processExpression(record,projection[prop]);
+			} else if (val) {
                     var del = true;
                     if (prop.slice(-2) == ".$") {
                         prop = prop.slice(0,-2);
-                        copy[prop] = record[prop].slice(0,1);
+						copy[prop] = val.slice(0,1);
                     } else if (projection[prop]['$elemMatch']) {
-                        copy[prop] = record[prop].where(projection[prop]['$elemMatch']).slice(0,1);
+						copy[prop] = val.where(projection[prop]['$elemMatch']).slice(0,1);
                     } else if (projection[prop]['$slice']) {
                         var start = 0, length = $c.isInt(projection[prop]['$slice']) ? projection[prop]['$slice'] : 0;
 
@@ -1176,10 +1320,10 @@ if (__thisIsNewer) {
                             start = projection[prop]['$slice'][0];
                             length = projection[prop]['$slice'][1];
                         }
-                        copy[prop] = record[prop].slice(start, length);
+						copy[prop] = val.slice(start, length);
                     } else if (projection[prop]) {
                         del = false;
-                        copy[prop] = record[prop];
+						$c.setProperty(copy, prop, val);
                     }
                     if (del && !copy[prop].length) {
                         delete copy[prop];
@@ -1190,13 +1334,6 @@ if (__thisIsNewer) {
             }
         }
         return copy;
-    }
-    function _copyWithProjectionHelper(record,copy) {
-        for (var prop in record) {
-            if (record.has(prop)) {
-                copy[prop] = record[prop];
-            }
-        }
     }
     function _craydentSelector (by, overwrite, object, single) {
         try {
@@ -1232,21 +1369,20 @@ if (__thisIsNewer) {
     function _defineFunction (name, func, override) {
         try {
             var args = _getFuncArgs(func),
-                fstr = func.toString().replace(/this/g,'obj'),
+			fstr = func.toString().replace(/this/g,'craydent_this'),
 
-            // extra code to account for when this == window
-                extra_code = "if(isNull(obj) && this == $c){return;}",
+			// extra code to account for when this == global
+			//		extra_code = "if($c.isNull(craydent_this) && this == $c){return;}",
+			extra_code = "if(arguments.length == 0 && this == $c){return;}",
                 fnew = args.length === 0 || (args.length === 1 && !_trim(args[0])) ?
-                    //    fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' ' + name + '(obj){'+extra_code) :
-                    fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' (obj){'+extra_code) :
-                "(" + fstr.toString().replace(/\((.*?)\)\s*?\{/, '(obj,$1){'+extra_code) + ")";
+				fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' (craydent_this){'+extra_code) :
+				"(" + fstr.toString().replace(/\((.*?)\)\s*?\{/, '(craydent_this,$1){'+extra_code) + ")";
 
             if (!override && eval("typeof("+name+")") !== "undefined") {
                 eval("$c."+name+" = "+fnew);
                 return;
             }
-            eval("$c."+name+" = "+fnew);
-            //eval(fnew.replace("function","function "+name));
+			return eval("$c."+name+" = "+fnew);
         } catch (ex) {
             error("_defineFunction", ex);
         }
@@ -1283,7 +1419,7 @@ if (__thisIsNewer) {
             }
             var loop_func = function (prop, original) {
                 if (original.hasOwnProperty(prop) && original[prop] && (!$c.isFunction(original[prop]) || !recursive)) {
-                    var index = ref.objects.indexOfAlt(original[prop],function(obj,value){
+                    var index = $c.indexOfAlt(ref.objects,original[prop], function(obj,value){
                             return obj.obj===value;
                         }),
                         new_path = current_path+"["+parseRaw(prop)+"]";
@@ -1302,11 +1438,10 @@ if (__thisIsNewer) {
                 }
                 obj[prop] = original[prop];
             };
-            //JSON.parse(JSON.stringify(obj));
             if ($c.isArray(original)) {
-			var i = 0;
-			while (original[i++]) {
-				loop_func.call(obj, i - 1, original, ref, current_path, arguments[argIndex+2]);
+				var i = 0, len = original.length;
+				while (i++ < len) {
+					loop_func.call(obj, i - 1, original, ref, current_path, arguments[argIndex+2]);
                 }
             } else {
                 for (var prop in original){
@@ -1324,21 +1459,27 @@ if (__thisIsNewer) {
             error('_duplicate', e);
         }
     }
-    function _endsWith (/*str, str1*/) {
+    function _endsWith () {
         /*|{
             "info": "String class extension to check if the string ends with the given string",
             "category": "String",
             "parameters":[
                 {"infinite": "any number of arguments can be passed"}],
 
-            "overloads":[],
+			"overloads":[
+				{"parameters":[
+					{"arr": "(String[]) An array of strings to check"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#string.endsWith",
-            "returnType": "(Bool)"
+			"returnType": "(Mix)"
          }|*/
         try {
-			var i = 0, arg;
-			while (arg = arguments[i++]) {
+		var args = arguments;
+		if (arguments.length < 3 && ($c.isArray(arguments[0]) || $c.isArray(arguments[1]))) {
+			args = arguments[1] || arguments[0];
+		}
+		for (var i = 0, len = args.length; i < len; i++) {
+			var arg = args[i];
 				if (arg == this) { continue; }
 				if (arg == this.slice(-arg.length)) { return arg; }
             }
@@ -1349,7 +1490,7 @@ if (__thisIsNewer) {
     }
     function _ext (cls, property, func, override) {
         try {
-            cls['prototype'][property] = cls['prototype'][property] || func;
+            $g.__craydentNoConflict || (cls['prototype'][property] = cls['prototype'][property] || func);
             _df(property, func, override);
         } catch (e) {
             error('_ext', e);
@@ -1383,9 +1524,10 @@ if (__thisIsNewer) {
     }
     function _getBrowserVersion(browser){
         try {
-            var index = navigator.userAgent.indexOf(browser);
-            if (index == -1 && $w["is"+browser]()) return -1;
-            return parseFloat(navigator.userAgent.substring(index+browser.length+1));
+			var index = this.navigator.userAgent.indexOf(browser);
+			if (index == -1 && this["is"+browser]()) return -1;
+            var version = parseFloat(this.navigator.userAgent.substring(index+browser.length+1));
+			return version === 0 || version ? version : -1;
         } catch(e){
             error('_getBrowserVersion', e);
         }
@@ -1440,17 +1582,94 @@ if (__thisIsNewer) {
     function _groupFieldHelper (obj, fields) {
 	var prop = "", j = 0, field;
 	while (field = fields[j++]) {
-		prop += field + ":" + obj[field] + ",";
+		prop += field + ":" + $c.getProperty(obj,field) + ",";
         }
         return prop;
     }
 	function _indexOf (objs, value) {
         try {
-		var i = 0, obj;
-		while (obj = objs[i++]) { if (obj === value) return --i; }
+		var len = objs.length,
+			i = 0;
+			while (i < len) {
+				if (objs[i] === value) return i;
+				++i;
+			}
             return -1;
         } catch (e) {
             error("_indexOf", e);
+        }
+    }
+    function _indexOfAlt(value,option) {
+		/*|{
+			"info": "Array class extension to find index of a value based on a callback function & String class extension to find the index based on a regular expression",
+			"category": "Array",
+			"parameters":[
+				{"value": "(Mixed) value to find"},
+				{"func": "(Function) Callback function used to do the comparison"}],
+	
+			"overloads":[
+				{"parameters":[
+					{"regex": "(RegExp) Regular expression to check value against"}]},
+				{"parameters":[
+					{"regex": "(RegExp) Regular expression to check value against"},
+					{"pos": "(Int) Index offset to start"}]}],
+	
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.indexOfAlt",
+			"returnType": "(Integer)"
+		}|*/
+	
+		try {
+			if ($c.isArray(this)) {
+				var func = option;
+				var len = this.length,
+						i = 0;
+				while (i < len) {
+					if ($c.isRegExp(value) && value.test(this[i])) { return i; }
+					if ($c.isFunction(func) && (value instanceof Object ? func(this[i], value) : func(this[i]) === value)) { return i; }
+					++i;
+				}
+				return -1;
+			}
+			if ($c.isString(this)) {
+				var regex = value, pos = option;
+				if (isNull(regex)) {
+					return -1;
+				}
+				pos = pos || 0;
+				var index = this.substring(pos).search(regex);
+				return (index >= 0) ? (index + pos) : index;
+			}
+		} catch (e) {
+			error($c.getName(this.constructor) + ".indexOfAlt", e);
+		}
+	}
+    function _insertAfter(refElem,value){
+        /*|{
+            "info": "Array class extension to add to the array after a specific index : HTMLElement class extension to insert element after another",
+            "category": "Array,HTMLElement",
+            "parameters":[
+                {"index/refElem": "(Int) Index to add after when using with Arrays, (HTMLElement) Reference HTML element to insert after when using with HTMLElements"},
+                {"value": "(Mixed) Value to add ( when used with Arrays)"}],
+
+            "overloads":[],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAfter",
+            "returnType": "(Bool)"
+        }|*/
+        try {
+            var index = refElem;
+            if ($c.isDomElement(this)) {
+                var next = $c.isFunction(refElem.nextElementSibling) ? refElem.nextElementSibling() : refElem.nextElementSibling;
+                next ? refElem.parentNode.insertBefore(this, next) : refElem.parentNode.appendChild(this);
+                return true;
+            }
+            if ($c.isArray(this)) {
+                this.splice(index + 1, 0, value);
+                return true;
+            }
+        } catch (e) {
+            error(($c.isDomElement(this) ? "DOM" : _getFuncName(this.constructor)) + ".remove", e);
+            return false;
         }
     }
     function _invokeHashChange() {
@@ -1485,8 +1704,8 @@ if (__thisIsNewer) {
             if (on.length == 1) {
                 on = [on,on];
             }
-            var name = arguments.callee.caller.getName();
-            on = on.trim();
+            var name = $c.getName(arguments.callee.caller);
+			on = $c.trim(on);
             name == "joinRight" && (on = [on[1],on[0]]);
         }
 
@@ -1495,17 +1714,15 @@ if (__thisIsNewer) {
                 propRef.push(prop);
             }
         }
-	var i = 0, obj;
-	while (obj = objs[i++]) {
-		var record = $c.copyObject(obj), query = {}, results;
+	for (var i = 0, len = objs.length; i < len; i++)  {
+		var record = $c.duplicate(objs[i],true), query = {},results;
             query[on[1]] = record[on[0]];
-            results = arr.where(query);
+            results = $c.where(arr,query);
             if (results.length > 0)  {
                 records.push($c.merge(record, results[0]));
             } else if (!exclusive)  {
-			var j = 0, pr;
-			while (pr = propRef[j++]) {
-				record[pr] = record[pr] || null;
+			for (var j = 0, jlen = propRef.length; j < jlen; j++) {
+				record[propRef[j]] = record[propRef[j]] || null;
                 }
                 records.push(record);
             }
@@ -1541,6 +1758,47 @@ if (__thisIsNewer) {
             return false;
         }
     }
+    function _on (evt, callback, evtObj) {
+        /*|{
+            "info": "Function listener to register events : HTMLElement class extension to handle and trigger events",
+            "category": "Function,HTMLElement",
+            "parameters":[
+                {"event":"(String) Event name to listen on and invoked on emit/HTMLElement trigger"},
+                {"func":"(Function) Function to call on emit/HTMLElement trigger"}],
+
+            "overloads":[],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#function.on",
+            "returnType": "(void)"
+        }|*/
+        if ($c.isDomElement(this)) {
+            try {
+                if (!callback) {
+                    var funcs = this.events[evt], func, i = 0;
+                    while (func = funcs[i++]) {
+                        func(evtObj);
+                    }
+                } else {
+                    this.events = this.events || {};
+                    this.events[evt] = this.events[evt] || [];
+                    this.events[evt].push(callback);
+                    !this.getAttribute("on" + evt) && this.setAttribute("on" + evt, "this.on('" + evt + "',null,(event || $w.event));");
+                }
+            } catch(e){
+                error("HTMLElement.on", e);
+            }
+            return;
+        }
+        if ($c.isFunction(this)) {
+            try {
+                this["_"+evt] = this["_"+evt] || [];
+                this["_"+evt].push(callback);
+            } catch (e) {
+                error("Function.on", e);
+            }
+            return
+        }
+    }
     function _orderListHelper(value, sorter, arr) {
         try {
             var ii = 0, i = 0, len = arr.length;
@@ -1562,7 +1820,7 @@ if (__thisIsNewer) {
     }
     function _processClause (clause) {
         try {
-            var index = clause.indexOfAlt(/between/i);
+            var index = $c.indexOfAlt(clause,/between/i);
             if (index != -1) { // contains between predicate
                 //replace AND in the between to prevent confusion for AND clause separator
                 clause.replace(/between( .*? )and( .*?)( |$)/gi,'between$1&and$2$3');
@@ -1579,36 +1837,36 @@ if (__thisIsNewer) {
                     //=, <>, >, >=, <, <=, IN, BETWEEN, LIKE, IS NULL or IS NOT NULL
                     switch (true) {
                         case (index = predicateClause.indexOf('=')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$equals':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$equals':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
                         case (index = predicateClause.indexOf('<>')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$ne':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$ne':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
                         case (index = predicateClause.indexOf('>')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$gt':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$gt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
                         case (index = predicateClause.indexOf('>=')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$gte':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$gte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push({'$gte':cond});
                             break;
                         case (index = predicateClause.indexOf('<')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$lt':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$lt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
                         case (index = predicateClause.indexOf('<=')) != -1 :
-                            cond[predicateClause.substring(0, index).trim()] = {'$lte':tryEval(predicateClause.substring(index + 1).trim())};
+							cond[predicateClause.substring(0, index).trim()] = {'$lte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case predicateClause.indexOfAlt(/between/i) == 0 :
+                        case $c.indexOfAlt(predicateClause,/between/i) == 0 :
                             var nums = predicateClause.replace(/between (.*?) &and (.*?) ( |$)/i,'$1,$2').split(',');
-                            aquery['$and'].push({'$gte':tryEval(nums[0])});
-                            aquery['$and'].push({'$lte':tryEval(nums[1])});
+							aquery['$and'].push({'$gte':$c.tryEval(nums[0])});
+							aquery['$and'].push({'$lte':$c.tryEval(nums[1])});
                             break;
-                        case (index = predicateClause.indexOfAlt(/ in /i)) != -1 :
-                            var _in = tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
+                        case (index = $c.indexOfAlt(predicateClause,/ in /i)) != -1 :
+						var _in = $c.tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
                             if (!_in) {
                                 //noinspection ExceptionCaughtLocallyJS
                                 throw "Invalid syntax near 'in'";
@@ -1616,16 +1874,16 @@ if (__thisIsNewer) {
                             cond[predicateClause.substring(0, index).trim()] = _in;
                             aquery['$and'].push({'$in':cond});
                             break;
-                        case (index = predicateClause.indexOfAlt(/is null/i)) != -1 :
+                        case (index = $c.indexOfAlt(predicateClause,/is null/i)) != -1 :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$equals':cond});
                             break;
-                        case (index = predicateClause.indexOfAlt(/is not null/i)) != -1 :
+                        case (index = $c.indexOfAlt(predicateClause,/is not null/i)) != -1 :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$ne':cond});
                             break;
-                        case (index = predicateClause.indexOfAlt(/ like /i)) != -1 :
-                            var likeVal = "^" + _trim(predicateClause.substring(index + 6),null,[' ', "'", '"']).replace_all("%",".*?") + "$";
+                        case (index = $c.indexOfAlt(predicateClause,/ like /i)) != -1 :
+                            var likeVal = "^" + $c.replace_all(_trim(predicateClause.substring(index + 6),null,[' ', "'", '"']),"%",".*?") + "$";
                             cond[predicateClause.substring(0, index).trim()] = {'$regex': new RegExp(likeVal,'i')};
                             aquery['$and'].push(cond);
                             break;
@@ -1681,19 +1939,53 @@ if (__thisIsNewer) {
             error('aggregate._redact', e);
         }
     }
+    function _remove(value,indexOf){
+        /*|{
+            "info": "Array class extension to remove an item by value : HTMLElement class extension to remove the element from the DOM tree",
+            "category": "Array,HTMLElement",
+            "parameters":[
+                {"value": "(Mixed) Value to remove (when using with Arrays)"}],
+
+            "overloads":[
+                {"parameters":[
+                    {"value": "(Mixed) Value to remove (when using with Arrays)"},
+                    {"indexOf": "(Function) Callback function to use to find the item based on the value (when using with Arrays)"}]}],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.remove",
+            "returnType": "(Mixed)"
+        }|*/
+        try {
+            if ($c.isDomElement(this)) {
+                return this.parentNode.removeChild(this);
+            }
+            if ($c.isArray(this)) {
+                indexOf = indexOf || this.indexOf;
+                var index = indexOf.call(this, value);
+                if (index == -1) {
+                    return false;
+                }
+                return this.splice(index, 1)[0];
+            }
+        } catch (e) {
+            error(($c.isDomElement(this) ? "DOM" : _getFuncName(this.constructor)) + ".remove", e);
+            return false;
+        }
+    }
     function _replace_all(replace, subject, flag) {
         try {
-            if (!$c.isArray(replace) && !$c.isArray(subject)) {
+			if (!$c.isArray(replace)){
                 replace = [replace];
+			}
+			if (!$c.isArray(subject)) {
                 subject = [subject];
             }
-			var str = this, i = 0, rep;
-			while (rep = replace[i++]) {
+		var str = this, last = 0;
+		for (var i = 0, len = replace.length; i < len; i++) {
+			var rep = replace[i];
 				var reg = new RegExp(__convert_regex_safe(rep), flag);
-                if (!str.contains(reg)) {
-                    continue;
-                }
-                str = str.replace(reg, subject[i] || subject[0]);
+			if (!$c.contains(str, reg)) { continue; }
+			str = str.replace(reg, subject[i] === undefined ? subject[last] : subject[i]);
+			if (subject[last + 1]) { last++; }
             }
             return str.toString();
         } catch (e) {
@@ -1701,20 +1993,25 @@ if (__thisIsNewer) {
         }
     }
     function _run_func_array(funcs, args) {
-        try {
+	//try {
 			var self = this;
 				!$c.isArray(funcs) && (funcs = [funcs]);
-			var i = 0, func;
+			var i = 0, func, rtn = [];
 			while (func = funcs[i++]){
-				if ($c.isFunction(func)){
-					func.apply(self, args);
-				} else if ($c.isGenerator(func)) {
-					tryEval('$c.syncroit(function *(){yield func.apply(self,args);});');
+				try {
+					if ($c.isFunction(func)){
+						rtn = rtn.concat(func.apply(self, args));
+					} else if ($c.isGenerator(func)) {
+						$c.tryEval('$c.syncroit(function *(){rtn = rtn.concat(yield func.apply(self,args));});');
+					}
+				} catch (e) {
+					throw e;
 				}
             }
-        } catch (e) {
-            error("_run_func_array", e);
-        }
+            return rtn;
+        //} catch (e) {
+        //    error("_run_func_array", e);
+        //}
     }
     function _set (variable, value, defer, options, loc){
         try {
@@ -1779,21 +2076,27 @@ if (__thisIsNewer) {
             error("_setDOMElementProperties", e);
         }
     }
-    function _startsWith (/*str, str1*/) {
+    function _startsWith () {
         /*|{
             "info": "String class extension to check if the string starts with the given string",
             "category": "String",
             "parameters":[
-                {"infinite": "any number of arguments can be passed"}],
+				{"infinite": "any number of String arguments can be passed"}],
 
-            "overloads":[],
+			"overloads":[
+				{"parameters":[
+					{"arr": "(String[]) An array of strings to check"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#string.startsWith",
             "returnType": "(Bool)"
          }|*/
         try {
-			var i = 0, arg;
-			while (arg = arguments[i++]) {
+		var args = arguments;
+		if (arguments.length < 3 && ($c.isArray(arguments[0]) || $c.isArray(arguments[1]))) {
+			args = arguments[1] || arguments[0];
+		}
+		for (var i = 0, len = args.length; i < len; i++) {
+			var arg = args[i];
 				if (arg == this) { continue; }
 				if (arg == this.slice(0, arg.length)) { return arg; }
             }
@@ -1844,6 +2147,7 @@ if (__thisIsNewer) {
                     "$lte":1,
                     "$exists":1,
                     "$equals":1,
+					"$eq":1,
                     "$ne":1,
                     "$nor":1,
                     "$type":1,
@@ -1858,7 +2162,7 @@ if (__thisIsNewer) {
 				opts = operator,
                 rtn = false;
 
-			if (!$c.isArray(opts)) { opts = [opts]; }
+		if (!$c.isArray(opts)) { opts = opts ? [opts] : []; }
 			// prep multiple subqueries
 			for (var prop in query) {
 				if (query.hasOwnProperty(prop) && prop in operands) {
@@ -1867,27 +2171,29 @@ if (__thisIsNewer) {
 			}
 			var i = 0, opt;
 			while (opt = opts[i++]) {
-				var val, vindex = 0;
+			var val, vindex = 0, vlen = values.length;
 				if (!rtn && i > 1) { return rtn; }
 				switch(opt) {
                     // value is the record in the array
                     // q is the conditional value
                     case "$equals":
+					case "$eq":
 						if (isNull(query) || !values.length) { return false; }
-                        var q = $c.getValue(query.hasOwnProperty("$equals") ? query['$equals'] : query);
+						var q = $c.getValue(query.hasOwnProperty(opt) ? query[opt] : query);
 
-						rtn = $c.isFunction(q) ? q(record, field, index) : values.contains(q);
+						rtn = $c.isFunction(q) ? q(record, field, index) : $c.contains(values, q);
                         break;
 
                     case "$ne":
 						if (isNull(query) || !values.length) { return false; }
                         var q = query['$ne'];
-						rtn = !($c.isFunction(q) ? q(record, field, index) : values.contains(q));
+						rtn = !($c.isFunction(q) ? q(record, field, index) : $c.contains(values, q));
                         break;
 
                     case "$lt":
-						if (!values.length) { return false; }
-						while (val = values[vindex++]) {
+						if (!vlen) { return false; }
+						for (; vindex < vlen; vindex++) {
+							val = values[vindex];
 							if (val < query['$lt']) {
 								rtn = true;
 								break;
@@ -1896,8 +2202,9 @@ if (__thisIsNewer) {
                         break;
 
                     case "$lte":
-						if (!values.length) { return false; }
-						while (val = values[vindex++]) {
+						if (!vlen) { return false; }
+						for (; vindex < vlen; vindex++) {
+							val = values[vindex];
 							if (val <= query['$lte']) {
 								rtn = true;
 								break;
@@ -1905,8 +2212,9 @@ if (__thisIsNewer) {
 						}
                         break;
                     case "$gt":
-						if (!values.length) { return false; }
-						while (val = values[vindex++]) {
+						if (!vlen) { return false; }
+						for (; vindex < vlen; vindex++) {
+							val = values[vindex];
 							if (val > query['$gt']) {
 								rtn = true;
 								break;
@@ -1914,8 +2222,9 @@ if (__thisIsNewer) {
 						}
                         break;
                     case "$gte":
-						if (!values.length) { return false; }
-						while (val = values[vindex++]) {
+						if (!vlen) { return false; }
+						for (; vindex < vlen; vindex++) {
+							val = values[vindex];
 							if (val >= query['$gte']) {
 								rtn = true;
 								break;
@@ -1930,8 +2239,8 @@ if (__thisIsNewer) {
                         rtn = true;
                         break;
                     case "$regex":
-						if (!values.length) { return false; }
-						rtn = values.contains(query["$regex"]);
+						if (!vlen) { return false; }
+						rtn = $c.contains(values, query["$regex"]);
                         break;
                     case "$exists":
                         var finished = {validPath:0};
@@ -1939,9 +2248,10 @@ if (__thisIsNewer) {
                         rtn = finished.validPath == query["$exists"];
                         break;
                     case "$type":
-						if (isNull(query) && !values.length || values.length) {
-							while (val = values[vindex++]) {
-								if (val.constructor == query) {
+						if ($c.isNull(query) && !vlen || vlen) {
+							for (; vindex < vlen; vindex++) {
+								val = values[vindex];
+								if (val.constructor == query['$type']) {
 									rtn = true;
 									break;
 								}
@@ -1953,55 +2263,58 @@ if (__thisIsNewer) {
                         //return record.getProperty(field).contains(query['$search']);
                         break;
                     case "$mod":
-						if (!$c.isArray(query) || !values.length) { return false; }
-	
-						while (val = values[vindex++]) {
-							if (val % query[0] == query[1]) {
+						if (!$c.isArray(query['$mod']) || !vlen) { return false; }
+						for (; vindex < vlen; vindex++) {
+							val = values[vindex];
+							if (val % query['$mod'][0] == query['$mod'][1]) {
 								rtn = true;
 								break;
 							}
 						}
                         break;
                     case "$all":
-						if (!$c.isArray(values) || !$c.isArray(query)) { return false; }
-						var j = 0, q;
-						while (q = query[j++]) {
-							if (!$c.contains(values, q)) { return false; }
+						var val = values[0];
+						if (!$c.isArray(val) || !$c.isArray(query['$all'])) { return false; }
+						var qs = query['$all'];
+						for (var j = 0, jlen = qs.length; j < jlen; j++) {
+							if (!$c.contains(val, qs[j])) { return false; }
                         }
                         rtn = true;
                         break;
                     case "$size":
-						var ival = parseInt(query);
-						if (!$c.isArray(values) || !ival && ival !== 0) { return false; }
-						rtn = values.length == val;
+						var ival = parseInt(query['$size']), val = values[0];
+						if (!$c.isArray(val) || !ival && ival !== 0) { return false; }
+						rtn = val.length == ival;
                         break;
                     case "$where":
-						rtn = $c.isFunction(query) ? query.call(record) : tryEval.call(record, "(function(){"+query+"}).call(this)");
+						rtn = $c.isFunction(query) ? query.call(record) : $c.tryEval.call(record,"var self = this;(function(){return ("+query+");}).call(self)");
                         break;
                     case "$elemMatch":
                         //query = { student: "Jane", grade: { $gt: 85 } } } };
-						if (!$c.isArray(values)) { return false; }
-						var brk = false, j = 0, obj;
-						while (!brk && (obj = values[j++])) {
-							var qval, operand;
-							for (var prop in query) {
-								if (!query.hasOwnProperty(prop)) {
-									continue;
-								}
-								if ($c.isObject(query[prop])) {
-									qval = [query[prop]];
-									operand = "$or";
-								} else {
-									qval = query[prop];
-									operand = "$equals";
-								}
-								if (_subQuery(record, qval, operand, prop, index)) {
-									brk = true;
-									break;
-								}
-							}
-						}
-                        rtn = brk;
+						var val = values[0];
+						if (!$c.isArray(val)) { return false; }
+						rtn = !!$c.where(val,query['$elemMatch'],1).length;
+
+						//var brk = false;
+						//for (var j = 0, jlen = vlen; !brk && j < vlen; j++) {
+						//	var obj = val[j];
+						//	var qval, operand;
+						//	for (var prop in query) {
+						//		if (!query.hasOwnProperty(prop)) { continue; }
+						//		if ($c.isObject(query[prop])) {
+						//			qval = [query[prop]];
+						//			operand = "$or";
+						//		} else {
+						//			qval = query[prop];
+						//			operand = "$equals";
+						//		}
+						//		if (_subQuery(record, qval, operand, prop, index)) {
+						//			brk = true;
+						//			break;
+						//		}
+						//	}
+						//}
+						//rtn = brk;
                         break;
                     case "$or":
                         if (!$c.isArray(query)) {
@@ -2026,11 +2339,14 @@ if (__thisIsNewer) {
                         rtn = __andNotHelper (record, query, operands, index);
                         break;
                     case "$not":
-                        if ($c.isObject(query)) {
-                            rtn = !__andNotHelper (record, query, operands, index);
+						if ($c.isObject(query['$not'])) {
+							//rtn = !__andNotHelper (record, query['$not'], operands, index);
+							var nquery = {}
+							nquery[field] = query['$not'];
+							rtn = !_subQuery(record, [nquery], '$or', field, index);
                             break;
                         }
-					rtn = values.contains(query);
+						rtn = $c.contains(values, query['$not']);
                         break;
 
 
@@ -2041,8 +2357,9 @@ if (__thisIsNewer) {
                         for (var fieldProp in query) {
 						if (!query.hasOwnProperty(fieldProp)) { continue; }
 						var k = 0, qv = query[fieldProp];
-						while (q = qv[k++]) {
-							if ($c.isArray(values) && values.contains(q)) {
+							for (var k = 0, klen = qv.length; k < klen; k++) {
+								var q = qv[k];
+								if ($c.isArray(values) && $c.contains(values, q)) {
                                     rtn = true;
                                     if (isNIN) {
                                         return !rtn;
@@ -2060,6 +2377,30 @@ if (__thisIsNewer) {
             error('_subQuery', e);
         }
     }
+	function _toCurrencyNotation(sep) {
+		/*|{
+			"info": "Number/String class extension to change number to currency",
+			"category": "String",
+			"parameters":[],
+	
+			"overloads":[
+				{"parameters":[
+				{"separator": "(Char) Character to use as delimiter"}]}],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#String.toCurrencyNotation",
+			"returnType": "(String)"
+		}|*/
+        sep = sep || ",";
+        var whole = this.toString(), fraction = "";
+        if (sep != ".") {
+            var part = whole.split('.');
+            if (part.length > 1) {
+                whole = part[0];
+                fraction = '.'+part[1];
+            }
+        }
+        return whole.replace(/\B(?=(\d{3})+(?!\d))/g, sep) + fraction;
+	}
     function _trim(str, side, characters) {
         try {
             var temp = str,
@@ -2076,7 +2417,7 @@ if (__thisIsNewer) {
                         trimChars[ch] = 1;
                     }
                 } else if (_isString(characters)) {
-                    trimChars = eval('({"'+characters+'":1})');
+                    trimChars = eval('({"'+__convert_regex_safe(characters)+'":1})');
                 }
             }
             if (!side || side == 'l') {
@@ -2096,20 +2437,36 @@ if (__thisIsNewer) {
     }
     function _unwind(docs, path) {
         try {
-            var results = [], doc, i = 0;
+			var results = [], doc, i = 0, options = {};
+			if ($c.isObject(path)) {
+				options = path;
+				path = options.path;
+			}
             while (doc = docs[i++]) {
                 var arr = __processExpression(doc, path);
-				if (isNull(arr) || $c.isArray(arr) && arr.isEmpty()) { continue; }
+				if (isNull(arr) || $c.isArray(arr) && $c.isEmpty(arr)) {
+					doc = $c.duplicate(doc);
+					if (options.includeArrayIndex) {
+						doc[options.includeArrayIndex] = 0;
+					}
+					options.preserveNullAndEmptyArrays && results.push(doc);
+					continue;
+				}
 				if (!$c.isArray(arr)) {
 					//noinspection ExceptionCaughtLocallyJS
 					throw "Exception: Value at end of $unwind field path '"+path+"' must be an Array, but is a " + (typeof arr).capitalize() +".";
 				}
-				var j = 0, ar;
-				while (ar = arr[j++]) {
+				if (path[0] == "$") {
+					path = path.substr(1);
+				}
+				for (var j = 0, jlen = arr.length; j < jlen; j++) {
 					var dup = $c.duplicate(doc);
-					$c.setProperty(dup, path, ar);
-                    results.push(dup);
-                }
+					if (options.includeArrayIndex) {
+						dup[options.includeArrayIndex] = j;
+					}
+					$c.setProperty(dup, path, arr[j]);
+					results.push(dup);
+				}
             }
             return results;
         } catch (e) {
@@ -2131,8 +2488,9 @@ if (__thisIsNewer) {
         }
 
 		var i = 0, obj;
-		while (obj = objs[i++]) {
-			if ((returnAll || _subQuery(obj, [condition],'$or', i - 1)) && !callback.call(objs, obj, i - 1)) { break; }
+		for (var i = 0, len = objs.length; i < len; i++) {
+			var obj = objs[i];
+			if ((returnAll || _subQuery(obj, [condition],'$or', i)) && !callback.call(objs, obj, i)) { break; }
         }
     }
 
@@ -2158,17 +2516,19 @@ if (__thisIsNewer) {
             "returnType": "(void)"
          }|*/
         try {
-			var shouldOverride = false;
-			if (eval("typeof("+name+")") == "undefined") {
-				shouldOverride = true;
+			if ($c.isNull($g.__craydentNoConflict) || !$g.__craydentNoConflict) {
+				var shouldOverride = false;
+				if (eval("typeof("+name+")") == "undefined") {
+					shouldOverride = true;
+				}
+				(!override && Object.prototype[name]) || Object.defineProperty(Object.prototype, name, {
+					writable: true,
+					enumerable: false,
+					configurable: true,
+					value: fn
+				});
+				override = shouldOverride;
 			}
-			(!override && Object.prototype[name]) || Object.defineProperty(Object.prototype, name, {
-				writable: true,
-				enumerable: false,
-				configurable: true,
-				value: fn
-			});
-			override = shouldOverride;
         } catch (e) {
             error("addPrototype", e);
             try {
@@ -2186,7 +2546,7 @@ if (__thisIsNewer) {
                 error("addPrototype:Non-ECMAScript 5", e);
             }
         }
-        _df(name, fn, override);
+		return _df(name, fn, override);
     }
     function addHTMLPrototype (name, fn, override) {
         /*|{
@@ -2277,7 +2637,7 @@ if (__thisIsNewer) {
         try {
             var props = [],
                 currentIndex = 0,
-                arr = $c.copyObject(records || []);
+				arr = $c.duplicate(records || [],true);
             if ($c.isObject(arr)) {
                 for (var prop in arr) {
                     if (!arr.hasOwnProperty(prop)) { continue; }
@@ -2285,8 +2645,8 @@ if (__thisIsNewer) {
                 }
                 props.sort();
             } else if ($c.isArray(arr)) {
-				var i = 0;
-				while (arr[i++]) {
+				var i = 0, len = arr.length;
+				while (i++ < len) {
 					props.push(i - 1);
                 }
             }
@@ -2296,10 +2656,16 @@ if (__thisIsNewer) {
                 return {value:this[props[currentIndex++]], done:currentIndex >= this.size()};
             };
             arr.reset = function () { currentIndex = 0; };
-            arr.setIndex = function (value) { currentIndex = parseInt(value) || 0; };
+			arr.setNextIndex = function (value) {
+				value = parseInt(value) || 0;
+				if (value < 0) { value = 0; }
+				else if (value >= props.length) { value = props.length - 1; }
+				currentIndex = value;
+				arr.current = arr[props[currentIndex]];
+			};
             arr.current = arr[props[currentIndex]];
 
-            arr.size = function () { return isNull(this.length) ? $c.itemCount(this) : this.length; };
+			arr.size = function () { return props.length; };
             return arr;
         } catch (e) {
             error('Cursor', e);
@@ -2323,11 +2689,11 @@ if (__thisIsNewer) {
         }|*/
         try {
             sorter = sorter || function(a,b){if (a < b) {return -1;}if (a > b) {return 1;}return 0;};
-            var arr = $c.copyObject(records || []).sort(sorter), nextIndex = 0;
+			var arr = $c.duplicate(records || [],true).sort(sorter), nextIndex = 0;
             arr.add = function(value){
                 if (!this.length) { return this.push(value); }
                 var index = _orderListHelper(value, sorter, this);
-                return this.insertBefore(index, value);
+                return $c.insertBefore(this,index, value);
             };
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
@@ -2352,13 +2718,9 @@ if (__thisIsNewer) {
             "returnType": "(Queue)"
          }|*/
         try {
-            var arr = $c.copyObject(records || []), nextIndex = 0;
-            arr.enqueue = function(value){
-                this.push(value);
-            };
-            arr.dequeue = function(){
-                return this.slice(0,1);
-            };
+			var arr = $c.duplicate(records || [],true), nextIndex = 0;
+			arr.enqueue = function(value){ this.push(value); };
+			arr.dequeue = function(){ return this.splice(0,1)[0]; };
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
@@ -2382,14 +2744,20 @@ if (__thisIsNewer) {
             "returnType": "(Set)"
         }|*/
         try {
-            var arr = $c.copyObject(records || []), nextIndex = 0;
+			var arr = $c.duplicate(records || []), nextIndex = 0;
             arr.add = function(value){
-				if (this.indexOf(value) == -1) { return !!arr.push(value); }
-                return false;
-
+				var push = true;
+				for (var i = 0, len = this.length; i < len; i++) {
+					if ($c.equals(value,this[i])) {
+						push = false;
+						break;
+					}
+				}
+				if (push) { return !!arr.push(value); }
+					return false;
             };
-            arr.clear = arr.removeAll;
-            arr.clean = arr.toSet;
+            arr.clear = function(val,indexOf){$c.removeAll(this,val,indexOf);};
+			arr.clean = function(){$c.toSet(this)};
             arr.next = function () {
                 return {value:this[nextIndex++], done:nextIndex >= this.size()};
             };
@@ -2406,19 +2774,25 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	Ajax operations
      /---------------------------------------------------------------------------------------------------------------*/
-    function ajax(params){
+    function ajax(params, returnData){
         /*|{
             "info": "Method to make ajax calls",
             "category": "Global",
             "parameters":[
                 {"params": "(Object) specs with common properties:<br />(String) url<br />(String) dataType<br />(Mixed) hitch<br />(Function[]) onerror<br />(Function[])onsuccess"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"params": "(Object) specs with common properties:<br />(String) url<br />(String) dataType<br />(Mixed) hitch<br />(Function[]) onerror<br />(Function[])onsuccess"},
+                    {"returnData": "(String) Specifies which data to return when using Promise pattern"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#ajax",
             "returnType": "(void)"
         }|*/
         try {
+			if ($c.isString(params)) {
+				params = { url : params };
+			}
             var need_to_shard = false, browser_url_limit = 1500, query, url, rtn;
             params.dataType = params.dataType || 'json';
             params.hitch = params.hitch || "";
@@ -2427,7 +2801,24 @@ if (__thisIsNewer) {
 			params.onerror = params.onerror || params.onresponse || [foo];
 			params.onsuccess = params.onsuccess || params.onresponse || [foo];
             params.query = params.data || params.query || "";
+            params.timeout = params.timeout || 120000;
             params.jsonp = (params.jsonp || "callback") + "=";
+
+            if (!$c.isArray(params.oncomplete)) {
+                params.oncomplete = [params.oncomplete];
+            }
+            if (!$c.isArray(params.onbefore)) {
+                params.onbefore = [params.onbefore];
+            }
+            if (!$c.isArray(params.onerror)) {
+                params.onerror = [params.onerror];
+            }
+            if (!$c.isArray(params.onresponse)) {
+                params.onresponse = [params.onresponse];
+            }
+            if (!$c.isArray(params.onsuccess)) {
+                params.onsuccess = [params.onsuccess];
+            }
             // commented line below is a valid parameter value
             /*
              params.shard_data = params.shard_data;
@@ -2457,163 +2848,199 @@ if (__thisIsNewer) {
             */
             params.thiss = this;
             params.url = params.url || "";
-
-            if (params.dataType.toLowerCase() == 'jsonp') {
-                var head = $d.getElementsByTagName('head')[0],
-                    func = params.jsonpCallback || '_cjson' + Math.floor(Math.random() * 1000000),
-                    insert = 'insertBefore',
-                    tag = $d.createElement('script');
-                while (!params.jsonpCallback && $w[func]) {
-                    func = '_cjson' + Math.floor(Math.random() * 1000000);
-                }
-                params.jsonpCallback && (params.onsuccess = $w[func]);
-                $w[func] = function (data) {
-                    if (params.query) {
-                        var thiss = params.thiss;
-                        delete params.thiss;
-                        ajax.call(thiss, params);
-                    } else {
-                        (!data.hasErrors &&
-                        (_run_func_array.call((params.context||params.thiss),params.onsuccess, [data, params.hitch, params.thiss, params.context]) || true)) ||
-                        _run_func_array.call((params.context||params.thiss),params.onerror,[data, params.hitch, params.thiss, params.context]);
-
-                        _run_func_array.call((params.context||this),params.oncomplete);
-                        if (params.jsonpCallback) {
-                            $w[func] = params.onsuccess;
+            var cbk = (function (res) {
+                if (params.dataType.toLowerCase() == 'jsonp') {
+                    var head = $d.getElementsByTagName('head')[0],
+                        func = params.jsonpCallback || '_cjson' + Math.floor(Math.random() * 1000000),
+                        insert = 'insertBefore',
+                        tag = $d.createElement('script');
+                    while (!params.jsonpCallback && $w[func]) {
+                        func = '_cjson' + Math.floor(Math.random() * 1000000);
+                    }
+                    params.jsonpCallback && (params.onsuccess = $w[func]);
+                    $w[func] = function (data) {
+                        if (params.query) {
+                            var thiss = params.thiss;
+                            delete params.thiss;
+                            ajax.call(thiss, params);
                         } else {
-                            try { delete $w[func] } catch(e){ $w[func] = undefined; }
+                            var code = data.code || 500;
+                            if (!$c.isNull(data.hasErrors) && data.hasErrors || !$c.isNull(data.hasErrors) && !data.success) {
+                                _run_func_array.call((params.context || params.thiss), params.onerror, [data, params.hitch, params.thiss, params.context, data.code || 500]);
+                            } else {
+                                _run_func_array.call((params.context || params.thiss), params.onsuccess, [data, params.hitch, params.thiss, params.context, code = 200]);
+                            }
+
+                            _run_func_array.call((params.context || this), params.oncomplete, [data, params.hitch, params.thiss, params.context, params.context, code]);
+                            if (params.jsonpCallback) {
+                                $w[func] = params.onsuccess;
+                            } else {
+                                try {
+                                    delete $w[func]
+                                } catch (e) {
+                                    $w[func] = undefined;
+                                }
+                            }
+
+                            var rtn = data;
+                            if (returnData == "response" || returnData == "res" || returnData == "request" || returnData == "req") {
+                                rtn = tag;
+                            }
+                            res(rtn);
                         }
-                    }
-                };
-                if (params.shard_data && params.query && !$c.isObject(params.query) && params.query.length > browser_url_limit) {
-                    need_to_shard = true;
-                    var query_parts = params.query;
-                    params.query = {};
-                    query_parts = query_parts.indexOf('?') == 0 ? query_parts.substr(1) : query_parts;
-                    query_parts = query_parts.split("&");
-                    // params.query now has the object representation of the query
-                    query_parts.map(function(str){
-                        var name_value = str.split('=');
-                        this[encodeURIComponent(name_value[0])] = encodeURIComponent(name_value[1]);
-                    },params.query);
-                } else if (params.query && $c.isObject(params.query)) {
-                    query = $c.toStringAlt(params.query, '=', '&',true);
-                    if (query.length > browser_url_limit) {
+                    };
+                    if (params.shard_data && params.query && !$c.isObject(params.query) && params.query.length > browser_url_limit) {
                         need_to_shard = true;
-                    } else {
-                        params.query = query;
-                    }
-                }
-
-                // if need_to_shard is true then params.query is an object
-                // and if if need_to_shard is false, params.query is a string ready by sent
-                query = params.query;
-                url = params.url;
-                if (need_to_shard) {
-                    params.__FIRST = isNull(params.__FIRST);
-                    params.__EOF = true;
-                    query = "&EOQ=false";
-                    for (var prop in params.query) {
-                        if ((query + prop +"xxx").length > browser_url_limit) {
-                            break;
-                        }
-                        query += '&' + encodeURIComponent(prop) + "=" + encodeURIComponent(params.query[prop]);
+                        var query_parts = params.query;
+                        params.query = {};
+                        query_parts = query_parts.indexOf('?') == 0 ? query_parts.substr(1) : query_parts;
+                        query_parts = query_parts.split("&");
+                        // params.query now has the object representation of the query
+                        query_parts.map(function (str) {
+                            var name_value = str.split('=');
+                            this[encodeURIComponent(name_value[0])] = encodeURIComponent(name_value[1]);
+                        }, params.query);
+                    } else if (params.query && $c.isObject(params.query)) {
+                        query = $c.toStringAlt(params.query, '=', '&', true);
                         if (query.length > browser_url_limit) {
-                            var left_over = query.substr(browser_url_limit);
-                            query = query.substr(0, browser_url_limit);
-                            params.query[prop] = left_over;
-                            break;
+                            need_to_shard = true;
+                        } else {
+                            params.query = query;
                         }
-                        delete params.query[prop];
                     }
+
+                    // if need_to_shard is true then params.query is an object
+                    // and if if need_to_shard is false, params.query is a string ready by sent
+                    query = params.query;
+                    url = params.url;
+                    if (need_to_shard) {
+                        params.__FIRST = isNull(params.__FIRST);
+                        params.__EOF = true;
+                        query = "&EOQ=false";
+                        for (var prop in params.query) {
+                            if ((query + prop + "xxx").length > browser_url_limit) {
+                                break;
+                            }
+                            query += '&' + encodeURIComponent(prop) + "=" + encodeURIComponent(params.query[prop]);
+                            if (query.length > browser_url_limit) {
+                                var left_over = query.substr(browser_url_limit);
+                                query = query.substr(0, browser_url_limit);
+                                params.query[prop] = left_over;
+                                break;
+                            }
+                            delete params.query[prop];
+                        }
+                    } else {
+                        params.__EOF && (params.__EOF = "true");
+                        delete params.query;
+                    }
+                    query = (params.run ? "&run=" + params.run : "") +
+                        (query || "") +
+                        ((params.__EOF && params.__EOF === "true" && ("&EOQ=true")) || "") +
+                        ((params.__FIRST && ("&FIRST=true")) || "");
+                    url += (params.url.indexOf('?') != -1 ? "&" : "?") + (params.jsonp || "callback=") + func + (query || "");
+
+                    tag['type'] = "text/javascript";
+                    tag.async = "async";
+                    tag['src'] = url;
+
+                    // Attach handlers for all browsers
+                    tag.onload = tag.onreadystatechange = function (ev) {
+                        try {
+                            if (!this.readyState || /complete|loaded/.test(this.readyState.toString())) {
+                                // Handle memory leak in IE
+                                this.onload = this.onreadystatechange = null;
+
+                                // Remove the script
+                                if (head && this.parentNode && IEVersion() == -1) {
+                                    head.removeChild(this);
+                                }
+                            }
+                        } catch (e) {
+                            error('ajax.tag.statechange', e);
+                        }
+                    };
+                    _run_func_array.call((params.context || this), params.onbefore, [tag, params.hitch, this]);
+                    head[insert](tag, head.firstChild);
+                    return tag;
                 } else {
-                    params.__EOF && (params.__EOF = "true");
-                    delete params.query;
-                }
-                query = (params.run ? "&run=" + params.run :"") +
-                (query || "") +
-                ((params.__EOF && params.__EOF === "true" && ("&EOQ=true")) || "") +
-                ((params.__FIRST && ("&FIRST=true")) || "");
-                url += (params.url.indexOf('?') != -1 ? "&" : "?") + (params.jsonp || "callback=") + func + (query || "");
+                    var httpRequest = new Request(),
+                        fileUpload = httpRequest.upload || {};
+                    params.method = params.method || "POST";
+                    params.headers = params.headers || [];
 
-                tag['type'] = "text/javascript";
-                tag.async = "async";
-                tag['src'] = url;
+                    if (params.query && $c.isObject(params.query)) {
+                        params.query = $c.toStringAlt(params.query, '=', '&', true);
+                    }
+                    params.query = (params.run ? "run=" + params.run : "") + (params.query || "");
+                    params.contentType = params.contentType || "application/x-www-form-urlencoded";
+                    params.onstatechange = params.onstatechange || foo;
 
-                // Attach handlers for all browsers
-                tag.onload = tag.onreadystatechange = function(ev) {
-                    try {
-                        if (!this.readyState || /complete|loaded/.test( this.readyState.toString() ) ) {
-                            // Handle memory leak in IE
-                            this.onload = this.onreadystatechange = null;
+                    fileUpload.onload = params.onfileload || foo;
+                    fileUpload.onprogress = params.onprogress || foo;
+                    fileUpload.onabort = params.onabort || foo;
+                    fileUpload.onerror = params.onerror || foo;
+                    fileUpload.onloadstart = params.onloadstart || foo;
 
-                            // Remove the script
-                            if ( head && this.parentNode && IEVersion () == -1) {
-                                head.removeChild( this );
+                    if (params.method == "GET") {
+                        params.url += params.query ? "?" + params.query : "";
+                        params.query = undefined;
+                    }
+                    _run_func_array.call((params.context || this), params.onbefore, [httpRequest, params.hitch, this]);
+                    httpRequest.onreadystatechange = function (xp) {
+                        params.onstatechange(xp);
+                        var data = _ajaxServerResponse(this), done = this.readyState == 4;
+                        if (data) {
+                            _run_func_array.call((params.context || this), params.onsuccess, [data, params.hitch, params.thiss, params.context, this.status]);
+                        } else if (done) {
+                            try {
+                                _run_func_array.call((params.context || this), params.onerror, [eval(this.responseText), params.hitch, params.thiss, params.context, this.status]);
+                            } catch (e) {
+                                _run_func_array.call((params.context || this), params.onerror, [this.responseText, params.hitch, params.thiss, params.context, this.status]);
                             }
                         }
-                    } catch (e) {
-                        error('ajax.tag.statechange', e);
-                    }
-                };
-                _run_func_array.call((params.context||this),params.onbefore, [tag, this]);
-                head[insert](tag, head.firstChild);
-                rtn = tag;
-            } else {
-                var httpRequest = new Request(),
-                    fileUpload = httpRequest.upload || {};
-                params.method = params.method || "POST";
-                params.headers = params.headers || [];
-
-                if (params.query && $c.isObject(params.query)) {
-                    params.query = $c.toStringAlt(params.query, '=', '&', true);
-                }
-                params.query = (params.run ? "run=" + params.run :"") + (params.query || "");
-                params.contentType = params.contentType || "application/x-www-form-urlencoded";
-                params.onstatechange = params.onstatechange || foo;
-
-                fileUpload.onload = params.onfileload || foo;
-                fileUpload.onprogress = params.onprogress || foo;
-                fileUpload.onabort = params.onabort || foo;
-                fileUpload.onerror = params.onerror || foo;
-                fileUpload.onloadstart = params.onloadstart || foo;
-
-                if (params.method == "GET") {
-                    params.url += params.query ? "?" + params.query : "";
-                    params.query = undefined;
-                }
-                _run_func_array.call((params.context||this),params.onbefore, [httpRequest, this]);
-                httpRequest.onreadystatechange = function (xp) {
-                    params.onstatechange(xp);
-                    var data = _ajaxServerResponse(this);
-                    if (data) {
-                        _run_func_array.call((params.context||this),params.onsuccess, [data, params.hitch, params.thiss, params.context, this.status]);
-                    } else if (this.readyState == 4) {
-                        try {
-                            _run_func_array.call((params.context||this),params.onerror, [eval(this.responseText), params.hitch, params.thiss, params.context, this.status]);
-                        } catch (e) {
-                            _run_func_array.call((params.context||this),params.onerror, [this.responseText, params.hitch, params.thiss, params.context, this.status]);
+                        done && _run_func_array.call((params.context || this), params.oncomplete, [data, params.hitch, params.thiss, params.context, this.status]);
+                        var rtn = data;
+                        if (returnData == "response" || returnData == "res") {
+                            rtn = this;
+                        } else if (returnData == "request" || returnData == "req") {
+                            rtn = httpRequest;
                         }
-                    }
-                    _run_func_array.call((params.context||this),params.oncomplete);
-                };
-                httpRequest.open(params.method, params.url, true);
-                httpRequest.setRequestHeader("Content-type", params.contentType);
+                        res(rtn);
+                    };
+                    httpRequest.open(params.method, params.url, true);
+                    httpRequest.setRequestHeader("Content-type", params.contentType);
 
-                for (var i = 0; i < params.headers.length; i++) {
-                    var header = params.headers[i];
-                    httpRequest.setRequestHeader(header.type, header.value);
+                    for (var i = 0; i < params.headers.length; i++) {
+                        var header = params.headers[i];
+                        httpRequest.setRequestHeader(header.type, header.value);
+                    }
+                    httpRequest.send(params.query);
+                    return httpRequest;
                 }
-                httpRequest.send(params.query);
-                rtn = httpRequest;
+            }).bind(this);
+            var prm = {};
+            if(typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1 && (params.onsuccess.length == 1 && params.onsuccess[0] === foo)){
+                prm = new Promise(cbk);
+                //if (params.onsuccess.length == 1 && params.onsuccess[0] !== foo) {
+                prm._then = prm.then || foo;
+                prm.then = function (res, rej) { //noinspection CommaExpressionJS
+                    params.onsuccess.push(res);
+                    params.onerror.push(rej);
+                    return this;
+                };
+                //}
+            } else {
+                prm = cbk(foo);
+                prm.then = function (callback) { //noinspection CommaExpressionJS
+                    return params.onsuccess.push(callback),this; };
             }
-            rtn.then = function (callback) { //noinspection CommaExpressionJS
-                return params.onsuccess.push(callback),this; };
-            rtn.otherwise = function (callback) { //noinspection CommaExpressionJS
+
+            prm.otherwise = function (callback) { //noinspection CommaExpressionJS
                 return params.onerror.push(callback),this; };
-            rtn['finally'] = function (callback) { //noinspection CommaExpressionJS
-                return params.complete.push(callback),this; };
-            return rtn
+            prm['finally'] = function (callback) { //noinspection CommaExpressionJS
+                return params.oncomplete.push(callback),this; };
+            return prm
         } catch (e) {
             error("ajax", e);
         }
@@ -2767,6 +3194,9 @@ if (__thisIsNewer) {
                     value.push(JSON.stringify(key[prop]));
                     keys.push(prop);
                 }
+            } else if ($c.isString(key) && $c.isObject(value)) {
+                options = value;
+                value = undefined;
             } else if (arguments.length > 1) {
                 keys.push(key);
                 values.push(JSON.stringify(value));
@@ -2797,12 +3227,11 @@ if (__thisIsNewer) {
             var cookies = {},
                 arr = c.split(/[,;]/);
             for (var i = 0, len = arr.length; i < len; i++) {
-                var cookie = arr[i],
-                    parts = cookie.split(/=/, 2),
-//                name = decodeURIComponent($c.ltrim(parts[0])),
+				var cookie = arr[i];
+				var parts = cookie.split(/=/, 2),
                     name = decodeURIComponent(parts[0] && parts[0].ltrim && parts[0].ltrim() || ""),
                     value = parts.length > 1 ? decodeURIComponent($c.rtrim(parts[1])) : null;
-                cookies[name] = tryEval(value) || value;
+                cookies[name] = $c.tryEval(value) || value;
                 if (key && key == name) {
                     return cookies[name];
                 }
@@ -2864,7 +3293,7 @@ if (__thisIsNewer) {
             }
             options = options || {};
             var ignoreCase = options.ignoreCase || options == "ignoreCase" ? "i" : "",
-                defer = !!$COMMIT.update && (options.defer || options == "defer"),
+                defer = /*!!$COMMIT.update && */(options.defer || options == "defer"),
                 regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
                 attr = "search",
                 location = {};
@@ -2974,7 +3403,7 @@ if (__thisIsNewer) {
             error("$SET", e);
         }
     }
-    function $DEL(variables, options) {
+    function $DELETE(variables, options) {
         /*|{
             "info": "Delete variable in url",
             "category": "Global",
@@ -3044,6 +3473,7 @@ if (__thisIsNewer) {
             return false;
         }
     }
+    $w.$DEL = $DELETE;
     function $COMMIT(options) {
         /*|{
             "info": "Commit changes using $GET, $SET, and $DEL with defer flag",
@@ -3145,9 +3575,8 @@ if (__thisIsNewer) {
         }|*/
         try {
             if($c && $c.DEBUG_MODE && console && console.log){
-			var i = 0, arg;
-			while (arg = arguments[i++]) {
-				console.log(arg);
+				for (var i = 0, len = arguments.length; i < len; i++) {
+					console.log(arguments[i]);
                 }
             }
         } catch (e) {
@@ -3194,15 +3623,24 @@ if (__thisIsNewer) {
 			"returnType":"(void)"
 		}|*/
 		try {
-			if (arguments.callee.caller['_emit']) {
-				_run_func_array.call(this, arguments.callee.caller['_emit'], arguments);
+			var args = arguments, vals = [];
+			if (!$c.isArray(args)) {
+				args = [];
+				for (var prop in arguments) {
+					args[prop] = arguments[prop];
+				}
+				args.callee = arguments.callee;
+				}
+			if (args.callee.caller['_emit']) {
+				vals = vals.concat(_run_func_array.call(this, args.callee.caller['_emit'], args));
 			}
-			if (ev && arguments.callee.caller['_'+ev]) {
-				_run_func_array.call(this, arguments.callee.caller['_' + ev], arguments.splice(1));
+			if (ev && args.callee.caller['_'+ev]) {
+				vals = vals.concat(_run_func_array.call(this, args.callee.caller['_' + ev], args.splice(1)));
 			}
+			return vals;
 		} catch (e) {
-			error('emit', e);
-			ev != 'catch' && _run_func_array.call(this, arguments.callee.caller['_' + ev], arguments.splice(1));
+			//error('emit', e);
+			return e != 'catch' && _run_func_array.call(this, arguments.callee.caller['_catch'], args.length == arguments.length ? args.splice(1) : args);
 		}
 	}
     function error(fname, e) {
@@ -3219,7 +3657,7 @@ if (__thisIsNewer) {
             "returnType": "(void)"
         }|*/
         try {
-            $c.DEBUG_MODE && cout("Error in " + fname + "\n" + (e.description || e), e);
+			$c.DEBUG_MODE && cout("Error in " + fname + "\n" + (e.description || e), e, e.stack);
         } catch (e) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
@@ -3287,34 +3725,29 @@ if (__thisIsNewer) {
             var html = "", variable, value, ttc = $c.TEMPLATE_TAG_CONFIG, tvs = $c.TEMPLATE_VARS,
 				hasDataProps = htmlTemplate.indexOf('${dataproperties}') != -1,
                 vsyntax = ttc.VARIABLE,
-                vnsyntax = ttc.VARIABLE_NAME,
-                declarations = htmlTemplate.match(ttc.DECLARE.syntax.addFlags('g')) || [], j = 0, tv, decl;
+                vnsyntax = ttc.VARIABLE_NAME, j = 0, tv, decl = false;
 			while (tv = tvs[j++]) {
-				variable = tv.variable;
+				variable = tv.variable || tv.name;
 				value = tv.value;
                 if (!variable) {continue;}
                 value = $c.isFunction(value) ? value(variable,j - 1):value;
-                htmlTemplate = htmlTemplate.replace_all("${"+variable+"}", value);
-            }
-			j = 0;
-			while (decl = declarations[j++]) {
-				htmlTemplate = ttc.DECLARE.parser(htmlTemplate, decl);
+                htmlTemplate = $c.replace_all(htmlTemplate,"${"+variable+"}", value);
             }
 
             max = max || objs.length;
             offset = offset || 0;
 
-            var props = (htmlTemplate.match(vsyntax) || []).condense(true), obj, i = offset;
+            var props = $c.condense(htmlTemplate.match(vsyntax) || [], true);
             // prep template to allow binding
             if (bound) {
                 var nodes = htmlTemplate.toDomElement();
                 function __setBindAttribute(n,value,id) {
                     var prop, k = 0;
                     while (prop = props[k++]) {
-                        if (value.contains(prop)) {
+                        if ($c.contains(value,prop)) {
                             var ca = n.getAttribute("data-craydent-bind") || "",
                                 property = $c.isFunction(vnsyntax) ? vnsyntax(prop) : vnsyntax.exec && vnsyntax.exec(prop);
-                            !ca.contains("${craydent_bind}." + property) &&
+                            !$c.contains(ca,"${craydent_bind}." + property) &&
                             n.setAttribute("data-craydent-bind", (ca ? ca + "," : id+":") + "${craydent_bind}." + property);
                         }
                     }
@@ -3348,20 +3781,19 @@ if (__thisIsNewer) {
             }
             var bindTemplate = {html: htmlTemplate}, _observing = fillTemplate._observing;
 
-            while (i < max && (obj = objs[i++])) {
-                var regex, template = htmlTemplate, match, bind = "";
+            for (var i = offset; i < max; i++) {
+                var obj = objs[i], regex, template = htmlTemplate, match, bind = "";
 
                 if (bound) {
                     $c.observe(obj);
                     bind = _observing["hash_"+_observing.indexOf(obj)];
                     _observing[bind] = {item:obj,template:bindTemplate};
-                    template = template.replace_all("${craydent_bind}", bind);
+                    template = $c.replace_all(template, "${craydent_bind}", bind);
                 }
 
-                if (template.contains("${this}")) {
+                if (template.indexOf("${this}") != -1 || template.indexOf("${index}") != -1) {
                     var uid = __add_fillTemplate_ref(obj);
-                    //template = template.replace_all(["${this}","${index}"],[parseRaw(obj, true).replace_all([';','[',']'], [';\\','\\[','\\]']),i]);
-                    template = template.replace_all(["${this}","${index}"],["fillTemplate.refs['" + uid + "']",i - 1]);
+                    template = $c.replace_all(template, ["${this}","${index}"],["fillTemplate.refs['" + uid + "']",i]);
                 }
 
 
@@ -3372,11 +3804,11 @@ if (__thisIsNewer) {
                     } else {
                         value = parseRaw(value, $c.isString(value));
                     }
-                    template= template.replace_all("${this."+match[1]+"}", value);
+                    template= $c.replace_all(template, "${this."+match[1]+"}", value);
                 }
                 var objval, expression;
-                j = 0;
-                while (expression = props[j++]) {
+				for (var j = 0, jlen = props.length; j < jlen; j++) {
+					expression = props[j];
                     var property = $c.isFunction(vnsyntax) ? vnsyntax(expression) : vnsyntax.exec && vnsyntax.exec(expression);
                     if (!obj.hasOwnProperty(property)) { continue; }
                     if (template.indexOf(expression) != -1 && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true}))) {
@@ -3385,49 +3817,58 @@ if (__thisIsNewer) {
                         } else {
                             objval = parseRaw(objval, $c.isString(objval));
                         }
-                        objval = objval.replace_all(['\n',';'],['<br />',';\\']);
+                        objval = $c.replace_all(objval, ['\n',';'],['<br />',';\\']);
 						if (objval.indexOf('${') != -1) {
                             objval = fillTemplate(objval,[obj]);
                         }
-                        template = template.replace_all(expression, objval);
+                        template = $c.replace_all(template, expression, objval);
 
                         if (hasDataProps) {
-                            template = template.replace_all('${dataproperties}', "data-" + property + "='" + (objval.indexOf('<') && "" || objval) + "' ${dataproperties}");
+                            template = $c.replace_all(template, '${dataproperties}', "data-" + property + "='" + (objval.indexOf('<') && "" || objval) + "' ${dataproperties}");
                         }
                     }
                 }
-                template = template.replace_all('\n', '');
+                template = $c.replace_all(template, '\n', '');
                 // special run sytax
 				template = template.indexOf("${COUNT") != -1 ? template.replace(/\$\{COUNT\[(.*?)\]\}/g, '${RUN[__count;$1]}') : template;
 				template = template.indexOf("${ENUM") != -1 ? template.replace(/\$\{ENUM\[(.*?)\]\}/g, '${RUN[__enum;$1]}') : template;
 				template = template.indexOf("${RUN") != -1 ? __run_replace(/\$\{RUN\[(.+?)\]\}/, template, true, obj) : template;
                 var tmp, rptmp;
 				if (template.indexOf('||') != -1 && (tmp = /\$\{(.+?\|\|?.+?)\}/.exec(template)) && tmp[1]) {
-                    tmp = tmp[1].strip('|').replace(/\|{3,}/,'');
+                    tmp = $c.strip(tmp[1], '|').replace(/\|{3,}/,'');
 					if (tmp.indexOf('||') != -1) {
-                        rptmp = (tmp && "__or|" + tmp.replace_all('||', "|") || "");
-                        template = template.replace_all(tmp, rptmp);
+                        rptmp = (tmp && "__or|" + $c.replace_all(tmp, '||', "|") || "");
+                        template = $c.replace_all(template, tmp, rptmp);
                     }
                     template = template.replace("||",'|');
                 }
 				if (template.indexOf('&&') != -1 && (tmp = /\$\{(.+?\&\&?.+?)\}/.exec(template)) && tmp[1]) {
                     tmp = tmp[1];
-                    rptmp = (tmp && "__and|"+tmp.replace_all('&&', "|") || "");
-                    template = template.replace_all(tmp, rptmp);
+                    rptmp = (tmp && "__and|"+$c.replace_all(tmp, '&&', "|") || "");
+                    template = $c.replace_all(template, tmp, rptmp);
                 }
                 var leftovervars = template.match(vsyntax);
                 if (leftovervars) {
-					var k = 0, variable;
-					while (variable = leftovervars[k++]) {
+					for (var k = 0, klen = leftovervars.length; k < klen; k++) {
+						var variable = leftovervars[k];
 						if (variable.indexOf('|') != -1) {
-                            var regex = new RegExp(variable.replace_all(['$','{','}','|'],['\\$','\\{(',')\\}','\\|']));
+                            var regex = new RegExp($c.replace_all(variable, ['$','{','}','|'],['\\$','\\{(',')\\}','\\|']));
                             template = __run_replace (regex, template, false,obj);
                         }
                     }
                 }
-                template = template.contains(/\$\{.*?(\|.*?)+?\}/) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
+                template = $c.contains(template, /\$\{.*?(\|.*?)+?\}/) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
+
+			//if (!decl) {
+				var declarations = template.match($c.addFlags(ttc.DECLARE.syntax, 'g')) || []
+				for (var j = 0, jlen = declarations.length; j < jlen; j++) {
+					template = ttc.DECLARE.parser(template, declarations[j]);
+					//htmlTemplate = ttc.DECLARE.parser(htmlTemplate, declarations[j]);
+				}
+				//decl = true;
+			//}
                 template = __logic_parser(template, obj, bind);
-                html += (template.contains(vsyntax) ? template.replace(vsyntax,"") : template).replace_all(';\\', ';');
+                html += $c.replace_all(($c.contains(template, vsyntax) ? template.replace(vsyntax,"") : template), ';\\', ';');
             }
 
             if (domRef) {
@@ -3478,6 +3919,27 @@ if (__thisIsNewer) {
         } catch (e) {
             error('getUniqueId', e);
         }
+    }
+    function isNull(value, defaultValue) {
+		/*|{
+			"info": "Check if a value is Null",
+			"category": "Global",
+			"parameters":[
+				{"value": "(Mixed) Value to check"}],
+
+			"overloads":[
+				{"parameters":[
+					{"value": "(Mixed) Value to check"},
+					{"defaultValue": "(Mixed) Value to return if null"}]}],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#isNull",
+			"returnType": "()"
+		}|*/
+        var isnull = value == null || value == undefined;
+        if (defaultValue == null || defaultValue == undefined) {
+            return isnull;
+        }
+        return isnull ? defaultValue : value;
     }
     function killPropagation(ev, bubble, returnValue) {
         /*|{
@@ -3532,7 +3994,7 @@ if (__thisIsNewer) {
 			var location = "", err = new Error(), args = [], arg, i = 0;
 
             $c.VERBOSE_LOGS && err.stack && (location = "\t\t\t\t    " + err.stack.split('\n')[2]);
-			while (arg = arguments[i++]) { args.push(arg); }
+		for (var i = 0, len = arguments.length; i < len; i++) { args.push( arguments[i]); }
             if ($c.VERBOSE_LOGS) {
                 args.push(location);
             }
@@ -3559,10 +4021,13 @@ if (__thisIsNewer) {
             "returnType":"(void)"
         }|*/
         try {
-            var className = clazz.getName();
-            $w[className] = namespace[className] || clazz;
-            $w.setProperty(name + "." + className, clazz);
+            var className = $c.getName(clazz);
+		$c.namespaces = $c.namespaces || {};
+		$c.namespaces[className] = namespace[className] || clazz;
+		$c.setProperty($c.namespaces, name + "." + className, clazz);
+		$g[name] = ($g[name] || "") + clazz.toString();
             fn && fn.call(clazz);
+		return clazz;
         } catch (e) {
             error('namespace', e);
         }
@@ -3580,9 +4045,17 @@ if (__thisIsNewer) {
 			"returnType":"(void)"
 		}|*/
 		try {
-			_run_func_array.call(this, arguments.callee.caller._then, arguments);
+		var args = arguments;
+		if (!$c.isArray(args)) {
+			args = [];
+			for (var prop in arguments) {
+				args[prop] = arguments[prop];
+			}
+			args.callee = arguments.callee;
+		}
+		return _run_func_array.call(this, arguments.callee.caller._then, arguments);
 		} catch (e) {
-			error('next', e);
+		return e != 'catch' && _run_func_array.call(this, arguments.callee.caller['_catch'], args.length == arguments.length ? args.splice(1) : args);
 		}
 	}
     function now (format) {
@@ -3599,7 +4072,7 @@ if (__thisIsNewer) {
             "returnType":"(Mixed)"
         }|*/
         try {
-            return format ? (new Date()).format(format) : new Date();
+            return format ? $c.format((new Date()), format) : new Date();
         } catch (e) { error('now', e); }
     }
     function observe(objs, callback, acceptList, parent){
@@ -3770,24 +4243,24 @@ if (__thisIsNewer) {
             }
             var raw = "";
             if ($c.isString(value)) {
-                raw = (!skipQuotes ? "\"" + value.replace_all('"','\\"') + "\"" : value);
+                raw = (!skipQuotes ? "\"" + $c.replace_all(value, '"','\\"') + "\"" : value);
             } else if ($c.isArray(value)) {
-				var tmp = [], val, i = 0;
-				while (val = value[i++]) {
-					tmp[i - 1] = parseRaw(val, skipQuotes, saveCircular, __windowVars, __windowVarNames);
+			var tmp = [];
+			for (var i = 0, len = value.length; i < len; i++) {
+				tmp[i] = parseRaw(value[i], skipQuotes, saveCircular, __windowVars, __windowVarNames);
                 }
                 raw = "[" + tmp.join(',') + "]";
             } else if ($c.isDate(value)) {
                 return "new Date('"+value.toString()+"')";
-            } else if (value instanceof Object && !$c.isFunction(value)) {
+            } else if (value instanceof Object && !$c.isFunction(value) && !$c.isGenerator(value)) {
                 if (!__windowVars) {
                     __windowVars = [];
                     __windowVarNames = [];
                     if (saveCircular) {
-                        for (var prop in $w) {
-                            if (!$w.hasOwnProperty(prop)) { continue; }
+                        for (var prop in $g) {
+                            if (!$g.hasOwnProperty(prop)) { continue; }
                             if (value.hasOwnProperty(prop)) {
-                                __windowVars.push($w[prop]);
+                                __windowVars.push($g[prop]);
                                 __windowVarNames.push(prop);
                             }
                         }
@@ -3810,7 +4283,7 @@ if (__thisIsNewer) {
                     if (!saveCircular) {
                         raw = "{}";
                     } else {
-                        raw = "$w['" + __windowVarNames[index ] +"']";
+                        raw = "$g['" + __windowVarNames[index ] +"']";
                     }
                 }
             } else {
@@ -3897,7 +4370,7 @@ if (__thisIsNewer) {
 				var obj = geno.next(val);
 
 				if (!obj.done) {
-					if ($c.isPromise(obj.value)) { return obj.value.then(cb); }
+					if ($c.isPromise(obj.value)) { return obj.value.then(cb).catch(cb); }
 					setTimeout(function () { cb(obj.value); }, 0);
 				}
 			})();
@@ -3922,7 +4395,9 @@ if (__thisIsNewer) {
             "returnType": "(Mixed)"
         }|*/
         try {
-            var value = (evaluator || eval)(expression);
+            var value;
+            if (evaluator) { value = evaluator(expression); }
+            else { value = eval(expression); }
             if (value === undefined && expression != "undefined") {
                 throw '';
             }
@@ -3962,10 +4437,10 @@ if (__thisIsNewer) {
                 condition = func.replace(/.*?(return)*\s*?wait\((.*?)\);.*/, '$2'),
                 fregex = /\s*?function\s*?\(\s*?\)\s*?\{/;
             func = func.replace(fname, '').replace(/(function\s*?\(.*?\)\s*?\{).*?(return)*\s*?wait\((.*?)\);/, '$1');
-			var a = 0, argName;
-			while (argName = funcArgNames[a++]) {
+		for (var a = 0, alen = funcArgNames.length; a < alen; a++) {
+			var argName = funcArgNames[a];
 				if (argName) {
-					func = func.replace(fregex, 'function(){var ' + argName + '=' + parseRaw(args[a - 1]) + ';');
+				func = func.replace(fregex, 'function(){var ' + argName + '=' + parseRaw(args[a]) + ';');
                 }
             }
             for (var i = 0, len = variableGroups.length; i < len; i++) {
@@ -4023,59 +4498,94 @@ if (__thisIsNewer) {
          "url": "http://www.craydent.com/library/1.8.1/docs#xmlToJson",
          "returnType": "(Object)"
         }|*/
+
         try {
-            // Create the return object
+            xml = $c.strip(xml.replace(/<\?.*?\?>/,''),'\n').replace(/>\s*?\n\s*/g,'>');
             var obj = {};
-            if ($c.isString(xml)) {
-                xml = xml.replace(/&(?!amp;)/gi, '&amp;');
-                if ($w.DOMParser) {
-                    xml = (new DOMParser()).parseFromString(xml, 'text/xml');
+
+            var index = xml.indexOf('>'),
+                nodename = xml.substring(0, index + 1).replace(/<(\S*)?(?:\s?.*?)>/,'$1');
+
+            if (!nodename) { return xml; }
+
+            var parts = xml.split(nodename), child = "", children = [], part;
+
+            // break down construct string of children
+            for (var i = 0, len = parts.length; i < len; i++) {
+                var part = parts[i] = $c.strip(parts[i],'\n');
+
+                if (part == ">" || part == "><") {
+                    child += ">";
+                    children.push(child);
+                    child = part.substr(1) + nodename;
                 } else {
-                    var doc;
-                    doc = new ActiveXObject('Microsoft.XMLDOM');
-                    doc.async='false';
-                    xml = doc.loadXML(xml) && doc;
+                    child += part + nodename;
                 }
             }
 
-            if (xml.nodeType == 1 && !ignoreAttributes) { // element
-                // do attributes
-                if (xml.attributes.length > 0) {
-                    obj["@attributes"] = {};
-                    for (var j = 0; j < xml.attributes.length; j++) {
-                        var attribute = xml.attributes.item(j);
-                        obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
-                    }
-                }
-            } else if (xml.nodeType == 3) { // text
-                obj = xml.nodeValue;
+            // when there are different nodes
+            if (xml && !children.length) {
+                return __processSiblings(xml);
             }
-
-            // do children
-            if (xml.hasChildNodes()) {
-                for(var i = 0; i < xml.childNodes.length; i++) {
-                    var item = xml.childNodes.item(i);
-                    var nodeName = item.nodeName;
-                    if (typeof(obj[nodeName]) == "undefined") {
-                        if (nodeName != "#text" || !ignoreAttributes) {
-                            obj[nodeName] = xmlToJson(item, ignoreAttributes);
-                        } else if (xml.childNodes.length == 1) {
-                            obj = xmlToJson(item, ignoreAttributes);
-                        }
-                    } else {
-                        if (!$c.isArray(obj[nodeName]) || typeof(obj[nodeName].length) == "undefined") {
-                            var old = obj[nodeName];
-                            obj[nodeName] = [];
-                            obj[nodeName].push(old);
-                        }
-                        obj[nodeName].push(xmlToJson(item, ignoreAttributes));
-                    }
-                }
-            }
-            return obj;
+            return __processChildren(nodename, children);
         } catch (e) {
             error('xmlToJson', e);
         }
+
+
+        //try {
+        //    // Create the return object
+        //    var obj = {};
+        //    if ($c.isString(xml)) {
+        //        xml = xml.replace(/&(?!amp;)/gi, '&amp;');
+        //        if ($w.DOMParser) {
+        //            xml = (new DOMParser()).parseFromString(xml, 'text/xml');
+        //        } else {
+        //            var doc;
+        //            doc = new ActiveXObject('Microsoft.XMLDOM');
+        //            doc.async='false';
+        //            xml = doc.loadXML(xml) && doc;
+        //        }
+        //    }
+		//
+        //    if (xml.nodeType == 1 && !ignoreAttributes) { // element
+        //        // do attributes
+        //        if (xml.attributes.length > 0) {
+        //            obj["@attributes"] = {};
+        //            for (var j = 0; j < xml.attributes.length; j++) {
+        //                var attribute = xml.attributes.item(j);
+        //                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+        //            }
+        //        }
+        //    } else if (xml.nodeType == 3) { // text
+        //        obj = xml.nodeValue;
+        //    }
+		//
+        //    // do children
+        //    if (xml.hasChildNodes()) {
+        //        for(var i = 0; i < xml.childNodes.length; i++) {
+        //            var item = xml.childNodes.item(i);
+        //            var nodeName = item.nodeName;
+        //            if (typeof(obj[nodeName]) == "undefined") {
+        //                if (nodeName != "#text" || !ignoreAttributes) {
+        //                    obj[nodeName] = xmlToJson(item, ignoreAttributes);
+        //                } else if (xml.childNodes.length == 1) {
+        //                    obj = xmlToJson(item, ignoreAttributes);
+        //                }
+        //            } else {
+        //                if (!$c.isArray(obj[nodeName]) || typeof(obj[nodeName].length) == "undefined") {
+        //                    var old = obj[nodeName];
+        //                    obj[nodeName] = [];
+        //                    obj[nodeName].push(old);
+        //                }
+        //                obj[nodeName].push(xmlToJson(item, ignoreAttributes));
+        //            }
+        //        }
+        //    }
+        //    return obj;
+        //} catch (e) {
+        //    error('xmlToJson', e);
+        //}
     }
     function zipit(files, content/*=NULL*/) {
         /*|{
@@ -4098,8 +4608,8 @@ if (__thisIsNewer) {
                 name:files,
                 content:content
             }]) || $c.isObject(files) && [files] || $c.isArray(files) && files;
-			var zip = new JSZip(), i = 0, file;
-			while (file = files[i++]) {
+			var zip = new JSZip();
+			for (var i = 0, len = files.length; i < len; i++) {
                 var file = files[i];
                 content = file.content;
                 if ($c.isObject(content)) {
@@ -4167,8 +4677,8 @@ if (__thisIsNewer) {
         }|*/
         try {
             var rv = -1;
-            if (navigator.appName == 'Microsoft Internet Explorer') {
-                var ua = navigator.userAgent,
+            if (this.navigator.appName == 'Microsoft Internet Explorer') {
+                var ua = this.navigator.userAgent,
                     re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
                 if (re.exec(ua) != null) {
                     rv = parseFloat(RegExp.$1);
@@ -4208,7 +4718,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            return _getBrowserVersion.call(this, "Safari");
+            return $c.isChrome() ? -1 : _getBrowserVersion.call(this, "Safari");
         } catch(e){
             error('SafariVersion', e);
         }
@@ -4226,7 +4736,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/amaya/i.test(navigator.userAgent));
+			return (/amaya/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isAmaya', e);
         }
@@ -4243,7 +4753,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/android/i.test(navigator.userAgent));
+            return (/android/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isAndroid', e);
         }
@@ -4260,7 +4770,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/blackberry/i.test(navigator.userAgent));
+            return (/blackberry/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isBlackBerry', e);
         }
@@ -4277,7 +4787,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/chrome/i.test(navigator.userAgent));
+            return (/chrome/i.test(this.navigator.userAgent));
         } catch(e){
             error('isChrome', e);
         }
@@ -4294,7 +4804,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var nu = navigator.userAgent;
+            var nu = this.navigator.userAgent;
             return (!/chrome/i.test(nu)
                 && !/apple/i.test(nu)
                 && !/opera/i.test(nu)
@@ -4315,7 +4825,7 @@ if (__thisIsNewer) {
              "returnType": "(Bool)"
         }|*/
         try {
-            return (/gecko/i.test(navigator.userAgent));
+            return !$c.isWebkit() && !$c.isKHTML() && (/gecko/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isGecko', e);
         }
@@ -4367,7 +4877,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/iPad|iPhone OS 3_[1|2]_2/i.test(navigator.userAgent));
+            return (/iPad|iPhone OS 3_[1|2]_2/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isIPad', e);
         }
@@ -4384,7 +4894,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return !isIPad() && /iphone/i.test(navigator.userAgent);
+            return !isIPad() && /iphone/i.test(this.navigator.userAgent);
         } catch (e) {
             error('isIPhone', e);
         }
@@ -4401,7 +4911,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/ipod/i.test(navigator.userAgent));
+            return (/ipod/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isIPod', e);
         }
@@ -4418,7 +4928,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/khtml/i.test(navigator.userAgent));
+            return !$c.isWebkit() && (/khtml/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isKHTML', e);
         }
@@ -4435,7 +4945,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return /linux/i.test(navigator.platform);
+            return /linux/i.test(this.navigator.platform);
         } catch (e) {
             error('isLinux', e);
         }
@@ -4452,7 +4962,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return /mac/i.test(navigator.platform);
+            return /mac/i.test(this.navigator.platform);
         } catch (e) {
             error('isMac', e);
         }
@@ -4474,27 +4984,6 @@ if (__thisIsNewer) {
             error('isMobile', e);
         }
     }
-    function isNull(value, defaultValue) {
-        /*|{
-            "info": "Check if a value is Null",
-            "category": "Global",
-            "parameters":[
-                {"value": "(Mixed) Value to check"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"value": "(Mixed) Value to check"},
-                    {"defaultValue": "(Mixed) Value to return if null"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#isNull",
-            "returnType": "()"
-        }|*/
-        var isnull = value == null || value == undefined;
-        if (defaultValue == null || defaultValue == undefined) {
-            return isnull;
-        }
-        return isnull ? defaultValue : value;
-    }
     function isOpera(){
         /*|{
             "info": "Check if browser is Opera",
@@ -4507,7 +4996,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var nu = navigator.userAgent;
+            var nu = this.navigator.userAgent;
             return /chrome/i.test(nu)
                 && /apple/i.test(nu)
                 && /opera/i.test(nu);
@@ -4527,7 +5016,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/palm/i.test(navigator.userAgent));
+            return (/palm/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isIPad', e);
         }
@@ -4544,7 +5033,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/presto/i.test(navigator.userAgent));
+            return (/presto/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isPresto', e);
         }
@@ -4561,7 +5050,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/prince/i.test(navigator.userAgent));
+            return (/prince/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isPrince', e);
         }
@@ -4578,8 +5067,8 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var nu = navigator.userAgent;
-            return (/chrome/i.test(nu)) && (/apple/i.test(nu));
+            var nu = this.navigator.userAgent;
+            return !$c.isChrome() && (/chrome/i.test(nu)) && (/apple/i.test(nu));
         } catch(e){
             error('isSafari', e);
         }
@@ -4596,7 +5085,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            var nu = navigator.userAgent;
+            var nu = this.navigator.userAgent;
             return (isWebkit() && (/series60/i.test(nu) || /symbian/i.test(nu)));
         } catch (e) {
             error('isIPad', e);
@@ -4614,7 +5103,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/trident/i.test(navigator.userAgent));
+            return (/trident/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isTrident', e);
         }
@@ -4631,7 +5120,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/webkit/i.test(navigator.userAgent));
+            return (/webkit/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isWebkit', e);
         }
@@ -4648,7 +5137,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try{
-            return /win/i.test(navigator.platform);
+            return /win/i.test(this.navigator.platform);
         } catch (e) {
             error('isWindows', e);
         }
@@ -4665,7 +5154,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (/windows ce/i.test(navigator.userAgent));
+            return (/windows ce/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isWindowsMobile', e);
         }
@@ -4801,139 +5290,148 @@ if (__thisIsNewer) {
                 SERVER_PATH: $l.pathname,
                 SYMBIAN:isSymbian(),
                 TEMPLATE_VARS: [],
-                TEMPLATE_TAG_CONFIG: {
+                TEMPLATE_TAG_CONFIG: $c && $c.TEMPLATE_TAG_CONFIG || {
                     IGNORE_CHARS:['\n'],
                     /* loop config */
-                    FOR:{
-                        "begin":/(?:\$\{for (.*?);(.*?);(.*?\}?)\})|(?:\{\{for (.*?);(.*?);(.*?\}?)\}\})/i,
-                        "end":/(\$\{end for\})|(\{\{end for\}\})/i,
-                        "helper":function(code, body){
+                    FOR: {
+                        "begin": /(?:\$\{for (.*?);(.*?);(.*?\}?)\})|(?:\{\{for (.*?);(.*?);(.*?\}?)\}\})/i,
+                        "end": /(\$\{end for\})|(\{\{end for\}\})/i,
+                        "helper": function (code, body) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 mresult = code.match(ttc.FOR.begin),
-                                condition, exec, dvars, vars = "", ovars = {},code_result = "";
+                                condition, exec, dvars, vars = "", ovars = {}, code_result = "";
 
                             for (var j = 1, jlen = mresult.length; j < jlen; j++) {
-                                if (!mresult[j]) {
-                                    continue;
-                                }
-                                mresult[j] = mresult[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                                if (!mresult[j]) { continue; }
+                                mresult[j] = $c.replace_all(mresult[j],['\\[', '\\]'], ['[', ']']).toString();
                             }
 
-                                condition = mresult[2] || mresult[5];
-                                exec = mresult[3] || mresult[6];
-                                dvars = (mresult[1] || mresult[4]).split(',');
+                            condition = ttc.VARIABLE_NAME(mresult[2] || mresult[5] || "");
+                            exec = ttc.VARIABLE_NAME(mresult[3] || mresult[6] || "");
+                            dvars = ttc.VARIABLE_NAME(mresult[1] || mresult[4] || "").split(',');
+
                             for (var i = 0, len = dvars.length; i < len; i++) {
-                                var parts = ttc.VARIABLE_NAME(dvars[i]).split('=');
+                                var dvar = dvars[i];
+                                var parts = dvar.split('=');
                                 vars += "var " + parts[0] + "=" + parts[1] + ";";
                                 ovars[parts[0]] = parts[0];
                             }
                             eval(vars);
-                            while (eval(fillTemplate(condition,ovars))) {
-                                code_result += body;
-                                eval(ttc.VARIABLE_NAME(exec));
+                            while (eval(fillTemplate(condition, ovars))) {
+                                code_result += "${i=" + i + ",''}" + body;
+                                eval(exec);
                             }
 
                             return code_result;
                         },
-                        "parser":function (code, obj, bind){
-                            var FOR = $c.TEMPLATE_TAG_CONFIG.FOR,
+                        "parser": function (code, oobj, bind) {
+                            var ttc = $c.TEMPLATE_TAG_CONFIG,
+                                FOR = ttc.FOR,
                                 blocks = __processBlocks(FOR.begin, FOR.end, code),
-                                code_result = "";
+                                code_result = "",
+                                i = 0, obj;
 
-                            for (var i = 0, len = blocks.length; i < len; i++) {
-                                var obj = blocks[i],
-                                    block = obj.block,
+                            while (obj = blocks[i++]) {
+                                var block = obj.block,
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) { continue; }
-                                code_result = code_result.replace_all(id,FOR.helper(block,obj.body));
+                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                code_result = $c.replace_all(code_result,id, FOR.helper(block, obj.body));
                             }
-
+                            var ____execMatches = code_result.match($c.TEMPLATE_TAG_CONFIG.VARIABLE), ____execMatchIndex = 0;
+                            //____execMatches[____execMatchIndex] = 0;
+                            while (____execMatchIndex < ____execMatches.length) {
+                                code_result = code_result.replace(____execMatches[____execMatchIndex],$c.tryEval(ttc.VARIABLE_NAME(____execMatches[____execMatchIndex])));
+                                ____execMatchIndex++;
+                            }
                             return __logic_parser(code_result);
                         }
                     },
-                    FOREACH:{
-                        "begin":/(?:\$\{foreach (.*?)\s+in\s+(.*?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(.*?)\s*\}\})/i,
-                        //begin:/(?:\$\{foreach (.*?)\s+in\s+(.*?\}?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(\\?\[\s*\{.*:.*?\}\s*\\?\])\s*\}\})/i,
-                        "end":/(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
-                        "helper":function (code, body,rtnObject,uid, obj, bind, ref_obj) {
+                    FOREACH: {
+                        "begin": /(?:\$\{foreach (.*?)\s+in\s+(.*?)\s*\})|(?:\{\{foreach (.*?)\s+in\s+(.*?)\s*\}\})/i,
+                        "end": /(?:\$\{end foreach\})|(?:\{\{end foreach\}\})/i,
+                        "helper": function (code, body, rtnObject, uid, obj, bind, ref_obj) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
                                 mresult = code.match(FOREACH.begin),
                                 objs, var_name,
-                                code_result = "";
+                                code_result = "",
+                                j = 0, mr;
 
-                            for (var j = 1, jlen = mresult.length; j < jlen; j++) {
-                                if (!mresult[j]) {
-                                    continue;
-                                }
-                                mresult[j] = mresult[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                            for (var j = 0, jlen = mresult.length; j < jlen; j++) {
+                                if (!mresult[j]) { continue; }
+                                mresult[j] = $c.replace_all(mresult[j],['\\[', '\\]'], ['[', ']']).toString();
                             }
-                            objs = tryEval(mresult[2] || mresult[4]);
+                            var value = mresult[2] || mresult[4];
+                            objs = $c.tryEval(value);
+                            if (!objs && value.startsWithAny("${","{{") && !value.endsWith("}")) {
+                                return code;
+                            }
                             var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]);
 
-                            //fillTemplate.binding.original.push(bind+"."+var_name);
-                            //fillTemplate.binding.replacer.push(fillTemplate.refs["ref_" + fillTemplate.refs.indexOf(objs)]);
 
                             rtnObject = rtnObject || {};
-                            rtnObject[uid] += "var " + var_name + "s," + var_name + ";";
-                            rtnObject[var_name+"s"] = objs;
+                            var vname = var_name + suid();
+                            rtnObject[uid] += "var " + vname + "s," + var_name + ";";
+                            rtnObject[vname + "s"] = objs;
                             if ($c.isArray(objs)) {
-                                fillTemplate.binding.original.push(bind + "." + var_name);
-                                var bindingCuids = "";
-                                for (var i = 0, len = objs.length; i < len; i++) {
-                                    if (typeof objs[i] == "object") {
-
-                                        bindingCuids += "," + fillTemplate._observing["hash_" + fillTemplate._observing.indexOf(objs[i])];
-                                    }
-                                    code_result += "${i="+i+","+var_name+"="+var_name+"s[i],null}" + body;
+                                var i = 0, len = objs.length;
+                                while (i < len) {
+                                    code_result += "${i=" + i + "," + var_name + "=" + vname + "s[i],null}" + body;
+                                    i++;
                                 }
-                                fillTemplate.binding.replacer.push(bindingCuids.substring(1));
+                                //for (var i = 0, len = objs.length; i < len; i++) {
+                                //	code_result += "${i=" + i + "," + var_name + "=" + vname + "s[i],null}" + body;
+                                //}
                             }
 
-                            return code_result;
+                            return objs ? code_result : "";
 
                         },
-                        "parser":function (code, ref_obj, bind){
+                        "parser": function (code, ref_obj, bind) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 FOREACH = ttc.FOREACH,
-                                uid = "##"+suid()+"##",
+                                uid = "##" + suid() + "##",
                                 result_obj = {},
                                 code_result = "", post = "",
-                                blocks = __processBlocks(FOREACH.begin, FOREACH.end, code);
-                                //bindReplacers = {original:[],treplacer:[]};
+                                blocks = __processBlocks(FOREACH.begin, FOREACH.end, code),
+                                i = 0, obj;
 
                             result_obj[uid] = "";
 
-                            for (var i = 0, len = blocks.length; i < len; i++) {
-                                var obj = blocks[i],
-                                    block = obj.block,
+                            while (obj = blocks[i++]) {
+                                var block = obj.block,
                                     id = obj.id, index;
-                                if (!i && (index = obj.code.lastIndexOf("##")) != -1) {
+                                if (i == 1 && (index = obj.code.lastIndexOf("##")) != -1) {
                                     post = obj.code.substring(index + 2);
-                                    obj.code = obj.code.substring(0,index + 2);
+                                    obj.code = obj.code.substring(0, index + 2);
                                 }
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) { continue; }
-                                code_result = code_result.replace_all(id,FOREACH.helper(block,obj.body,result_obj,uid,obj,bind,ref_obj));
+                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                code_result = $c.replace_all(code_result,id, FOREACH.helper(block, obj.body, result_obj, uid, obj, bind, ref_obj));
+                                if (!code_result) { break; }
                             }
                             eval(result_obj[uid]);
                             delete result_obj[uid];
                             for (var prop in result_obj) {
-                                if (!result_obj.has(prop)) { continue; }
+                                if (!result_obj.hasOwnProperty(prop)) { continue; }
                                 eval(prop + "=" + "result_obj['" + prop + "']");
                             }
 
                             var matches = code_result.match(ttc.VARIABLE) || [];
-                            matches.map(function (var_match) {
+                            for (var m = 0, mlen = matches.length; m < mlen; m++) {
+                                var var_match = matches[m]
                                 var var_match_name = ttc.VARIABLE_NAME(var_match),
                                     str = "";
-                                try { str = eval(var_match_name); } catch(e){ return; }
-
-                                code_result = code_result.replace(var_match,str||"");
-
-                            });
+                                try {
+                                    str = eval(var_match_name);
+                                } catch (e) { continue; }
+                                if ($c.isObject(str) || $c.isArray(str)) {
+                                    str = "fillTemplate.refs['" + __add_fillTemplate_ref(str) + "']";
+                                }
+                                code_result = code_result.replace(var_match, str || "");
+                            }
 
                             return __logic_parser(code_result + post, obj, bind);
                         }
@@ -4941,21 +5439,23 @@ if (__thisIsNewer) {
                     WHILE: {
                         "begin": /(?:\$\{while\s*\((.*?)\)\s*\})|(?:\{\{while\s*\((.*?)\)\s*\}\})/i,
                         "end": /(?:\$\{end while\})|(?:\{\{end while\}\})/i,
-                        "helper": function (code,body) {
+                        "helper": function (code, body) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
                                 mresult = code.match(WHILE.begin),
-                                vars = "", ovars = {},code_result = "",
+                                vars = "", ovars = {}, code_result = "",
                                 declared = fillTemplate.declared,
                                 loop_limit = 100000;
                             for (var prop in declared) {
-                                if (!code.contains("${"+prop+"}") || !declared.hasOwnProperty(prop)) { continue; }
+                                if (code.indexOf("${" + prop + "}") == -1 || !declared.hasOwnProperty(prop)) {
+                                    continue;
+                                }
                                 var val = declared[prop];
                                 vars += "var " + prop + "=" + val + ";";
                                 ovars[prop] = prop;
                             }
                             eval(vars);
-                            while (eval(fillTemplate(mresult[1] || mresult[2],ovars))) {
+                            while (eval(fillTemplate(mresult[1] || mresult[2], ovars))) {
                                 loop_limit--;
                                 if (loop_limit < 1) {
                                     var msg = "fillTemplate While only support up to 100,000 iterations.  Possible infinite loop?";
@@ -4963,61 +5463,62 @@ if (__thisIsNewer) {
                                     throw msg;
                                 }
                                 code_result += body;
-                                (body.match(ttc.VARIABLE)||[]).map(function(var_matches){ eval(ttc.VARIABLE_NAME(var_matches)); });
+                                var matches = body.match(ttc.VARIABLE) || [];
+                                for (var m = 0, mlen = matches.length; m < mlen; m++) {
+                                    eval(ttc.VARIABLE_NAME(matches[m]));
+                                }
                             }
                             fillTemplate.declared = declared;
 
+                            var variable_initialization = "";
                             for (var prop in ovars) {
                                 if (!ovars.hasOwnProperty(prop)) { continue; }
-                                //var ovar = ovars[prop];
-                                code_result += "${" + prop + "=" + declared[prop] + ",null}";
-                                //declared[prop] = eval(ovars[prop]);
+                                variable_initialization += "${" + prop + "=" + declared[prop] + ",null}";
                             }
 
-                            return code_result;
+                            return variable_initialization + code_result;
                         },
                         "parser": function (code, ref_obj, bind) {
                             var ttc = $c.TEMPLATE_TAG_CONFIG,
                                 WHILE = ttc.WHILE,
                                 lookups = {},
                                 blocks = __processBlocks(WHILE.begin, WHILE.end, code, lookups),
-                                code_result = "", vars = "", declared = fillTemplate.declared, post = "";
+                                code_result = "", vars = "", declared = fillTemplate.declared, post = "",
+                                i = 0, obj;
 
-                            for (var i = 0, len = blocks.length; i < len; i++) {
-                                var obj = blocks[i],
-                                    block = obj.block,
-                                    id = obj.id;
+                            while (obj = blocks[i++]) {
+                                var block = obj.block,
+                                    id = obj.id, index;
 
-                                if (!i && (index = obj.code.lastIndexOf("##")) != -1) {
+                                if (i == 1 && (index = obj.code.lastIndexOf("##")) != -1) {
                                     post = obj.code.substring(index + 2);
-                                    obj.code = obj.code.substring(0,index + 2);
+                                    obj.code = obj.code.substring(0, index + 2);
                                 }
 
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) { continue; }
-                                code_result = code_result.replace_all(id,WHILE.helper(block,obj.body));
+                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                code_result = $c.replace_all(code_result,id, WHILE.helper(block, obj.body));
                             }
 
                             for (var prop in declared) {
-                                if (!code.contains("${"+prop+"}")) { continue; }
+                                if (code.indexOf("${" + prop + "}") == -1) { continue; }
                                 vars += "var " + prop + "=" + declared[prop] + ";";
                             }
                             eval(vars);
                             var matches = code_result.match(ttc.VARIABLE) || [];
-                            matches.map(function (var_match) {
-                                var var_match_name = ttc.VARIABLE_NAME(var_match),
+                            for (var m = 0, mlen = matches.length; m < mlen; m++) {
+                                var var_match = matches[m],
+                                    var_match_name = ttc.VARIABLE_NAME(var_match),
                                     var_match_index = code_result.indexOf(var_match),
                                     before, after;
-                                if (tryEval("var "+ var_match_name +";") !== null) {
+                                if (tryEval(var_match_name + ";") !== null) {
                                     var_match_index += var_match.length;
                                 }
 
-
-                                before = code_result.substring(0,var_match_index).replace_all(var_match,eval(var_match_name));
+                                before = $c.replace_all(code_result.substring(0, var_match_index), var_match, eval(var_match_name));
                                 after = code_result.substring(code_result.indexOf(var_match) + var_match.length);
                                 code_result = before + after;
-                            });
-
+                            }
 
                             return __logic_parser(code_result + post);
 
@@ -5026,37 +5527,44 @@ if (__thisIsNewer) {
                     /* end loop config*/
 
                     /* conditional config*/
-                    IF:{
-                        "begin":/\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        "elseif":/\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
-                        "else":/\$\{else\}|\{\{else\}\}/i,
-                        "end":/\$\{end if\}|\{\{end if\}\}/i,
-                        "helper":function (code) {
+                    IF: {
+                        "begin": /\$\{if\s+\((.*?)(?!\{)\)\s*\}|\{\{if\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        "elseif": /\$\{elseif\s+\((.*?)(?!\{)\)\s*\}|\{\{elseif\s+\((.*?)(?!\{)\)\s*\}\}/i,
+                        "else": /\$\{else\}|\{\{else\}\}/i,
+                        "end": /\$\{end if\}|\{\{end if\}\}/i,
+                        "helper": function (code) {
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
-                                ifmatch = (code.match(IF.begin) || []).condense(),
-                                endlength = code.match(IF.end)[0].length,
-                                startindex = code.indexOfAlt(IF.begin),
-                                endindex = code.indexOfAlt(IF.end);
+								ifmatch = $c.condense((code.match(IF.begin) || [])),
+								endlength = code.match(IF.end)[0].length,
+								startindex = $c.indexOfAlt(code,IF.begin),
+								endindex = $c.indexOfAlt(code,IF.end),
+								vsyntax = $c.TEMPLATE_TAG_CONFIG.VARIABLE;
 
                             if (ifmatch.length) {
                                 for (var j = 1, jlen = ifmatch.length; j < jlen; j++) {
-                                    ifmatch[j] = ifmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                                    var ifm = ifmatch[j];
+                                    ifmatch[j] = $c.replace_all(ifm,['\\[', '\\]'], ['[', ']']).toString();
                                 }
                                 var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
-                                    ifsyntax = new RegExp(IF.begin.source+"|"+IF.elseif.source+"|"+IF["else"].source,'i');
+                                    ifsyntax = new RegExp(IF.begin.source + "|" + IF.elseif.source + "|" + IF["else"].source, 'i');
 
-                                if (!code.match(new RegExp(IF.elseif.source+"|"+IF["else"].source,'ig'))) {
-                                    if ("undefined" == ifmatch[1] || !tryEval(ifmatch[1])) {
+                                if (!code.match(new RegExp(IF.elseif.source + "|" + IF["else"].source, 'ig'))) {
+                                    if ("undefined" == ifmatch[1] || !$c.tryEval(ifmatch[1])) {
                                         return pre + post;
                                     }
                                     return pre + code.substring(startindex + ifmatch[0].length, endindex) + post;
                                 }
-                                ifmatch = (code.match(ifsyntax.addFlags('g')) || []).condense();
+                                ifmatch = $c.condense((code.match($c.addFlags(ifsyntax,'g')) || []));
                                 for (var i = 0, len = ifmatch.length; i < len; i++) {
-                                    var ife = ifmatch[i].match(ifsyntax).condense(),
+                                    var ifm = ifmatch[i],
+                                        ife = $c.condense(ifm.match(ifsyntax)),
                                         condition = ife[1],
-                                        value = "undefined" == condition ? false : tryEval(condition),
-                                        sindex = code.indexOf(ifmatch[i]) + ifmatch[i].length;
+                                        value = "undefined" == condition ? false : $c.tryEval(condition),
+                                        sindex = code.indexOf(ifm) + ifm.length;
+
+                                    if (condition && condition.length && condition != 'null' && !$c.contains(condition, vsyntax) && value === null) {
+                                        value = condition;
+                                    }
 
                                     if (value !== undefined && value) {
                                         var eindex = code.indexOf(ifmatch[i + 1]);
@@ -5064,25 +5572,25 @@ if (__thisIsNewer) {
                                             return pre + code.substring(sindex) + post;
                                         }
                                         return pre + code.substring(sindex, eindex) + post;
-                                    } else if (ifmatch[i].match(IF["else"])) {
-                                        return pre + code.substring(sindex,endindex) + post;
+                                    } else if (ifm.match(IF["else"])) {
+                                        return pre + code.substring(sindex, endindex) + post;
                                     }
                                 }
                                 return pre + post;
                             }
                             return code;
                         },
-                        "parser":function (code, obj, bind){
+                        "parser": function (code, oobj, bind) {
                             var IF = $c.TEMPLATE_TAG_CONFIG.IF,
                                 blocks = __processBlocks(IF.begin, IF.end, code),
-                                code_result = "";
-                            for (var i = 0, len = blocks.length; i < len; i++) {
-                                var obj = blocks[i],
-                                    block = obj.block,
+                                code_result = "",
+                                i = 0, obj;
+                            while (obj = blocks[i++]) {
+                                var block = obj.block,
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) { continue; }
+                                if (code_result.indexOf(obj.id) == -1) { continue; }
                                 code_result = IF.helper(code_result.replace(id, block));
                             }
                             return __logic_parser(code_result);
@@ -5096,39 +5604,41 @@ if (__thisIsNewer) {
                         "break": /(\$\{break\})|(\{\{break\}\})/i,
                         "helper": function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                                csyntax = SWITCH["case"],
-                                switchmatch = (code.match(SWITCH.begin) || []).condense(),
-                                endlength = code.match(SWITCH.end)[0].length,
-                                startindex = code.indexOfAlt(SWITCH.begin),
-                                endindex = code.indexOfAlt(SWITCH.end),
+                            //csyntax = SWITCH["case"],
+                                switchmatch = $c.condense((code.match(SWITCH.begin) || [])),
+								endlength = code.match(SWITCH.end)[0].length,
+								startindex = $c.indexOfAlt(code, SWITCH.begin),
+								endindex = $c.indexOfAlt(code,SWITCH.end),
                                 brk = SWITCH["break"], dflt = SWITCH["default"];
 
 
                             if (switchmatch.length) {
-
                                 for (var j = 1, jlen = switchmatch.length; j < jlen; j++) {
-                                    switchmatch[j] = switchmatch[j].replace_all(['\\[', '\\]'], ['[', ']']).toString();
+                                    var swmatch = switchmatch[j];
+                                    switchmatch[j] = $c.replace_all(swmatch,['\\[', '\\]'], ['[', ']']).toString();
                                 }
                                 var pre = code.substring(0, startindex), post = code.substring(endindex + endlength),
-                                    val = tryEval(switchmatch[2]) || switchmatch[2],
-                                    cgsyntax = SWITCH["case"].addFlags("g"),
+                                    val = $c.tryEval(switchmatch[2]) || switchmatch[2],
+                                    cgsyntax = $c.addFlags(SWITCH["case"],"g"),
                                     cases = code.match(cgsyntax);
                                 code = code.substring(startindex + (switchmatch[0] || "").length, endindex);
 
                                 if (!cases) {
-                                    return pre + code.cut(startindex, endindex + endlength) + post;
+                                    return pre + $c.cut(code,tartindex, endindex + endlength) + post;
                                 }
                                 for (var i = 0, len = cases.length; i < len; i++) {
-                                    var cs = cases[i].match(SWITCH["case"]),
+                                    var cse = cases[i],
+                                        cs = cse.match(SWITCH["case"]),
                                         cvalue = cs[1] || cs[2];
+                                    cvalue = $c.tryEval(cvalue) || cvalue;
                                     if (val == cvalue) {
-                                        var cindex = code.indexOf(cases[i]),
-                                            bindex = code.indexOfAlt(brk, cindex);
+                                        var cindex = code.indexOf(cse),
+                                            bindex = $c.indexOfAlt(code,brk, cindex);
                                         bindex = bindex == -1 ? code.length : bindex;
-                                        return pre + code.substring(cindex + cases[i].length, bindex).replace(cgsyntax, '') + post;
+                                        return pre + code.substring(cindex + cse.length, bindex).replace(cgsyntax, '') + post;
                                     }
                                 }
-                                var dindex = code.indexOfAlt(dflt);
+                                var dindex = $c.indexOfAlt(code,dflt);
                                 if (dindex != -1) {
                                     return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
                                 }
@@ -5136,18 +5646,16 @@ if (__thisIsNewer) {
                             }
                             return code;
                         },
-                        "parser": function (code, obj, bind) {
+                        "parser": function (code, oobj, bind) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
                                 blocks = __processBlocks(SWITCH.begin, SWITCH.end, code),
-                                code_result = "";
-
-                            for (var i = 0, len = blocks.length; i < len; i++) {
-                                var obj = blocks[i],
-                                    block = obj.block,
+                                code_result = "", i = 0, obj;
+                            while (obj = blocks[i++]) {
+                                var block = obj.block,
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (!code_result.contains(obj.id)) { continue; }
+                                if (code_result.indexOf(obj.id) == -1) { continue; }
                                 code_result = SWITCH.helper(code_result.replace(id, block));
                             }
                             return __logic_parser(code_result);
@@ -5162,18 +5670,22 @@ if (__thisIsNewer) {
                         "end": /(\$\{end script\})|(\{\{end script\}\})/i,
                         "parser": function (code, obj, bind) {
                             var SCRIPT = $c.TEMPLATE_TAG_CONFIG.SCRIPT,
-                                sindex = code.indexOfAlt(SCRIPT.begin),
-                                slen = code.match(SCRIPT.begin)[0].length,
-                                eindex = code.indexOfAlt(SCRIPT.end),
+                                sindex = $c.indexOfAlt(code,SCRIPT.begin),
+								slen = code.match(SCRIPT.begin)[0].length,
+								eindex = $c.indexOfAlt(code,SCRIPT.end),
                                 elen = code.match(SCRIPT.end)[0].length;
 
-                            if (eindex == -1) { eindex = undefined; }
-                            var block = code.substring(sindex + slen,eindex), str = "",
-                            echo = function (value) { echo.out += value; };
+                            if (eindex == -1) {
+                                eindex = undefined;
+                            }
+                            var block = code.substring(sindex + slen, eindex), str = "",
+                                echo = function (value) {
+                                    echo.out += value;
+                                };
                             echo.out = "";
-                            str = eval("(function(){"+block+";return echo.out;})()");
+                            str = eval("(function(){" + block + ";return echo.out;})()");
 
-                            return __logic_parser(code.cut(sindex,eindex+elen, str));
+                            return __logic_parser($c.cut(code,sindex, eindex + elen, str));
                         }
 
                     },
@@ -5184,35 +5696,35 @@ if (__thisIsNewer) {
                         "end": /(\$\{end try\})|(\{\{end try\}\})/i,
                         "helper": function (code, lookups, exec) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
-                                cindex = code.indexOfAlt(TRY["catch"]),
-                                findex = code.indexOfAlt(TRY["finally"]),
-                                eindex = code.indexOfAlt(TRY["end"]),
+                                cindex = $c.indexOfAlt(code,TRY["catch"]),
+								findex = $c.indexOfAlt(code,TRY["finally"]),
+								eindex = $c.indexOfAlt(code,TRY["end"]),
                                 tend = cindex;
 
                             if (tend == -1) {
                                 tend = findex != -1 ? findex : eindex;
                             }
 
-                            var tindex = code.indexOfAlt(TRY.begin),
+							var tindex = $c.indexOfAlt(code,TRY.begin),
                                 body = code.substring(tindex + code.match(TRY.begin)[0].length, tend),
-                                pre = code.substring(0,tindex), post = code.substring(eindex + code.match(TRY.end)[0].length),
+                                pre = code.substring(0, tindex), post = code.substring(eindex + code.match(TRY.end)[0].length),
                                 regex = /##[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}##/i,
                                 match = body.match(regex), str = "", id,
                                 echo = function (value) {
                                     echo.out += value;
                                 };
                             echo.out = "";
-                            while(match && match.length){
+                            while (match && match.length) {
                                 id = match.splice(0)[0];
                                 body = body.replace(id, ";echo('" + TRY.helper(lookups[id], lookups) + "');");
                             }
                             match = pre.match(regex);
-                            while(match && match.length) {
+                            while (match && match.length) {
                                 id = match.splice(0)[0];
                                 pre = pre.replace(id, TRY.helper(lookups[id], lookups));
                             }
                             match = post.match(regex);
-                            while(match && match.length) {
+                            while (match && match.length) {
                                 id = match.splice(0)[0];
                                 post = post.replace(id, TRY.helper(lookups[id], lookups));
                             }
@@ -5221,19 +5733,20 @@ if (__thisIsNewer) {
                                 str = eval("(function(){" + body + ";return echo.out; })()");
                             } catch (e) {
                                 if (cindex != -1) {
-                                    echo.out = "";
+                                    //echo.out = "";
                                     tend = findex != -1 ? findex : eindex;
                                     var catchBlock = code.substring(cindex, tend),
-                                        catchLine = catchBlock.match(TRY["catch"]);
-                                    catchBlock = catchBlock.replace(catchLine[0], ''),
-                                    errorString = JSON.stringify(e);
+                                        catchLine = catchBlock.match(TRY["catch"]),
+                                    //errorString = JSON.stringify(e);
+                                        errorString = $c.replace_all(e.toString(),'\'','\\\'');
+                                    catchBlock = catchBlock.replace(catchLine[0], '');
 
                                     match = catchBlock.match(regex);
-                                    while(match && match.length) {
+                                    while (match && match.length) {
                                         id = match.splice(0)[0];
-                                        catchBlock = catchBlock.replace(id, ";echo('" + TRY.helper(lookups[id], lookups,"var " + catchLine[1] + "=" + errorString + ";") + "');");
+                                        catchBlock = catchBlock.replace(id, ";echo('" + TRY.helper(lookups[id], lookups, "var " + catchLine[1] + "= new Error('" + errorString + "');") + "');");
                                     }
-                                    str += eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})('" + errorString + "')");
+                                    str += eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})(new Error('" + errorString + "'))");
                                 }
                             } finally {
                                 if (findex != -1) {
@@ -5243,9 +5756,9 @@ if (__thisIsNewer) {
                             }
                             return pre + str + post;
                         },
-                        "parser": function (code, obj, bind) {
+                        "parser": function (code, oobj, bind) {
                             var TRY = $c.TEMPLATE_TAG_CONFIG.TRY,
-                                lookups = {}, code_result,
+                                lookups = {},
                                 blocks = __processBlocks(TRY.begin, TRY.end, code, lookups);
 
                             var obj = blocks[0],
@@ -5260,19 +5773,20 @@ if (__thisIsNewer) {
                     /* end error handling config */
 
                     /* tokens config */
-                    VARIABLE:/(?:\$\{((?!\$)\S)*?\})|(?:\{\{((?!\{\{)\S)*?\}\})/gi,
-                    VARIABLE_NAME:function(match){
-                        return  match.slice(2,match.contains('}}') ? -2 : -1);
+                    VARIABLE: /(?:\$\{((?!\$)\S)*?\})|(?:\{\{((?!\{\{)\S)*?\}\})/gi,
+                    VARIABLE_NAME: function (match) {
+                        return match.slice(2, match.indexOf('}}') != -1 ? -2 : -1);
                     },
-                    DECLARE:{
-                        "syntax": /(?:\$\{DECLARE (.*?);?\})|(?:\{\{DECLARE (.*?);?\}\})/i,
-                        "parser": function (htmlTemplate, declare){
-                            var matches = declare.match($c.TEMPLATE_TAG_CONFIG.DECLARE.syntax),
-                                var_nameValue = (matches[1]||matches[2]).strip(';').split("=");
+                    DECLARE: {
+                        "syntax": /(?:\$\{declare (.*?);?\})|(?:\{\{declare (.*?);?\}\})/i,
+                        "parser": function (htmlTemplate, declare) {
+                            var matches = declare.match($c.TEMPLATE_TAG_CONFIG.DECLARE.syntax);
+                            /*,
+                             var_nameValue = (matches[1]||matches[2]).strip(';').split("=");
 
-                            //fillTemplate.declared[var_nameValue[0]] = var_nameValue[1];
-                            $c.merge(fillTemplate.declared, tryEval("({"+matches[1].replace_all('=',":")+"})"));
-                            return htmlTemplate.replace_all(declare,'');
+                             fillTemplate.declared[var_nameValue[0]] = var_nameValue[1];*/
+                            $c.merge(fillTemplate.declared, tryEval("({" + $c.replace_all(matches[1],'=', ":") + "})"));
+                            return $c.replace_all(htmlTemplate,declare, '');
                         }
                     }
                     /* end tokens config */
@@ -5291,6 +5805,7 @@ if (__thisIsNewer) {
                     return tmp;
                 },
 
+                navigator:$w.navigator,
                 // methods
 
                 $COOKIE:$COOKIE,
@@ -5357,9 +5872,9 @@ if (__thisIsNewer) {
                 wait:wait,
                 xmlToJson:xmlToJson,
                 zipit:zipit
-            },
-            $c = Craydent,
-            __$$ = [
+        },
+        $c = Craydent,
+        __$$ = [
                 {
                     "func": '$',
                     "selector": 'getElementById',
@@ -5375,7 +5890,7 @@ if (__thisIsNewer) {
                     "overwrite": '_$TAGoverwrite'
                 }];
 
-
+        __contextualizeMethods(Craydent);
         $w._onload = $w.onload || foo;
         $w.onload = function () {
             $c.BROWSER.SCROLLBAR_WIDTH = (function() {
@@ -5438,13 +5953,11 @@ if (__thisIsNewer) {
         }|*/
         try {
             pos = pos || [0];
-			var i = 0, p;
             !$c.isArray(pos) && (pos = [pos]);
             var wordArray = everyWord ? this.split(' ') : ([this]);
-			while (p = pos[i++]) {
-				var j = 0, word;
-				while (word = wordArray[j++]) {
-					wordArray[j - 1] = word.substring(0,p) + word.charAt(p).toUpperCase() + word.slice(p + 1);
+		for (var i = 0; i < pos.length; i++) {
+			for (var j = 0; j < wordArray.length; j++) {
+				wordArray[j] = wordArray[j].substring(0,pos[i]) + wordArray[j].charAt(pos[i]).toUpperCase() + wordArray[j].slice(pos[i] + 1);
                 }
             }
             return wordArray.join(' ');
@@ -5475,34 +5988,6 @@ if (__thisIsNewer) {
             return parts ? parts[2] + "/" + parts[3] + "/" + parts[1] + " " + parts[4] + ":" + parts[5] + ":" + parts [6] : dateAsString;
         } catch (e) {
             error('String.convertUTCDate', e);
-        }
-    }, true);
-    _ext(String, 'count', function (word) {
-        /*|{
-            "info": "String class extension to count the number of occurences of a word or phrase",
-            "category": "String",
-            "parameters":[
-                {word": "(String) Word or phrase to count"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.count",
-            "returnType": "(Int)"
-        }|*/
-        try {
-            if (!$c.isRegExp(word)) {
-                word = new RegExp(word, "g");
-            } else if (!word.global) {
-                var reg_str = word.toString(),
-                    index = reg_str.lastIndexOf('/'),
-                    options = reg_str(index + 1);
-
-                reg_str = reg_str.substring(1,index);
-                word = new RegExp(word, "g"+options);
-            }
-            return (this.match(word) || []).length;
-        } catch (e) {
-            error("String.count", e);
         }
     }, true);
     _ext(String, 'cut', function (si, ei, replacement) {
@@ -5552,7 +6037,7 @@ if (__thisIsNewer) {
         try {
             after = after || 0;
             if (before + after > this.length) { return this; }
-            return this.cut(before, -1*after, "...");
+            return $c.cut(this, before, -1*after, "...");
         } catch (e) {
             error('String.ellipsis', e);
         }
@@ -5594,9 +6079,11 @@ if (__thisIsNewer) {
 
             "overloads":[
                 {"parameters":[
-                    {"search": "(RegExp) Regular expression to search"},
-                    {"cssClass": "(String) Class to add for highlighting"}]},
+                    {"search": "(RegExp) Regular expression to search"}]},
                 {"parameters":[
+					{"search": "(String) String to search"},
+					{"cssClass": "(String) Class to add for highlighting"}]},
+				{"parameters":[
                     {"search": "(RegExp) Regular expression to search"},
                     {"cssClass": "(String) Class to add for highlighting"}]},
                 {"parameters":[
@@ -5604,7 +6091,7 @@ if (__thisIsNewer) {
                     {"cssClass": "(String) Class to add for highlighting"},
                     {"tag": "(String) Tag to use to surround the search"}]},
                 {"parameters":[
-                    {"search": "(String) String to search"},
+					{"search": "(RegExp) Regular expression to search"},
                     {"cssClass": "(String) Class to add for highlighting"},
                     {"tag": "(String) Tag to use to surround the search"}]}],
 
@@ -5626,35 +6113,12 @@ if (__thisIsNewer) {
 			} else if (search.indexOf("(") == -1) {
                 txt = "(" + search + ")";
             }
-            return this.replace((new RegExp(txt)).addFlags(flags),"<" + tag + " class=\"" + cssClass + "\">$1</" + tag + ">");
+            return this.replace($c.addFlags((new RegExp(txt)), flags),"<" + tag + " class=\"" + cssClass + "\">$1</" + tag + ">");
         } catch (e) {
             error("String.highlight", e);
         }
     }, true);
-    _ext(String, 'indexOfAlt', function(regex, pos) {
-        /*|{
-            "info": "String class extension to find the index based on a regular expression",
-            "category": "String",
-            "parameters":[
-                {"regex": "(RegExp) Regular expression to check value against"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"regex": "(RegExp) Regular expression to check value against"},
-                    {"pos": "(Int) Index offset to start"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.indexOfAlt",
-            "returnType": "(Int)"
-        }|*/
-        try {
-            if (isNull(regex)) { return -1; }
-            pos = pos || 0;
-            var index = this.substring(pos).search(regex);
-            return (index >= 0) ? (index + pos) : index;
-        } catch (e) {
-            error("String.indexOfAlt", e);
-        }
-    }, true);
+    _ext(String, 'indexOfAlt', _indexOfAlt, true);
     _ext(String, 'ireplace_all', function(replace, subject) {
         /*|{
             "info": "String class extension to replace all substrings ignoring case",
@@ -5749,7 +6213,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             regex = (regex.global) ? regex : new RegExp(regex.source, "g" + (regex.ignoreCase ? "i" : "") + (regex.multiLine ? "m" : ""));
-            pos = pos || this.length;
+			pos = $c.isNull(pos) ? this.length : pos;
             if(pos < 0) {
                 pos = 0;
             }
@@ -5829,7 +6293,10 @@ if (__thisIsNewer) {
                 {"replace": "(String) String to replace"},
                 {"subject": "(String) String to replace with"}],
 
-            "overloads":[],
+			"overloads":[{
+				"parameters":[
+					{"replace": "(String[]) Array of string to replace"},
+					{"subject": "(String[]) Array of string to replace with"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#string.replace_all",
             "returnType": "(String)"
@@ -5957,28 +6424,7 @@ if (__thisIsNewer) {
         }|*/
         return _strip(this, character);
     }, true);
-    _ext(String, 'toCurrencyNotation', function (separator) {
-        /*|{
-            "info": "String class extension to change string to currency",
-            "category": "String",
-            "parameters":[],
-
-            "overloads":[],
-
-            "overloads":[
-                {"parameters":[
-                    {"separator": "(Char) Character to use as delimiter"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.toCurrencyNotation",
-            "returnType": "(String)"
-        }|*/
-        try {
-            separator = separator || ",";
-            return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
-        } catch (e) {
-            error("String.toCurrencyNotation", e);
-        }
-    }, true);
+    _ext(String, 'toCurrencyNotation', _toCurrencyNotation, true);
     _ext(String, 'toDateTime', function (options) {
         /*|{
             "info": "String class extension to convert string to datetime",
@@ -6017,7 +6463,7 @@ if (__thisIsNewer) {
                     // using format m(m).d(d).yy(yy) or d(d).m(m).yy(yy) or yy(yy).m(m).d(d) or yy(yy).d(d).m(m)
                     // using format m(m)/d(d)/yy(yy) or d(d)/m(m)/yy(yy) or yy(yy)/m(m)/d(d) or yy(yy)/d(d)/m(m)
                     // using format m(m)-d(d)-yy(yy) or d(d)-m(m)-yy(yy) or yy(yy)-m(m)-d(d) or yy(yy)-d(d)-m(m)
-                    var c = chars[i],
+					var c = chars[i - 1],
                         regex = new RegExp("(\\d{1,4})" + c + "\\s*?(\\d{1,2})" + c + "\\s*?(\\d{2,4})(.*)");
                     if ((parts = dtstring.match(regex)) && parts.length > 1) {
                         // assume year is first
@@ -6044,7 +6490,7 @@ if (__thisIsNewer) {
                 var offset = !isNull(options.offset) ? options.offset : _getGMTOffset.call(new Date());
                 dt = new Date(dt.valueOf() + offset * 60*60000);
             }
-            return options.format ? dt.format(options.format) : dt;
+			return options.format ? $c.format(dt,options.format) : dt;
         } catch (e) {
             error("String.toDateTime", e);
         }
@@ -6068,9 +6514,9 @@ if (__thisIsNewer) {
         try {
             assignmentChar = assignmentChar || "=";
             delimiter = delimiter || "&";
-            var rtn = {}, kv_pairs = this.split(delimiter), i = 0, kv;
-            while (kv = kv_pairs[i++]) {
-                kv = kv.split(assignmentChar);
+            var rtn = {}, kv_pairs = this.split(delimiter);
+			for (var i = 0, len = kv_pairs.length; i < len; i++) {
+				var kv = kv_pairs[i].split(assignmentChar);
                 rtn[kv[0]] = kv[1];
             }
             return rtn;
@@ -6129,24 +6575,7 @@ if (__thisIsNewer) {
             error("String.toDomElement", e);
         }
     }, true);
-    _ext(String, 'trim', function(character) {
-        /*|{
-            "info": "String class extension to remove characters from the beginning and end of the string",
-            "category": "String",
-            "parameters":[
-                {"character": "(Char[]) Character to remove"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.trim",
-            "returnType": "(String)"
-        }|*/
-        try {
-            return _trim(this, undefined, character);
-        } catch (e) {
-            error("String.trim", e);
-        }
-    }, true);
+    _ext(String, 'trim', __universal_trim, true);
 
     /*----------------------------------------------------------------------------------------------------------------
      /-	Array class Extensions
@@ -6166,35 +6595,61 @@ if (__thisIsNewer) {
             "returnType": "(Array)"
         }|*/
         try {
-			var rtn = this, pipeline, i = 0;
+		var rtn = this, pipeline, i = 0, hasGroup = false;
 			while (pipeline = pipelines[i++]){
+			if (pipeline["$group"]) { hasGroup = true; }
 				rtn = __processStage(rtn, pipeline);
             }
-            return rtn;
+		return rtn.sample && !hasGroup ? rtn.sample : rtn;
         } catch (e) {
             error("Array.aggregate", e);
         }
-    }, true);
+	}, true);
+	_ext(Array, 'average', function () {
+		/*|{
+			"info": "Array class extension to perform average of all the values (any value which is not a number is 0).",
+			"category": "Array",
+			"featured": true,
+			"parameters":[],
+
+			"overloads":[],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.aggregate",
+			"returnType": "(Array)"
+		 }|*/
+		try {
+			var length = 0, sum = 0;
+			for (var i = 0, len = this.length; i < len; i++) {
+				if ($c.isNumber(this[i])) {
+					sum += this[i];
+					length++;
+				}
+			}
+			return sum/length;
+		} catch (e) {
+			error("Array.average", e);
+		}
+	}, true);
     _ext(Array, 'buildTree', function (parentFinder,childFinder,options) {
         /*|{
             "info": "Array class extension to create a parent/child hierarchy",
             "category": "Array",
             "parameters":[
-                {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+				{"parentFinder": "(Function) Function to determine the parent.   Should return a boolean value and is passed the current item as an argument."},
                 {"childFinder": "(String) Property name of the object to use as a grouping."}],
 
             "overloads":[
                 {"parameters":[
-                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+					{"parentFinder": "(Function) Function to determine the parent.   Should return a boolean value and is passed the current item as an argument."},
                     {"childFinder": "(Function) Function to determine the grouping."}]},
 
                 {"parameters":[
-                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+					{"parentFinder": "(Function) Function to determine the parent.   Should return a boolean value and is passed the current item as an argument."},
                     {"childFinder": "(String) Property name of the object to use as a grouping."},
                     {"options":"(Object) Options to customize properties,  Valid property is:<br />childProperty"}]},
 
                 {"parameters":[
-                    {"rootFinder": "(Function) Function to determine the parent.   Should return a boolean value."},
+					{"parentFinder": "(Function) Function to determine the parent.   Should return a boolean value and is passed the current item as an argument."},
                     {"childFinder": "(String) Property name of the object to use as a grouping."},
                     {"options":"(Object) Options to customize properties,  Valid property is:<br />childProperty"}]}],
 
@@ -6205,19 +6660,19 @@ if (__thisIsNewer) {
             options = options || {};
             var rtnArr = [];
             var i = 0,objt,cats=[],catDict={},tmp={}, singles = {};
-            var prop = options.childProperty || "children";
+			var cprop = options.childProperty || "children";
             while(objt=this[i++]){
                 var cat = $c.isFunction(childFinder) ? childFinder(objt) : objt[childFinder],
-                    rootFound = cats.contains(cat);
+				rootFound = $c.contains(cats, cat);
 
-                objt[prop] = objt[prop] || [];
-                if (rootFinder(objt)) {
+				objt[cprop] = objt[cprop] || [];
+				if (parentFinder(objt)) {
                     delete singles[cat];
 
                     if (!rootFound && tmp[cat]) {
-                        objt[prop] = tmp[cat];
+						objt[cprop] = tmp[cat];
                     }
-                    tmp[cat] = objt[prop];
+					tmp[cat] = objt[cprop];
 
                     cats.push(cat);
                     catDict[cat] = objt;
@@ -6232,14 +6687,14 @@ if (__thisIsNewer) {
                     tmp[cat] = tmp[cat] || [];
                     tmp[cat].push(objt);
                 } else {
-                    catDict[cat][prop].push(objt);
+                    catDict[cat][cprop].push(objt);
                 }
             }
             for (var prop in singles) {
                 if (!singles.hasOwnProperty(prop)) { continue; }
 				var j = 0, single;
 				while (single = singles[prop][j++]) {
-					singles.children = [];
+					single[cprop] = [];
                 }
                 rtnArr = rtnArr.concat(singles[prop]);
             }
@@ -6248,62 +6703,6 @@ if (__thisIsNewer) {
             error('Array.buildTree', e);
         }
     });
-    _ext(Array, 'complexSort', function(specs){
-        /*|{
-            "info": "Array class extension to sort using lookups",
-            "category": "Array",
-            "parameters":[],
-
-            "overloads":[
-                {"parameters":[
-                    {"specs": "(Object) specs with common properties:<br />(Mixed) props<br />(Boolean) reverse<br />(Function) lookupprimer<br />(Function) propprimer<br />(Object) lookup<br />(Function) lookupfunc"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.complexSort",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            specs = specs || {};
-            var defunc = function(v){return v;},
-                props = specs.props,
-                rev = specs.reverse,
-                lprimer = specs.lookupprimer || defunc,
-                pprimer = specs.propprimer || defunc,
-                lookup = specs.lookup,
-                lookupfunc = specs.lookupfunc || function(id){
-                    if(lookup){return lookup[id];}
-                    return id;
-                };
-
-			if($c.isString(props)){ props = [props]; }
-            var craftVal = function(v,prop){
-                    return pprimer(
-                        (lookup && lookup[lprimer(v)][prop]) ||
-                        (lookupfunc && lookupfunc(lprimer(v))[prop]) ||
-                        v[prop]
-                    );
-                },
-                prop_sort = function (a,b,p) {
-                    p = p||0;
-                    var prop = props[p];
-
-                    if(!prop){return -1;}
-
-                    var aVal = craftVal(a,prop),//pprimer((lookup && lookup[lprimer(a)][prop]) || a[prop]),
-                        bVal = craftVal(b,prop);//pprimer((lookup && lookup[lprimer(b)][prop]) || b[prop]);
-
-                    if (aVal == bVal) {
-                        return prop_sort(a,b,p+1);
-                    }
-
-                    if (aVal > bVal) {return 1;}
-                    return -1;
-                };
-            this.sort(prop_sort);
-            return rev && this.reverse || this;
-        } catch (e) {
-            error('Array.complexSort', e);
-        }
-    },true);
     _ext(Array, 'condense', function (check_values) {
         /*|{
             "info": "Array class extension to reduce the size of the Array removing blank strings, undefined's, and nulls",
@@ -6319,21 +6718,6 @@ if (__thisIsNewer) {
         }|*/
         return _condense(this, check_values);
     }, true);
-    _ext(Array, 'count', function(condition) {
-        /*|{
-            "info": "Array class extension to count the length and optionally filter items first",
-            "category": "Array",
-            "parameters":[],
-
-            "overloads":[
-                {"parameters":[
-                {"condition": "(Mixed) Query used in Array.where"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.count",
-            "returnType": "(Int)"
-        }|*/
-        return this.where(condition).length;
-    });
     _ext(Array, 'delete', function(condition, justOne) {
 		/*|{
 			"info": "Array class extension to delete records",
@@ -6350,7 +6734,7 @@ if (__thisIsNewer) {
 			"returnType": "(Array)"
 		}|*/
         try {
-            justOne = parseBoolean(isNull(justOne) ? true : isNull(justOne.justOne, justOne));
+            justOne = parseBoolean($c.isNull(justOne) ? true : $c.isNull(justOne.justOne, justOne));
             // if no condition was given, remove all
             if (!condition) {
                 return this.splice(0,justOne ? 1 : this.length);
@@ -6365,9 +6749,8 @@ if (__thisIsNewer) {
                 indexes.push(i);
                 return true;
             });
-			var i = indexes.length, index;
-			while (index = indexes[--i]) {
-				arr = this.splice(index,1).concat(arr);
+			for (var i = indexes.length - 1; i >= 0; i--) {
+				arr = this.splice(indexes[i],1).concat(arr);
             }
 
             return arr;
@@ -6381,20 +6764,33 @@ if (__thisIsNewer) {
 			"info": "Array class extension to get all unique records by fields specified",
 			"category": "Array",
 			"parameters":[
-				{"fields": "(Mixed) Fields to use as the projection and unique comparison"}],
+				{"fields": "(String) Fields to use as the projection and unique comparison (comma delimited)"}],
 
 			"overloads":[
 				{"parameters":[
-					{"fields": "(Mixed) Fields to use as the projection and unique comparison"},
-					{"condition": "(Mixed) Query following find/where clause syntax"}]}],
+					{"fields": "(Array) Fields to use as the projection and unique comparison"}]},
+
+				{"parameters":[
+					{"fields": "(String) Fields to use as the projection and unique comparison (comma delimited)"},
+					{"condition": "(String) Query following SQL where clause syntax"}]},
+
+				{"parameters":[
+					{"fields": "(Array) Fields to use as the projection and unique comparison (comma delimited)"},
+					{"condition": "(String) Query following SQL where clause syntax"}]}
+
+				{"parameters":[
+					{"fields": "(String) Fields to use as the projection and unique comparison (comma delimited)"},
+					{"condition": "(Object) Query following MongoDB find clause syntax"}]},
+
+				{"parameters":[
+					{"fields": "(Array) Fields to use as the projection and unique comparison (comma delimited)"},
+					{"condition": "(Object) Query following MongoDB find clause syntax"}]}],
 
 			"url": "http://www.craydent.com/library/1.8.1/docs#array.distinct",
 			"returnType": "(Array)"
 		}|*/
         try {
-            if ($c.isString(fields)) {
-                fields = [fields];
-            }
+		if ($c.isString(fields)) { fields = fields.split(","); }
 
 //            var projection = {},len = fields.length;
 //            for (var i = 0; i < len; i++) {
@@ -6402,7 +6798,15 @@ if (__thisIsNewer) {
 //            }
 
 
-            return this.group(fields,condition);
+		var records = $c.group(this, {field:fields,cond:condition},true);
+		if (fields.length == 1) {
+			var arr = [];
+			for (var i = 0, len = records.length; i < len; i++ ) {
+				arr.push(records[i][fields[0]]);
+			}
+			return arr;
+		}
+		return records;
         } catch (e) {
             error("Array.distinct", e);
             return false;
@@ -6418,15 +6822,16 @@ if (__thisIsNewer) {
             "overloads":[
                 {"parameters":[
                     {"callback": "(Function) Callback to test for each element"},
-                    {"thisObject": "(Mixed) Context for the callback function"}]}],
+                    {"thisObject": "(Object) Context for the callback function"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#array.every",
             "returnType": "(Bool)"
         }|*/
         try {
 			var thisObject = thisObject || this, thiz, i = 0;
-			while (thiz = this[i++]) {
-				if (thiz && !callback.call(thisObject, thiz, i - 1, this)) {return false; }
+			for (var i = 0, len = this.length; i < len; i++) {
+				var thiz = this[i];
+				if (thiz && !callback.call(thisObject, thiz, i, this)) { return false; }
             }
             return true;
         } catch (e) {
@@ -6468,7 +6873,51 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'group', function(params) {
+	_ext(Array, 'find', function(condition, projection) {
+		/*|{
+			"info": "Array class extension to use mongo or sql queries (Alias of Where minus the limit argument)",
+			"category": "Array",
+			"featured": true,
+			"parameters":[
+				{"condition": "(Mixed) Query following find/where clause syntax"}],
+
+			"overloads":[
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"projection": "(Mixed) Indicate which properties to return"}]},
+
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"useReference": "(Bool) Flag to make a copy instead of using references"}]}],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.where",
+			"returnType": "(Array)"
+		}|*/
+		return $c.where(this,condition, projection);
+	});
+	_ext(Array, 'findOne', function(condition, projection) {
+		/*|{
+			"info": "Array class extension to use mongo or sql queries returning the first item match",
+			"category": "Array",
+			"featured": true,
+			"parameters":[
+				{"condition": "(Mixed) Query following find/where clause syntax"}],
+
+			"overloads":[
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"projection": "(Mixed) Indicate which properties to return"}]},
+
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"useReference": "(Bool) Flag to make a copy instead of using references"}]}],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.where",
+			"returnType": "(Object)"
+		}|*/
+		return $c.where(this, condition, projection, 1)[0];
+	});
+	_ext(Array, 'group', function(params, removeProps) {
         /*|{
             "info": "Array class extension to group records by fields",
             "category": "Array",
@@ -6498,53 +6947,55 @@ if (__thisIsNewer) {
          *            {reduce: ""},
          *            {initial: ""}]}],*/
         try {
-            //var fields = params.field || params.key,
             var key = params.field || params.key,
                 condition = params.cond,
                 reduce = params.reduce || foo,
                 initial = params.initial || {},
                 keyf = params.keyf,
-                finalize = params.finalize || foo;
+			finalize = params.finalize || function(o) { return o;};
+
             if ($c.isString(key)) {
                 key = key.split(',');
             }
             if ($c.isArray(key)) {
-				var tmp = {}, i = 0, ky;
-				while (ky = key[i++]) {
-					tmp[ky] = 1;
+				var tmp = {};
+				for (var i = 0, len = key.length; i < len; i++) {
+					tmp[key[i]] = 1;
                 }
                 key = tmp;
             }
 
             var props = $c.getKeys(initial),
-                key = $c.getKeys(key),
+				fields = $c.getKeys(key),
                 arr = [], result = {}, id = suid();
             _whereHelper(this, condition,function (obj, i) {
                 // _groupFieldHelper creates a grouping string based on the field value pairs
-                var fields = key;
-                if (!key && keyf) {
+				//var fields = key;
+				if (!fields && keyf) {
                     fields = $c.isFunction(keyf) ? keyf(doc) : keyf;
                 }
                 var prop = _groupFieldHelper(obj, fields), addit = false;
                 if (!result[prop]) {
                     addit = true;
                     var tmp = $c.duplicate(initial);
-                    //for (var i = 0, len = props.length; i < len; i++) {
-                    //    tmp[props[i]] = initial[props[i]];
-                    //}
                     result[prop] = tmp;
                 }
                 var curr = $c.duplicate(obj), item;
                 reduce(curr, result[prop]);
-                item = _copyWithProjection(fields, obj);
+				item = _copyWithProjection(fields, obj, !removeProps);
                 item[id] = prop;
                 addit && arr.push(item);
                 return true;
             });
 
-			var i = 0, ar;
-			while (ar = arr[i++]) {
-				arr[i - 1] = finalize($c.merge(ar,result[ar[id]]));
+			var keyObj = $c.duplicate(initial);
+			for (var prop in key) {
+				if (!key.hasOwnProperty(prop)) { continue; }
+				$c.setProperty(keyObj,prop,key[prop]);
+			}
+			for (var i = 0, len = arr.length; i < len; i++) {
+				var merge1 = $c.merge(arr[i],result[arr[i][id]]);
+				arr[i] = $c.merge(keyObj,finalize(merge1) || merge1,{clone:true,intersect:true});
             }
             return arr;
         } catch (e) {
@@ -6552,84 +7003,81 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ext(Array, 'groupBy', function(clause){ // TODO: reconsider this with .group
-        /*|{
-            "info": "Array class extension to ",
-            "category": "Array",
-            "parameters":[
-                {"clause": "(Mixed) "}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.groupBy",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            var props = [];
-            if ($c.isObject(clause)) {
-                props = $c.getKeys(clause);
-            }
-            if ($c.isString(clause)) {
-                props = clause.split(',');
-            }
-
-            clause = "${" + props.join("},${") + "}";
-
-            var arr = [];
-			var temp = {}, i = 0, obj;
-            // loop through each record
-            while (obj = this[i++]) {
-                var nprop = fillTemplate(clause,obj);
-                temp[nprop] = temp[nprop] || {};
-                for (var prop in obj) {
-					if (!obj.hasOwnProperty(prop)) { continue; }
-                    var propOnly = prop.replace(/.*\.(.*$)/, '$1'),
-                        agg = prop.replace("."+propOnly, '');
-
-                    if (props.indexOf(propOnly)) {
-
-                        switch (agg) {
-                            case "avg":
-                                var avg = temp[nprop].avg = temp[nprop].avg || 0,
-                                    n = temp[nprop].n = temp[nprop].n || 1;
-                                temp[nprop].avg = (obj[prop]+avg*n)/temp[nprop].n++;
-                                break;
-                            case "checksum_agg":
-                                break;
-                            case "sum":
-                                temp[nprop].sum = temp[nprop].sum || 0;
-                                temp[nprop].sum += obj[prop];
-                                break;
-                            case "count":
-                                temp[nprop].count = temp[nprop].count || 0;
-                                temp[nprop].count++;
-                                break;
-                            case "stddev":
-                                break;
-                            case "count_big":
-                                break;
-                            case "stdevp":
-                                break;
-                            case "grouping":
-                                break;
-                            case "var":
-                                break;
-                            case "grouping_id":
-                                break;
-                            case "varp":
-                                break;
-                            case "max":
-                                break;
-                        }
-                    }
-                }
-            }
-
-            return this;
-        } catch (e) {
-            error('Array.groupBy', e);
-        }
-    }, true);
+    //_ext(Array, 'groupBy', function(clause){ // TO/DO: reconsider this with .group
+    //    /*|{
+    //        "info": "Array class extension to ",
+    //        "category": "Array",
+    //        "parameters":[
+    //            {"clause": "(Mixed) "}],
+	//
+    //        "overloads":[],
+	//
+    //        "url": "http://www.craydent.com/library/1.8.1/docs#array.groupBy",
+    //        "returnType": "(Array)"
+    //    }|*/
+    //    try {
+    //        var props = [];
+//		if ($c.isObject(clause)) { props = $c.getKeys(clause); }
+//		if ($c.isString(clause)) { props = clause.split(','); }
+	//
+    //        clause = "${" + props.join("},${") + "}";
+	//
+    //        var arr = [];
+		//	var temp = {}, i = 0, obj;
+    //        // loop through each record
+//		for (var i = 0, len = this.length; i < len; i++) {
+//			var obj = this[i],
+//				nprop = fillTemplate(clause,obj);
+    //            temp[nprop] = temp[nprop] || {};
+    //            for (var prop in obj) {
+		//			if (!obj.hasOwnProperty(prop)) { continue; }
+    //                var propOnly = prop.replace(/.*\.(.*$)/, '$1'),
+    //                    agg = prop.replace("."+propOnly, '');
+	//
+    //                if (props.indexOf(propOnly)) {
+	//
+    //                    switch (agg) {
+    //                        case "avg":
+    //                            var avg = temp[nprop].avg = temp[nprop].avg || 0,
+    //                                n = temp[nprop].n = temp[nprop].n || 1;
+    //                            temp[nprop].avg = (obj[prop]+avg*n)/temp[nprop].n++;
+    //                            break;
+    //                        case "checksum_agg":
+    //                            break;
+    //                        case "sum":
+    //                            temp[nprop].sum = temp[nprop].sum || 0;
+    //                            temp[nprop].sum += obj[prop];
+    //                            break;
+    //                        case "count":
+    //                            temp[nprop].count = temp[nprop].count || 0;
+    //                            temp[nprop].count++;
+    //                            break;
+    //                        case "stddev":
+    //                            break;
+    //                        case "count_big":
+    //                            break;
+    //                        case "stdevp":
+    //                            break;
+    //                        case "grouping":
+    //                            break;
+    //                        case "var":
+    //                            break;
+    //                        case "grouping_id":
+    //                            break;
+    //                        case "varp":
+    //                            break;
+    //                        case "max":
+    //                            break;
+    //                    }
+    //                }
+    //            }
+    //        }
+	//
+    //        return this;
+    //    } catch (e) {
+    //        error('Array.groupBy', e);
+    //    }
+    //}, true);
     _ext(Array, 'indexOf', function(value) {
         /*|{
             "info": "Array class extension to implement indexOf",
@@ -6644,32 +7092,7 @@ if (__thisIsNewer) {
         }|*/
         return _indexOf(this, value);
     }, true);
-    _ext(Array, 'indexOfAlt', function(value, func) {
-        /*|{
-            "info": "Array class extension to find index of a value based on a callback function",
-            "category": "Array",
-            "parameters":[
-                {"value": "(Mixed) value to find"},
-                {"func": "(Function) Callback function used to do the comparison"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.indexOfAlt",
-            "returnType": "(Array)"
-        }|*/
-        try {
-            var len = this.length,
-                i = 0;
-            while (i < len) {
-                if ($c.isRegExp(value) && value.test(this[i])) { return i;
-                } else if (value instanceof Object ? func(this[i], value) : func(this[i]) === value) return i;
-                ++i;
-            }
-            return -1;
-        } catch (e) {
-            error("Array.indexOfAlt", e);
-        }
-    }, true);
+    _ext(Array, 'indexOfAlt', _indexOfAlt, true);
     _ext(Array, "innerJoin", function (arr, on) {
         /*|{
             "info": "Array class extension to do an inner join on arrays",
@@ -6701,7 +7124,9 @@ if (__thisIsNewer) {
         }|*/
         try {
             if ($c.isArray(value)) {
-                this.concat(value);
+				for (var i = 0, len = value.length; i < len; i++) {
+					this.push(value[i]);
+				}
             } else {
                 this.push(value);
             }
@@ -6711,27 +7136,7 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'insertAfter', function(index, value) {
-        /*|{
-            "info": "Array class extension to add to the array after a specific index",
-            "category": "Array",
-            "parameters":[
-                {"index": "(Int) Index to add after"},
-                {"value": "(Mixed) Value to add"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAfter",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            this.splice(index + 1, 0, value);
-            return true;
-        } catch (e) {
-            error("Array.insertAfter", e);
-            return false;
-        }
-    }, true);
+    _ext(Array, 'insertAfter', _insertAfter, true);
     _ext(Array, 'insertBefore', function(index, value) {
         /*|{
             "info": "Array class extension to add to the array before a specific index",
@@ -6750,24 +7155,6 @@ if (__thisIsNewer) {
             return true;
         } catch (e) {
             error("Array.insertBefore", e);
-            return false;
-        }
-    }, true);
-    _ext(Array, 'isEmpty', function() {
-        /*|{
-            "info": "Array class extension to check if the array is empty",
-            "category": "Array",
-            "parameters":[],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.isEmpty",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            return (this.length == 0);
-        } catch (e) {
-            error("Array.isEmpty", e);
             return false;
         }
     }, true);
@@ -6795,7 +7182,7 @@ if (__thisIsNewer) {
             "info": "Array class extension to do an outer right join on arrays",
             "category": "Array",
             "parameters":[
-                {"arr": "(Array) Primary array to be joined with"},
+                {"arr": "(Array) Secondary array to be joined with"},
                 {"on": "(String) Condition to join on"}],
 
 			"overloads":[],
@@ -6809,24 +7196,30 @@ if (__thisIsNewer) {
             error('Array.joinRight', e);
         }
     });
-    _ext(Array, 'limit', function(max) {
+    _ext(Array, 'limit', function(max, skip) {
         /*|{
             "info": "Array class extension to return a limited amount of items",
             "category": "Array",
             "parameters":[
                 {"max": "(Int) Maximum number of items to return"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+                    {"max": "(Int) Maximum number of items to return"},
+                    {"skip": "(Int) Number of items to skip"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#array.limit",
             "returnType": "(Array)"
         }|*/
         try {
-			var arr = [], i = 0, a;
-			while (i < max && (a = this[i++])) {
-				arr.push(a);
-            }
-            return arr;
+            //var arr = [], i = 0, a;
+            //while (i < max && (a = this[i++])) {
+            //	arr.push(a);
+            //}
+            //return arr;
+
+            skip = skip || 0;
+            return this.slice(skip,max);
         } catch (e) {
             error("Array.limit", e);
         }
@@ -6871,26 +7264,45 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"map": "(Function) Function to apply to each item"},
 					{"reduce": "(Function) Function used to condense the items"},
-					{"options": "(Object) Indicate which properties to return"}]}],
+					{"options": "(Object) Options specified in the Mongo Doc"}]}],
 
 			"url": "http://www.craydent.com/library/1.8.1/docs#array.mapReduce",
 			"returnType": "(Array)"
 		}|*/
         try {
 			options = options || {};
-
-			var obj = {}, results = this.where(options.query), rtnArr = [], final = options.finalize;
-			map.on('emit',function(key,value){
+			var obj = {}, results = $c.where(this, options.query,null,options.limit), rtnArr = [], final = options.finalize;
+			if (options.sort) {
+				if ($c.isObject(options.sort)) {
+					var sortProps = [];
+					for (var prop in options.sort) {
+						if (!options.sort.hasOwnProperty(prop)) { continue; }
+						if (options.sort[prop] == 1) { sortProps.push(prop); }
+						if (options.sort[prop] == -1) { sortProps.push("!"+prop); }
+					}
+					results = $c.sortBy(results, sortProps);
+				} else {
+					results = $c.sortBy(results, options.sort);
+				}
+			}
+			$c.on(map, 'emit',function(key,value){
 				obj[key] = obj[key] || [];
 				obj[key].push(value);
 			});
 			var result, i = 0;
-			while (result = results[i++]) { map.call(result); }
+			for (var i = 0, len = results.length; i < len; i++) { map.call(results[i]) };
 			for (var key in obj) {
 				if (!obj.hasOwnProperty(key)) { continue; }
 				var reducedValue = reduce(key,obj[key]);
 				if ($c.isFunction(final)) { reducedValue = final(key,reducedValue); }
 				rtnArr.push({_id:key, value: reducedValue});
+			}
+
+			if ($c.isString(options.out)) {
+				$g[options.out] = $c.duplicate(rtnArr,true);
+			} else if ($c.isArray(options.out)) {
+				$c.removeAll(options.out);
+				return $c.merge(options.out,rtnArr);
 			}
 			return rtnArr;
         } catch (e) {
@@ -6910,53 +7322,32 @@ if (__thisIsNewer) {
             "returnType": "(Array)"
         }|*/
         try {
-            var allProps = {}, arrObj = [], i = 0, json;
-			while (json = this[i++]) {
+			var allProps = {}, arrObj = [], len = this.length;
+			for(var i = 0; i < len; i++) {
+				var json = this[i];
                 if (!$c.isObject(json)) {
-                    error("normalize", {description:'index: ' + (i - 1) + ' (skipped) is not an object'});
+					error("normalize", {description:'index: ' + i + ' (skipped) is not an object'});
                     continue;
                 }
                 for(var prop in json) {
                     if (json.hasOwnProperty(prop)) {
-                        allProps[prop] = '';
+						allProps[prop] = 1;
                     }
                 }
             }
-            i = 0;
-			while (json = this[i++]) {
-				arrObj.push($c.merge(allProps, json));
+			for(i = 0; i < len; i++) {
+				for (var prop in allProps) {
+					if (!allProps.hasOwnProperty(prop)) { continue; }
+					this[i][prop] = this[i][prop] || null;
+				}
+				arrObj.push(this[i]);
             }
             return arrObj;
         } catch(e) {
             error("Array.normalize", e);
         }
     }, true);
-    _ext(Array, 'remove', function (value, indexOf) {
-        /*|{
-            "info": "Array class extension to remove an item by value",
-            "category": "Array",
-            "parameters":[
-                {"value": "(Mixed) Value to remove"}],
-
-            "overloads":[
-                {"parameters":[
-                {"value": "(Mixed) Value to remove"},
-                {"indexOf": "(Function) Callback function to use to find the item based on the value"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.remove",
-            "returnType": "(Mixed)"
-        }|*/
-        try {
-            indexOf = indexOf || this.indexOf;
-            var index = indexOf.call(this, value);
-            if(index == -1) {
-                return false;
-            }
-            return this.splice(index, 1)[0];
-        } catch (e) {
-            error("Array.remove", e);
-        }
-    }, true);
+    _ext(Array, 'remove', _remove, true);
     _ext(Array, 'removeAll', function (value, indexOf) {
         /*|{
             "info": "Array class extension to remove all items by value",
@@ -6979,8 +7370,8 @@ if (__thisIsNewer) {
                 if (index == -1) {
                     return false;
                 }
-                while (index != -1) {
-                    removed.push(this.remove(value, indexOf));
+				while (index != -1 && $c.isInt(index)) {
+                    removed.push($c.remove(this, value, indexOf));
                     index = indexOf.call(this, value);
                 }
                 return removed;
@@ -7027,6 +7418,24 @@ if (__thisIsNewer) {
             return this.splice(index, 1, value)[0];
         } catch (e) {
             error("Array.replaceAt", e);
+        }
+    }, true);
+    _ext(Array, 'scramble', function() {
+        /*|{
+            "info": "Array class extension to scramble the order.",
+            "category": "Array",
+            "parameters":[],
+
+            "overloads":[],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.scramble",
+            "returnType": "(Array)"
+        }|*/
+        try {
+			var min = 0, max = this.length;
+            return this.sort(function(){ return Math.round($c.rand(min,max,true)); });
+        } catch (e) {
+            error("Array.scramble", e);
         }
     }, true);
     _ext(Array, 'sortBy', function(props, rev, primer, lookup, options){
@@ -7136,6 +7545,56 @@ if (__thisIsNewer) {
         } catch (e) {
             error('Array.sortBy', e);
         }
+	}, true);
+	_ext(Array, 'stdev', function (con) {
+		/*|{
+			"info": "Array class extension to perform standard deviation (any value which is not a number is 0).",
+			"category": "Array",
+			"featured": true,
+			"parameters":[],
+
+			"overloads":[],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.stdev",
+			"returnType": "(Array)"
+		}|*/
+		try {
+			if (!this.length) { return 0; }
+			var avg = $c.average(this),
+				sum = null, sdlen = 0;
+			for (var i = 0, len = this.length; i < len; i++) {
+				if (!$c.isNumber(this[i])) { continue; }
+				sdlen++;
+				sum = sum || 0;
+				var diff = this[i] - avg;
+					sum += diff * diff;
+			}
+			return Math.sqrt(sum/sdlen);
+		} catch (e) {
+			error("Array.stdev", e);
+		}
+	}, true);
+	_ext(Array, 'sum', function () {
+		/*|{
+			"info": "Array class extension to perform summation of all the values (any value which is not a number is 0).",
+			"category": "Array",
+			"featured": true,
+			"parameters":[],
+
+			"overloads":[],
+
+			"url": "http://www.craydent.com/library/1.8.1/docs#array.sum",
+			"returnType": "(Array)"
+		}|*/
+		try {
+			var value = 0;
+			for (var i = 0, len = this.length; i < len; i++) {
+				value += $c.isNumber(this[i]) ? this[i] : 0;
+			}
+			return value;
+		} catch (e) {
+			error("Array.sum", e);
+		}
     }, true);
     _ext(Array, 'toSet', function() {
         /*|{
@@ -7149,10 +7608,14 @@ if (__thisIsNewer) {
             "returnType": "(Array)"
         }|*/
         try {
-			var i = 0, item, index, len = this.length;
-			while ((item = this[i++]) && i < len) {
-				while ((index = this.indexOf(item,i)) != -1) {
-                    this.removeAt(index);
+			for (var i = 0, len = this.length; i < len; i++) {
+				var item = this[i];
+				for (var j = i + 1; j < len; j++) {
+					var citem = this[j];
+					if ($c.equals(item,citem)) {
+						$c.removeAt(this, j--);
+						len--;
+					}
                 }
             }
         } catch (e) {
@@ -7160,35 +7623,8 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'trim', function(chars) {
-        /*|{
-            "info": "Array class extension to remove all white space from the beginning and end of all string values in the array",
-            "category": "Array",
-            "parameters":[],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.trim",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            var arr = [],
-				alter = false, i = 0, item;
-            if ($c.isBoolean(chars)) {
-                alter = true;
-            }
-
-			while (item = this[i++]) {
-				$c.isString(item) && (arr[i] = item.toString().trim()) || (arr[i] = item);
-				alter && (this[i - 1] = arr[i]);
-            }
-            return arr;
-        } catch (e) {
-            error("Array.trim", e);
-            return false;
-        }
-    }, true);
-    _ext(Array, 'update', function(condition, setClause, multi) {
+	_ext(Array, 'trim', __universal_trim, true);
+    _ext(Array, 'update', function(condition, setClause, options) {
         /*|{
             "info": "Array class extension to update records in the array",
             "category": "Array",
@@ -7200,45 +7636,43 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"condition": "(Mixed) Query following find/where clause syntax"},
                     {"setClause": "(Mixed) Set clause used to update the records"},
-                    {"multi": "(Mixed) Flag to specify if multiple records should be updated"}]}],
+					{"options": "(Object) Options to specify if mulit update and/or upsert"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#array.update",
             "returnType": "(Array)"
         }|*/
         try {
+			options = options || {};
             // if sql syntax convert to mongo object syntax
             if ($c.isString(condition)) {
                 condition = _processClause(condition);
             }
-            var setObject = {'$set':null};
+			var setObject = $c.isObject(setClause) ? setClause : {'$set':null};
             if ($c.isString(setClause)) {
                 setClause = setClause.split(',');
                 setObject['$set'] = {};
-				var i = 0, clause;
-				while (clause = setClause[i++]) {
-					var keyVal = clause.split("=");
+				for (var i = 0, len = setClause.length; i < len; i++) {
+					var keyVal = setClause[i].split("=");
                     setObject['$set'][_trim(keyVal[0])] = _trim(keyVal[0]);
                 }
             }
-//            var arr = [];
-//            for (var i = 0, len = this.length; i < len; i++) {
-//                if (_subQuery(this[i], [condition],'$or')) {
-//                    for (var prop in setObject['$set']) {
-//                        this[i][prop] = setObject['$set'][prop];
-//                    }
-//                    if (!multi || !multi.multi) {
-//                        break;
-//                    }
-//                }
-//            }
-            var found = false, plainObject = !setObject['$set'] && !setObject['$currentDate'];
+			var found = false, plainObject = true, operations = {"$set":1,"$unset":1,"$currentDate":1,"$inc":1,"$max":1,"$min":1,"$mul":1,"$bit":1,"$rename":1
+				,"$":1,"$addToSet":1,"$pop":1,"$pullAll":1,"$pull":1,"$pushAll":1,"$push":1};
+			for (var prop in setObject) {
+				if (operations[prop]) {
+					plainObject = false;
+					break;
+				}
+			}
             _whereHelper(this, condition, function (obj, i) {
                 found  = true;
                 if (plainObject) {
                     this.splice(i,1,setObject);
                 }
-                for (var prop in (setObject['$set'] || {})) {
-                    setObject['$set'].hasOwnProperty(prop) && obj.setProperty(prop, setObject['$set'][prop]);
+				if (setObject['$set']) {
+					for (var prop in setObject['$set']) {
+						setObject['$set'].hasOwnProperty(prop) && $c.setProperty(obj, prop, setObject['$set'][prop]);
+					}
                 }
                 if (setObject['$unset']) {
                     for (var prop in setObject['$unset']) {
@@ -7257,15 +7691,18 @@ if (__thisIsNewer) {
                 }
                 if (setObject['$max']) {
                     for (var prop in setObject['$max']) {
+						if (!setObject['$max'].hasOwnProperty(prop)) { continue; }
+						obj[prop] = $c.isNull(obj[prop]) ? setObject['$max'][prop] : obj[prop];
                         var value = obj[prop];
-                        setObject['$max'].hasOwnProperty(prop) && value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
+						value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
                     }
                 }
                 if (setObject['$min']) {
-                    var value = obj[prop];
                     for (var prop in setObject['$min']) {
+					if (!setObject['$min'].hasOwnProperty(prop)) { continue; }
+						obj[prop] = $c.isNull(obj[prop]) ? setObject['$min'][prop] : obj[prop];
                         var value = obj[prop];
-                        setObject['$min'].hasOwnProperty(prop) && value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
+						value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
                     }
                 }
                 if (setObject['$mul']) {
@@ -7287,16 +7724,106 @@ if (__thisIsNewer) {
                 }
                 if (setObject['$rename']) {
                     for (var prop in setObject['$rename']) {
+                        if (!obj.hasOwnProperty(prop)) { continue; }
                         var value = obj[prop];
                         setObject['$rename'].hasOwnProperty(prop) && delete obj[prop] && (obj[setObject['$rename'][prop]] = value);
                     }
                 }
 
-                return  !(!multi || !multi.multi);
+				// Array operations
+				if (setObject['$']) {
+
+				}
+				if (setObject['$addToSet']) {
+					for (var prop in setObject['$addToSet']) {
+						if (!setObject['$addToSet'].hasOwnProperty(prop)) { continue; }
+						var each;
+						if (each = $c.getProperty(setObject,'$addToSet.'+prop+'.$each')) {
+							for (var i = 0, len = each.length; i < len; i++) {
+								obj[prop].push(each[i]);
+							}
+						} else {
+							obj[prop].push(setObject['$addToSet'][prop]);
+						}
+					}
+					$c.toSet(obj[prop]);
+				}
+				if (setObject['$pop']) {
+					for (var prop in setObject['$pop']) {
+						if(!setObject['$pop'].hasOwnProperty(prop) || !$c.isArray(obj[prop])) { continue; }
+						if (setObject['$pop'][prop] == 1) { obj[prop].pop(); }
+						else if (setObject['$pop'][prop] == -1) { obj[prop].shift(); }
+					}
+				}
+				if (setObject['$pullAll']) {
+					for (var prop in setObject['$pullAll']) {
+						var arr = $c.getProperty(obj,prop),
+							values = setObject['$pullAll'][prop];
+						if (!$c.isArray(arr)) { continue; }
+						__pullHelper(arr,values);
+					}
+				}
+				if (setObject['$pull']) {
+					for (var prop in setObject['$pull']) {
+						var arr = $c.getProperty(obj,prop),
+							values = setObject['$pullAll'][prop];
+						if (!$c.isArray(arr)) { continue; }
+						if ($c.isArray(values)) {
+							__pullHelper(arr,values);
+						} else if ($c.isObject(values)) {
+							$c.delete(values,false);
+						}
+					}
+				}
+				if (setObject['$push']) {
+					for (var prop in setObject['$push']) {
+						if (!setObject['$push'].hasOwnProperty(prop)) { continue; }
+						var each = $c.getProperty(setObject,'$push.'+prop+'.$each'),
+							slice = $c.getProperty(setObject,'$push.'+prop+'.$slice'),
+							sort = $c.getProperty(setObject,'$push.'+prop+'.$sort'),
+							position = $c.getProperty(setObject,'$push.'+prop+'.$position');
+
+
+						if (each) {
+							if ($c.isNull(position)) {
+								for (var i = 0, len = each.length; i < len; i++) {
+									obj[prop].push(each[i]);
+								}
+							} else {
+								for (var i = 0, len = each.length; i < len; i++) {
+									$c.insertBefore(obj[prop], position++, each[i]);
+								}
+							}
+
+						} else {
+							obj[prop].push(setObject['$push'][prop]);
+						}
+
+						if (each && sort) {
+							var sorter = []
+							for (var p in sort) {
+								if (!sort.hasOwnProperty(p)) { continue; }
+								if (sort[p] == 1) {
+									sorter.push(p)
+								} else if (sort[p] == -1) {
+									sorter.push("!"+p)
+								}
+							}
+							$c.sortBy(obj[prop],sorter);
+						}
+
+						if (each && !$c.isNull(slice)) {
+							obj[prop] = obj[prop].slice(slice);
+						}
+					}
+				}
+
+
+				return  !!options.multi;
             });
 
-            if (!found && multi && multi.upsert && plainObject) {
-                this.push(setObject);
+			if (!found && options.upsert) {
+				this.push($c.update([{}],{},setObject)[0] || setObject);
             }
 
             return this;
@@ -7328,16 +7855,21 @@ if (__thisIsNewer) {
             "returnType": "(Object)"
         }|*/
         try {
-            prop = prop || "_id";
-            callback = callback || foo;
+			//prop = prop || "_id";
+			//callback = callback || foo;
+			var usePrimaryKey = true;
+			if (!$c.isArray(records)) { records = [records]; }
             if ($c.isFunction(prop)) {
                 callback = prop;
-                prop = "_id";
+				prop = undefined;
             }
+			if (!prop) { prop = "_id"; }
+			if (callback) { usePrimaryKey = false; }
 
-			var ids = [], refs = {}, insert = [], i = 0, record;
-			while (record = records[i++]) {
-				refs[record[prop]] = {record:record,index:i - 1};
+			var ids = [], refs = {}, insert = [];
+			for (var i = 0, len = records.length; i < len; i++) {
+				var record = records[i];
+				refs[record[prop]] = {record:record,index:i};
 				ids.push(record[prop]);
             }
 
@@ -7347,10 +7879,10 @@ if (__thisIsNewer) {
             _whereHelper(this, condition, function (obj,i) {
                 var ref = refs[obj[prop]],
                     record = ref.record,
-                    isEqual = callback(obj,record),
+					isEqual = callback && callback(obj,record),
                     index = uIndex,
                     arr = uArr;
-                if (!isNull(isEqual) ? isEqual : $c.equals(record,obj)) {
+				if (!$c.isNull(isEqual) ? isEqual : $c.equals(record,obj)) {
                     index = sIndex;
                     arr = sArr;
                 } else {
@@ -7361,13 +7893,11 @@ if (__thisIsNewer) {
                 ids.splice(ref.index-(j++), 1);
                 return true;
             });
-			i = 0
-			var id;
-			while (id = ids[i++]) {
-				var objRef = refs[id];
+			for (var i = 0, len = ids.length; i < len; i++) {
+				var objRef = refs[ids[i]];
                 iIndex.push(this.length);
-                iArr.push(objRef);
-                this.push($c.duplicate(objRef));
+				iArr.push(objRef.record);
+				this.push($c.duplicate(objRef.record));
             }
 
             return {
@@ -7383,7 +7913,7 @@ if (__thisIsNewer) {
             return false;
         }
     }, true);
-    _ext(Array, 'where', function(condition, projection) {
+    _ext(Array, 'where', function(condition, projection, limit) {
         /*|{
             "info": "Array class extension to use mongo or sql queries",
             "category": "Array",
@@ -7397,7 +7927,17 @@ if (__thisIsNewer) {
                     {"projection": "(Mixed) Indicate which properties to return"}]},
                 {"parameters":[
                     {"condition": "(Mixed) Query following find/where clause syntax"},
-                    {"useReference": "(Bool) Flag to make a copy instead of using references"}]}],
+					{"useReference": "(Bool) Flag to make a copy instead of using references"}]},
+
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"projection": "(Mixed) Indicate which properties to return"},
+					{"limit": "(Int) Limit the number of the results returned."}]},
+
+				{"parameters":[
+					{"condition": "(Mixed) Query following find/where clause syntax"},
+					{"useReference": "(Bool) Flag to make a copy instead of using references"},
+					{"limit": "(Int) Limit the number of the results returned."}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#array.where",
             "returnType": "(Array)"
@@ -7409,26 +7949,80 @@ if (__thisIsNewer) {
 			//}
 
             // if no condition was given, return all
-            if (!condition) {
-                return this;
+			if (!condition) { return this.slice(0,limit); }
+			if (limit === 0) { return []; }
+
+
+			if ($c.isFunction(condition) && !projection) {
+				var arr = this.filter(function(item){ return condition.call(item); });
+				return limit ? arr.slice(0,limit) : arr;
             }
 
             // check if there is query MongoDB syntax
-			if (!projection && !/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$ghere":|"\$elemMatch":|"\$not":/.test(JSON.stringify(condition))) {
-                return this.filter(function (obj) {
-					for (var prop in condition) {
-						if (obj[prop]) {
-							if (obj[prop] != condition[prop]) { return false; }
-						} else if (prop.indexOf('.') != -1 && !__queryNestedProperty(obj, prop).contains(condition[prop])) {
-                            return false;
-                        }
-                    }
-                });
-            }
+			var simple = !projection;
+			var condStr;
+			try {
+				condStr = simple && JSON.stringify(condition, function (key, val) {
+					if (key[0] == "$") {
+						simple = false;
+						throw '';
+					}
+					return val;
+				});
+			} catch (e) { }
 
-            var arr = [];
+			//if (!projection && !condition["$where"] && !/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$eq":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$elemMatch":|"\$not":/.test(condStr)) {
+			if (simple) {
+				limit = limit || this.length;
+				this.temp_count = 0;
+				this.temp_limit = limit;
+				var boolCond = "", useQueryNested = false, func = function (cobj,index,arr) {
+					if (arr.temp_count++ < this.temp_limit) { return false; }
+						for (var prop in condition) {
+							if (cobj[prop]) {
+								return cobj[prop] === condition[prop];
+							} else if (prop.indexOf('.') != -1 && !__queryNestedProperty(cobj, prop).contains(condition[prop])) {
+								return false;
+							} else if ($c.isNull(cobj[prop])) {
+								return false;
+							}
+						}
+					return true;
+				};
+				for (var prop in condition) {
+					if (condition.hasOwnProperty(prop)) {
+						if (prop.indexOf('.') != -1) { useQueryNested = true; break; }
+						var q = $c.isString(condition[prop]) ? "\"" : "";
+						if ($c.isRegExp(condition[prop])) {
+							boolCond += condition[prop] + ".test(cobj[\"" + prop + "\"]) && ";
+						} else if (typeof condition[prop] == "object") {
+							boolCond += "$c.equals(cobj[\"" + prop + "\"]," + JSON.stringify(condition[prop]) + ") && ";
+						} else {
+							boolCond += "cobj[\"" + prop + "\"]==" + q + condition[prop] + q + " && ";
+						}
+					}
+				}
+				if (!useQueryNested) {
+					func = ($c.tryEval("function(cobj,index,arr){ return arr.temp_count++ < arr.temp_limit && "+boolCond+"1;}") || func);
+				}
+				//try {
+				//	delete this.temp_count;
+				//	delete this.ttemp_limit;
+				//} catch(e) {
+				//	console.log('broke',e);
+				//}
+				//var arr = this.filter(func);
+				return this.filter(func);
+				//return limit ? arr.slice(0,limit) : arr;
+			}
+
+			var arr = [];
             _whereHelper(this, condition, function (obj,i) {
-                return arr.push(useReference ? obj : _copyWithProjection(projection, obj));
+				arr.push(useReference ? obj : _copyWithProjection(projection, obj));
+				if (limit > 0 && arr.length == limit) {
+					return false;
+				}
+				return true;
             });
 
             return arr;
@@ -7454,7 +8048,7 @@ if (__thisIsNewer) {
                     {"format": "(String) Format syntax to use to to format date"},
                     {"options": "(Object) specs with optional properties:<br />(Bool) gmt<br />(Int) offset"}]}],
 
-			"description":"<h2>Format syntax is as follows:</h2><br /><h3>Day Options</h3><p>d or %d: 2 digit day leading 0<br />D: textual representation of a day, three letters<br />j: day without leading 0<br />l (lower case L): full textual representation of the day of the week<br />N: ISO-8601 numeric representation of the day of the week<br />S: English ordinal suffix for the day of the month, 2 characters<br />w: Numeric representation of the day of the week (starting from 1)<br />w: Numeric representation of the day of the week (starting from 0)<br />z: The day of the year (starting from 0)<br />%j: day of the year (starting from 1)</p><h3>Week Options</h3><p>W: ISO-8601 week number of the year, weeks staring on Monday<br />U: ISO-8601 week number of the year, weeks staring on Monday<br /></p><h3>Month Options</h3><p>F: full textual representation of a month, such as January or March<br />m* or %m: Numeric representation of a month, with leading zeros<br />M or %M: short textual representation of a month, three letters<br />n: Numeric representation of a month, without leading zeros<br />t: Number of days in the given month<br /></p><h3>Year Options</h3><p>L: 0 or 1 indicating whether it's a leap year<br />o: full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.<br />Y or %Y: full numeric representation of a year, 4 digits<br />y: two digit representation of a year<br /></p><h3>Time Options</h3><p>a: Lowercase Ante Meridiem and Post Meridiem<br />A: Uppercase Ante Meridiem and Post Meridiem<br />B: Swatch Internet time<br />g: 12-hour format of an hour without leading zeros<br />G: 24-hour format of an hour without leading zeros<br />h: 12-hour format of an hour with leading zeros<br />H or %H: 24-hour format of an hour with leading zeros<br />i: Minutes with leading zeros<br />s or %S: Seconds, with leading zeros<br />u: Microseconds<br />%L: Milliseconds<br /></p><h3>Timezone Options</h3><p>e: Timezone identifier<br />I: 0 or 1 indicating whether or not the date is in daylight saving time<br />O: Difference to Greenwich time (GMT) in hours<br />P: Difference to Greenwich time (GMT) with colon between hours and minutes<br />T: Timezone abbreviation<br />Z: Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive<br /></p><h3>Other Options</h3><p>c: ISO 8601 date<br />r: RFC 2822 formatted date<br />U: Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)</p>",
+			"description":"<h2>Format syntax is as follows:</h2><br /><h3>Day Options</h3><p>d or %d: 2 digit day leading 0<br />D: textual representation of a day, three letters<br />j: day without leading 0<br />l (lower case L): full textual representation of the day of the week<br />N: ISO-8601 numeric representation of the day of the week<br />S: English ordinal suffix for the day of the month, 2 characters<br />w: Numeric representation of the day of the week (starting from 1)<br />%w: Numeric representation of the day of the week (starting from 0)<br />z: The day of the year (starting from 0)<br />%j: day of the year (starting from 1)</p><h3>Week Options</h3><p>W: ISO-8601 week number of the year, weeks starting on Monday<br />U: ISO-8601 week number of the year, weeks starting on Monday with leading 0<br /></p><h3>Month Options</h3><p>F: full textual representation of a month, such as January or March<br />m or %m: Numeric representation of a month, with leading zeros<br />M or %M: short textual representation of a month, three letters<br />n: Numeric representation of a month, without leading zeros<br />t: Number of days in the given month<br /></p><h3>Year Options</h3><p>L: 0 or 1 indicating whether it's a leap year<br />o: full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.<br />Y or %Y: full numeric representation of a year, 4 digits<br />y: two digit representation of a year<br /></p><h3>Time Options</h3><p>a: Lowercase Ante Meridiem and Post Meridiem<br />A: Uppercase Ante Meridiem and Post Meridiem<br />B: Swatch Internet time<br />g: 12-hour format of an hour without leading zeros<br />G: 24-hour format of an hour without leading zeros<br />h: 12-hour format of an hour with leading zeros<br />H or %H: 24-hour format of an hour with leading zeros<br />i: Minutes with leading zeros<br />s or %S: Seconds, with leading zeros<br />u: Microseconds<br />%L: Milliseconds<br /></p><h3>Timezone Options</h3><p>e: Timezone identifier<br />I: 0 or 1 indicating whether or not the date is in daylight saving time<br />O: Difference to Greenwich time (GMT) in hours<br />P: Difference to Greenwich time (GMT) with colon between hours and minutes<br />T: Timezone abbreviation<br />Z: Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive<br /></p><h3>Other Options</h3><p>c: ISO 8601 date<br />r: RFC 2822 formatted date<br />U: Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)</p>",
             "url": "http://www.craydent.com/library/1.8.1/docs#date.format",
             "returnType": "(String)"
         }|*/
@@ -7470,9 +8064,11 @@ if (__thisIsNewer) {
              **/
             var localTimeZoneOffset = _getGMTOffset.call(this),
                 datetime = options.offset ? new Date(this.valueOf() - (options.offset + (options.offset ? -1 : 1) * localTimeZoneOffset)*60*60000) : this,
+				hour = datetime.getHours(),
+				uhour = datetime.getUTCHours(),
                 minute = datetime.getMinutes(),
                 second = datetime.getSeconds(),
-                GMTDiff = options.offset || datetime.getHours() - 24 - datetime.getUTCHours(),
+				GMTDiff = options.offset || hour - (hour > uhour ? 24 : 0) - uhour,
                 epoch = datetime.getTime(),
                 timezones = {
                     'Afghanistan Time':'AFT',
@@ -7615,13 +8211,15 @@ if (__thisIsNewer) {
                     'Yakutsk Time':'YAKT',
                     'Yekaterinburg Time':'YEKT'
                 },
-                currentTimezone = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
+				ct = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
+				currentTimezone = "\\"+ct.split('').join("\\"),
+				currentTimezoneLong = "\\"+$c.keyOf(timezones,ct).split('').join("\\");
                 minuteWithZero = (minute < 10 ? "0" + minute : minute),
                 secondsWithZero = (second < 10 ? "0" + second : second);
 
             if (options.gmt) {
                 datetime = new Date(datetime.valueOf() - localTimeZoneOffset*60*60000);
-                currentTimezone = "GMT";
+				currentTimezone = "\\G\\M\\T";
                 GMTDiff = 0;
             }
 
@@ -7631,10 +8229,9 @@ if (__thisIsNewer) {
                 year = datetime.getFullYear(),
                 firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000)),
                 //week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000)),
-                week = datetime.getWeek() - 1,
-                hour = datetime.getHours(),
-                dayOfYear = datetime.getDayOfYear(),
-                dayOfYearFrom1 = dayOfYear + 1,
+                week = $c.getWeek(datetime) - 1,
+                dayOfYear = $c.getDayOfYear(datetime),
+				dayOfYearFrom1 = dayOfYear - 1,
                 dayOfYearWithZero = (dayOfYearFrom1< 10 ? "00" + dayOfYearFrom1 : (dayOfYearFrom1 < 100 ? "0" + dayOfYearFrom1 : dayOfYearFrom1)),
 
                 dateWithZero = (date < 10 ? "0" + date : date),
@@ -7643,31 +8240,29 @@ if (__thisIsNewer) {
                 hour24 = (hour < 10 ? "0" + hour : hour),
                 GMTDiffFormatted = (GMTDiff > 0 ? "+" : "-") + (Math.abs(GMTDiff) < 10 ? "0" : "") + Math.abs(GMTDiff) + "00";
 
-
-
-            return /*option d or %d*/format.replace(/%d|([^\\])d|^d/g, '$1' + dateWithZero).// replace all d's with the 2 digit day leading 0
+			return /*option d or %d*/format.replace(/([^\\])%d|^%d|([^\\])d|^d/g, '$1$2' + dateWithZero).// replace all d's with the 2 digit day leading 0
                 /*option D*/replace(/([^\\])D|^D/g, '$1' + threeLetterDay).// replace all D's with A textual representation of a day, three letters
-                /*option j*/replace(/([^\\])j|^j/g, '$1' + date).// replace all j's with the day without leading 0
+				/*option j*/replace(/([^\\%])j|^j/g, '$1' + date).// replace all j's with the day without leading 0
                 /*option l*/replace(/([^\\])l|^l/g, '$1' + ['\\S\\u\\n\\d\\a\\y','\\M\\o\\n\\d\\a\\y','\\T\\u\\e\\s\\d\\a\\y','\\W\\e\\d\\n\\e\\s\\d\\a\\y','\\T\\h\\u\\r\\s\\d\\a\\y','\\F\\r\\i\\d\\a\\y', '\\S\\a\\t\\u\\r\\d\\a\\y'][day]).// replace all l's (lower case L) with A full textual representation of the day of the week
                 /*option N*/replace(/([^\\])N|^N/g, '$1' + (day == 0 ? 7 : day)).// replace all N's with ISO-8601 numeric representation of the day of the week
                 /*option S*/replace(/([^\\%]S)|^S/g, '$1' + (date > 3 ? '\\t\\h' : (date == 1 ? '\\s\\t' : (date == 2 ? '\\n\\d' : '\\r\\d')))).// replace all S's with English ordinal suffix for the day of the month, 2 characters
+				/*option %w*/replace(/([^\\])%w|^%w/g, day + 1).// replace all %w's with Numeric representation of the day of the week (starting from 0)
                 /*option w*/replace(/([^\\])w|^w/g, '$1' + day).// replace all w's with Numeric representation of the day of the week (starting from 1)
-                /*option w*/replace(/%w/g, day + 1).// replace all %w's with Numeric representation of the day of the week (starting from 0)
-                /*option z*/replace(/([^\\])z|^z/g, '$1' + dayOfYear).// replace all z's with The day of the year (starting from 0)
-                /*option %j*/replace(/%j/g, dayOfYearWithZero).// replace all %j's with The day of the year (starting from 1)
+				/*option z*/replace(/([^\\])z|^z/g, '$1' + dayOfYearFrom1).// replace all z's with The day of the year (starting from 0)
+				/*option %j*/replace(/([^\\])%j|^%j/g, dayOfYear).// replace all %j's with The day of the year (starting from 1)
 
-                /*option W*/replace(/([^\\])W|^W/g, '$1' + (week > 0 ? week : 52)).// replace all W's with ISO-8601 week number of the year, weeks staring on Monday
-                /*option W*/replace(/%U/g, week < 10 ? "0" + week : week).// replace all %U's with ISO-8601 week number of the year, weeks staring on Monday
+				/*option W*/replace(/([^\\])W|^W/g, '$1' + (week > 0 ? week : 52)).// replace all W's with ISO-8601 week number of the year, weeks starting on Monday
+				/*option W*/replace(/([^\\])%U|^%U/g, week < 10 ? "0" + week : week).// replace all %U's with ISO-8601 week number of the year, weeks starting on Monday with leading 0
 
                 /*option F*/replace(/([^\\])F|^F/g, '$1' + ['\\J\\a\\n\\u\\a\\r\\y','\\F\\e\\b\\r\\u\\a\\r\\y','\\M\\a\\r\\c\\h','\\A\\p\\r\\i\\l','\\M\\a\\y','\\J\\u\\n\\e','\\J\\u\\l\\y','\\A\\u\\g\\u\\s\\t','\\S\\e\\p\\t\\e\\m\\b\\e\\r','\\O\\c\\t\\o\\b\\e\\r','\\N\\o\\v\\e\\m\\b\\e\\r','\\D\\e\\c\\e\\m\\b\\e\\r'][month - 1]).// replace all F's with A full textual representation of a month, such as January or March
-                /*option m* or %m*/replace(/%m|([^\\])m|^m/g, '$1' + (month < 10 ? "0" + month : month)).// replace all m's with Numeric representation of a month, with leading zeros
-                /*option M or %M*/replace(/%M|([^\\])M|^M/g, '$1' + threeLetterMonth).// replace all M's with A short textual representation of a month, three letters
+				/*option m* or %m*/replace(/([^\\])%m|^%m|([^\\])m|^m/g, '$1$2' + (month < 10 ? "0" + month : month)).// replace all m's with Numeric representation of a month, with leading zeros
+				/*option M or %M*/replace(/([^\\])%M|^%M`|([^\\])M|^M/g, '$1' + threeLetterMonth).// replace all M's with A short textual representation of a month, three letters
                 /*option n*/replace(/([^\\])n|^n/g, '$1' + month).// replace all n's with Numeric representation of a month, without leading zeros
                 /*option t*/replace(/([^\\])t|^t/g, '$1' + (month == 2 && $c.isInt(year/4) ? 29 :[31,28,31,30,31,30,31,31,30,31,30,31][month - 1])).// replace all t's with Number of days in the given month
 
-                /*option L*/replace(/([^\\])L|^L/g, '$1' + $c.isInt(year/4) ? 0 : 1).//replace all t's with Whether it's a leap year
+				/*option L*/replace(/([^\\%])L|^L/g, '$1' + $c.isInt(year%4) ? 1 : 0).//replace all L's with Whether it's a leap year
                 /*option o*/replace(/([^\\])o|^o/g, '$1' + (week > 0 ? year : year - 1)).//replace all o's with A full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.
-                /*option Y or %Y*/replace(/%Y|([^\\])Y|^Y/g, '$1' + year).//replace all t's with A full numeric representation of a year, 4 digits
+				/*option Y or %Y*/replace(/([^\\])%Y|^%Y|([^\\])Y|^Y/g, '$1$2' + year).//replace all Y's with A full numeric representation of a year, 4 digits
                 /*option y*/replace(/([^\\])y|^y/g, '$1' + year.toString().substring(year.toString().length - 2)).//replace all t's with A two digit representation of a year
 
                 /*option a*/replace(/([^\\])a|^a/g, '$1' + (hour > 11 ? "\\p\\m" : "\\a\\m")).//replace all a's with Lowercase Ante Meridiem and Post Meridiem
@@ -7676,18 +8271,18 @@ if (__thisIsNewer) {
                 /*option g*/replace(/([^\\])g|^g/g, '$1' + (hour == 0 ? 12 : hour > 12 ? hour - 12 : hour)).//replace all g's with 12-hour format of an hour without leading zeros
                 /*option G*/replace(/([^\\])G|^G/g, '$1' + hour).//replace all G's with 24-hour format of an hour without leading zeros
                 /*option h*/replace(/([^\\])h|^h/g, '$1' + (hour < 10 ? "0" + hour : (hour > 12 && hour - 12 < 10) ? "0" + (hour - 12) : hour)).//replace all h's with 12-hour format of an hour with leading zeros
-                /*option H or %H*/replace(/%H|([^\\])H|^H/g, '$1' + hour24).//replace all H's with 24-hour format of an hour with leading zeros
+				/*option H or %H*/replace(/([^\\])%H|^%H|([^\\])H|^H/g, '$1' + hour24).//replace all H's with 24-hour format of an hour with leading zeros
                 /*option i*/replace(/([^\\])i|^i/g, '$1' + minuteWithZero).//replace all i's with Minutes with leading zeros
-                /*option s or %S*/replace(/%S|([^\\])s|^s/g, '$1' + secondsWithZero).//replace all s's with Seconds, with leading zeros
+				/*option s or %S*/replace(/([^\\])%S|^%S|([^\\])s|^s/g, '$1' + secondsWithZero).//replace all s's with Seconds, with leading zeros
                 /*option u*/replace(/([^\\])u|^u/g, '$1' + epoch*1000).//replace all u's with Microseconds
-                /*option %L*/replace(/%L/g, epoch).//replace all u's with Milliseconds
+				/*option %L*/replace(/([^\\])%L|^%L/g, epoch).//replace all L's with Milliseconds
 
-                /*option e*/replace(/([^\\])e|^e/g, '$1' + currentTimezone).//replace all e's with Timezone identifier
-                /*option I*/replace(/([^\\])I|^I/g, '$1' + Math.max((new Date(datetime.getFullYear(), 0, 1)).getTimezoneOffset(), (new Date(datetime.getFullYear(), 6, 1)).getTimezoneOffset()) > datetime.getTimezoneOffset() ? 1 : 0).//replace all I's with Whether or not the date is in daylight saving time
+				/*option e*/replace(/([^\\])e|^e/g, '$1' + currentTimezoneLong).//replace all e's with Timezone identifier
+				/*option I*/replace(/([^\\])I|^I/g, '$1' + Math.max((new Date(datetime.getFullYear(), 0, 1)).getTimezoneOffset(), (new Date(datetime.getFullYear(), 6, 1)).getTimezoneOffset()) > datetime.getTimezoneOffset() ? 0 : 1).//replace all I's with Whether or not the date is in daylight saving time
 
                 /*option O*/replace(/([^\\])O|^O/g, '$1' + GMTDiffFormatted).//replace all O's with Difference to Greenwich time (GMT) in hours
                 /*option P*/replace(/([^\\])P|^P/g, '$1' + GMTDiffFormatted.substr(0, 3) + ":" + GMTDiffFormatted.substr(3,2)).//replace all P's with Difference to Greenwich time (GMT) with colon between hours and minutes
-                /*option T*/replace(/([^\\])T|^T/g, '$1' + timezones[currentTimezone]).//replace all T's with Timezone abbreviation
+				/*option T*/replace(/([^\\])T|^T/g, '$1' + currentTimezone).//replace all T's with Timezone abbreviation
                 /*option Z*/replace(/([^\\])Z|^Z/g, '$1' + (-1 * GMTDiff * 60)).//replace all Z's with Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive
 
 
@@ -7730,8 +8325,9 @@ if (__thisIsNewer) {
         try {
             var d = new Date(+this);
             d.setHours(0, 0, 0);
-            d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-            return Math.ceil((((d - new Date(d.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
+			var fdate = new Date(d.getFullYear(), 0, 1);
+			//d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+			return Math.ceil((((d - fdate) / 8.64e7) + 1 +fdate.getDay()) / 7);
         } catch (e) {
             error("Date.getWeek", e);
         }
@@ -7810,26 +8406,7 @@ if (__thisIsNewer) {
             error("Number.isOdd", e);
         }
     }, true);
-    _ext(Number, 'toCurrencyNotation', function (separator) {
-        /*|{
-            "info": "Number class extension to change number to currency",
-            "category": "Number",
-            "parameters":[],
-
-            "overloads":[
-                {"parameters":[
-                {"separator": "(Char) Character to use as delimiter"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#number.toCurrencyNotation",
-            "returnType": "(String)"
-        }|*/
-        try {
-            separator = separator || ",";
-            return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
-        } catch (e) {
-            error("Number.toCurrencyNotation", e);
-        }
-    }, true);
+    _ext(Number, 'toCurrencyNotation', _toCurrencyNotation, true);
 
     /*----------------------------------------------------------------------------------------------------------------
  	/-	Function and Generator class Extensions
@@ -7881,22 +8458,23 @@ if (__thisIsNewer) {
                     {"inheritAsOwn":"(Boolean) Flag to inherit and for values hasOwnProperty to be true."}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#function.extends",
-            "returnType": "(String)"
+			"returnType": "(Function)"
         }|*/
         try {
-            var className = this.getName(),
+            var className = $c.getName(this),
                 cls = new extendee();
-            namespace[className] = $w[className];
-            if (inheritAsOwn) {
+				$c.namespace[className] = $c.namespaces && $c.namespaces[className];
                 for (var prop in cls) {
-                    if (!cls.hasOwnProperty(prop)) { continue; }
+					if (inheritAsOwn && !cls.hasOwnProperty(prop)) { continue; }
                     this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
                 }
-                for (var prop in extendee) {
-                    if (!extendee.hasOwnProperty(prop)) { continue; }
-                    this[prop] = this[prop] || extendee[prop];
+				if (!inheritAsOwn) {
+                    console.log(extendee);
+                    for (var prop in extendee) {
+                        if (!extendee.hasOwnProperty(prop)) { continue; }
+                        this[prop] = this[prop] || extendee[prop];
+                    }
                 }
-            }
 
             this.prototype.construct = this.prototype.construct || cls.construct || foo;
 
@@ -7905,26 +8483,7 @@ if (__thisIsNewer) {
             error("Function.extends", e);
         }
     }, true);
-    _ext(Function, 'on',function(ev, func){
-        /*|{
-         "info": "Function listener to register events",
-         "category": "Function",
-         "parameters":[
-         {"event":"(String) Event to listen on and invoked on emit"},
-         {"func":"(Function) Function to call on emit"}],
-
-         "overloads":[],
-
-         "url": "http://www.craydent.com/library/1.8.1/docs#function.on",
-         "returnType": "(String)"
-         }|*/
-        try {
-            this["_"+ev] = this["_"+ev] || [];
-            this["_"+ev].push(func);
-        } catch (e) {
-            error("Function.on", e);
-        }
-    }, true);
+    _ext(Function, 'on',_on, true);
 
     var _genConstruct = $c.tryEval(('(function *(){}).constructor'));
     _genConstruct && _ext(_genConstruct, 'toPromise',function(){
@@ -7961,7 +8520,7 @@ if (__thisIsNewer) {
 			"returnType": "(String)"
 		}|*/
 		try {
-			this.on('then',func);
+			$c.on(this,'then',func);
 		} catch (e) {
 			error("Function.then", e);
 		}
@@ -7979,7 +8538,7 @@ if (__thisIsNewer) {
 			"returnType": "(String)"
 		}|*/
 		try {
-			this.on('catch',func);
+			$c.on(this, 'catch',func);
 		} catch (e) {
 			error("Function.catch", e);
 		}
@@ -8066,28 +8625,32 @@ if (__thisIsNewer) {
             "info": "Object class extension to check if value exists",
             "category": "Object",
             "parameters":[
-                {"val": "(Mixed) Value to check"}],
+				{"val": "(Mixed) Value to check or custom function to determine validity"}],
 
             "overloads":[
                 {"parameters":[
                     {"val": "(Mixed) Value to check"},
                     {"func": "(Function) Callback function used to do the comparison"}]},
                 {"parameters":[
-                    {"val": "(Mixed) Value to check"},
                     {"arr": "(Array) Array of values to return first matching value"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#object.contains",
             "returnType": "(Bool)"
         }|*/
         try {
+			if ($c.isFunction(val)) {
+				for (var prop in this) {
+					if (val(this[prop],prop,this)) { return true; }
+				}
+			}
             switch(true) {
                 case $c.isArray(this):
 					if ($c.isFunction(func) || $c.isRegExp(val)) {
-                        return $c.indexOfAlt(this, func) != -1;
-                    } else if ($c.isArray(func)) {
-						var item, i = 0;
-						while (item = func[i++]) {
-							if (this.contains(item)) {
+						return $c.indexOfAlt(this,val,func) != -1;
+					} else if ($c.isArray(val)) {
+						for (var i = 0, len = val.length; i < len; i++) {
+							var item = val[i];
+							if ($c.contains(this,item)) {
 								return item;
                             }
                         }
@@ -8113,7 +8676,7 @@ if (__thisIsNewer) {
     });
     _ao("copyObject", function () {
         /*|{
-            "info": "Object class extension to copy an object including constructor",
+			"info": "Object class extension to copy an object excluding constructor",
             "category": "Object",
             "parameters":[],
 
@@ -8126,14 +8689,61 @@ if (__thisIsNewer) {
             if (!this) {
                 return undefined;
             }
-            return _duplicate(typeof(this.constructor) == "function" ? new this.constructor() : {}, this, true);
+			//return _duplicate(typeof(this.constructor) == "function" ? new this.constructor() : {}, this, true);
+			return _duplicate({}, this, true);
         } catch (e) {
             error("Object.copyObject", e);
         }
     });
+    _ao("count", function(option){
+		/*|{
+			"info": "Object class extension to count the properties in the object/elements in arrays/characters in strings.",
+			"category": "Object",
+			"parameters":[],
+	
+			"overloads":[
+				{"parameters":[
+					{"option": "(Mixed) Query used in Array.where when counting elements in an Array"}]},
+				{"parameters":[
+		 			{option": "(String) Word or phrase to count in the String"}]},
+				{"parameters":[
+					{option": "(RegExp) Word or phrase pattern to count in the String"}]}],
+	
+			"url": "http://www.craydent.com/library/1.8.1/docs#object.count",
+			"returnType": "(Int)"
+		}|*/
+		try {
+			if ($c.isObject(this)) {
+				var count = 0;
+				for (var prop in this){
+					if (this.hasOwnProperty(prop)) { count++; }
+				}
+				return count;
+			}
+			if ($c.isArray(this)) {
+				return $c.where(this,option).length;
+			}
+			if ($c.isString(this)) {
+				var word = option;
+				if (!$c.isRegExp(word)) {
+					word = new RegExp(word, "g");
+				} else if (!option.global) {
+					var reg_str = word.toString(),
+						index = reg_str.lastIndexOf('/'),
+						options = reg_str.substring(index + 1);
+	
+					word = new RegExp(word, "g"+options);
+				}
+				return (this.match(word) || []).length;
+			}
+			return undefined;
+		} catch (e) {
+			error('Object.count', e);
+		}
+	});
     _ao("duplicate", function (recursive) {
         /*|{
-            "info": "Object class extension to copy an object excluding constructor",
+			"info": "Object class extension to copy an object including constructor",
             "category": "Object",
             "parameters":[],
 
@@ -8145,7 +8755,7 @@ if (__thisIsNewer) {
             "returnType": "(Object)"
         }|*/
         try {
-            return _duplicate({}, this, recursive);
+			return _duplicate(new this.constructor(), this, recursive);
         } catch (e) {
             error('Object.duplicate', e);
         }
@@ -8178,7 +8788,9 @@ if (__thisIsNewer) {
             "parameters":[
                 {"compare": "(Object) Object to compare against"}],
 
-            "overloads":[],
+			"overloads":[{"parameters":[
+				{"compare": "(Object) Object to compare against"},
+				{"props": "(String[]) Array of property values to compare against"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#object.equals",
             "returnType": "(Bool)"
@@ -8187,33 +8799,31 @@ if (__thisIsNewer) {
             if ($c.isArray(props)) {
                 var j = 0;
                 while (prop = props[j++]) {
-                    if (this.hasOwnProperty(prop) && compare.hasOwnProperty(prop) && this[prop] != compare[prop]
+					if (this.hasOwnProperty(prop) && compare.hasOwnProperty(prop) && !$c.equals(this[prop],compare[prop])
                         || (!this.hasOwnProperty(prop) && compare.hasOwnProperty(prop)) || (this.hasOwnProperty(prop) && !compare.hasOwnProperty(prop))) {
                         return false;
                     }
                 }
+				return true;
             }
             if (($c.isObject(this) && $c.isObject(compare)) || ($c.isArray(this) && $c.isArray(compare))) {
                 for (var prop in compare){
                     if (!compare.hasOwnProperty(prop)) {
                         continue;
                     }
-                    if (this[prop] !== compare[prop]) {
-                        return false;
-                    }
+					if (!$c.equals(this[prop], compare[prop])) { return false; }
                 }
                 for (var prop in this){
                     if (!this.hasOwnProperty(prop)) {
                         continue;
                     }
-                    if (this[prop] !== compare[prop]) {
-                        return false;
-                    }
+					if (!$c.equals(this[prop], compare[prop])) { return false; }
                 }
                 return true;
-            } else {
-                return (this.toString() == compare.toString() && this.constructor == compare.constructor);
-            }
+			}
+			if (this === undefined && compare !== undefined || this !== undefined && compare === undefined) { return false; }
+			if (this === null && compare !== null || this !== null && compare === null) { return false; }
+			return (this.toString() == compare.toString() && this.constructor == compare.constructor);
         } catch (e) {
             error('Object.equals', e);
         }
@@ -8236,7 +8846,7 @@ if (__thisIsNewer) {
         try {
             thisObject = thisObject || this;
             for (var prop in this)
-                if (this[prop] && !callback.call(thisObject, this[prop], prop, this))
+				if (/*this[prop] && */!callback.call(thisObject, this[prop], prop, this))
                     return false;
             return true;
         } catch (e) {
@@ -8327,7 +8937,7 @@ if (__thisIsNewer) {
         try {
             if (!$c.isFunction(this)) {
                 if (args && !dflt) { dflt = args; }
-                return isNull(this, dflt) || this;
+				return $c.isNull(this, dflt) || this;
             }
             var rtn = this.apply(this, args);
             return rtn === undefined ? dflt : rtn;
@@ -8340,7 +8950,7 @@ if (__thisIsNewer) {
             "info": "Alias to Object.prototype.hasOwnProperty",
             "category": "Object",
             "parameters":[
-                {"callback": "(String) Property name to check"}],
+				{"property": "(String) Property name to check"}],
 
             "overloads":[],
 
@@ -8349,7 +8959,11 @@ if (__thisIsNewer) {
         }|*/
         var args = arguments;
         if (arguments.length > 1 && this == args[0]) {
-            args = args.splice(0,1);
+			args = [];
+			for (var i = 1, len = arguments.length; i < len; i++) {
+				args.push(arguments[i]);
+			}
+
         }
         return Object.prototype.hasOwnProperty.apply(this,args);
     });
@@ -8519,7 +9133,7 @@ if (__thisIsNewer) {
 			"returnType": "(Bool)"
 		}|*/
 		try {
-			if (isNull(this)) {return false;}
+			if ($c.isNull(this)) {return false;}
 			return (this.constructor.name == "GeneratorFunction");
 		} catch (e) {
 			error('Object.isGenerator', e);
@@ -8538,7 +9152,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             if (isNull(this)) {return false;}
-            return (this.constructor.toString().indexOf('function Geolocation()') == 0);
+			return (this.constructor.toString().indexOf('function Geolocation') == 0);
         } catch (e) {
             error('Object.isGeolocation', e);
         }
@@ -8796,7 +9410,7 @@ if (__thisIsNewer) {
             var recurse = condition == "recurse" || condition.recurse,
                 shared = condition == "onlyShared" || condition.onlyShared,
 				intersect = condition == "intersect" || condition.intersect,
-                objtmp = (condition == "clone" || condition.clone) ? $c.copyObject(this) : this,
+				objtmp = (condition == "clone" || condition.clone) ? $c.duplicate(this,true) : this,
 				compareFunction = $c.isFunction(condition) ? condition : condition.compareFunction,
 				intersectObj = {};
 
@@ -8816,33 +9430,36 @@ if (__thisIsNewer) {
                         }
                         objtmp.push($c.duplicate(secondary[prop]));
                     } else {
-                        if ($c.isArray(objtmp) && (isNull(condition) || recurse)) {
+						if ($c.isArray(objtmp) && ($c.isNull(condition) || recurse)) {
                             if (objtmp.indexOf(secondary[prop]) == -1) {
                                 objtmp.push(secondary[prop]);
                             }
+						} else if (recurse && ($c.isArray(objtmp[prop]) || $c.isObject(objtmp[prop])) && ($c.isArray(secondary[prop]) || $c.isObject(secondary[prop]))) {
+							objtmp[prop] = $c.merge(objtmp[prop],secondary[prop],condition);
                         } else {
                             objtmp[prop] = secondary[prop];
                         }
                     }
                 }
             }
-            if (recurse) {
-                var args = [],
-                    removeCount = 1;
-                for (var aprop in arguments) {
-                    if (!arguments.hasOwnProperty(aprop)) { continue; }
-                    if ($c.isInt(aprop)) {
-                        args.push(arguments[aprop]);
-                    }
-                }
-                var noThis = false;
-                if (typeof obj != "undefined") {
-                    noThis = true;
-                    removeCount = 2;
-                }
-                args.splice(0,removeCount,objtmp);
-                objtmp = $c.merge.apply(noThis?obj:this, args);
-            }
+			//if (recurse) {
+			//	var args = [],
+			//		removeCount = 1;
+			//	for (var aprop in arguments) {
+			//		if (!arguments.hasOwnProperty(aprop)) { continue; }
+			//		if ($c.isInt(aprop)) {
+			//			args.push(arguments[aprop]);
+			//		}
+			//	}
+			//	var noThis = false;
+			//	if (typeof craydent_this != "undefined") {
+			//		noThis = true;
+			//		removeCount = 2;
+			//	}
+			//	args.splice(0,removeCount,objtmp);
+			//	console.log(args);
+			//	objtmp = $c.merge.apply(noThis?craydent_this:this, args);
+			//}
 			return intersect ? intersectObj : objtmp;
         } catch (e) {
             error('Object.merge', e);
@@ -8874,12 +9491,22 @@ if (__thisIsNewer) {
             options = options || {};
             delimiter = delimiter || ".";
             var props = path.split(delimiter);
-			var obj = this, i = 0, prop, len = props.length;
+			var obj = this, i = 0, prop, len = props.length, pobj, pprop;
 			while (prop = props[i++]) {
 				if (i == len) {
 					return obj[prop] = value, true;
                 }
+				if (pobj && pprop && !$c.isArray(pobj[pprop]) && parseInt(prop) >= 0) {
+					var tmp = pobj[pprop];
+					pobj[pprop] = [];
+					for (var p in tmp) {
+						if (tmp.hasOwnProperty(p)) { pobj[p] = tmp[p]; }
+					}
+					obj = pobj[pprop];
+				}
 				obj[prop] = obj[prop] || {};
+				pobj = obj;
+				pprop = prop;
 				obj = obj[prop];
             }
             return false;
@@ -9359,27 +9986,7 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ah("insertAfter", function (refElem){
-        /*|{
-            "info": "HTMLElement class extension to insert element after another",
-            "category": "HTMLElement",
-            "parameters":[
-                {"refElem": "(HTMLElement) Reference HTML element to insert after"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.insertAfter",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            var next = $c.isFunction(refElem.nextElementSibling) ? refElem.nextElementSibling() : refElem.nextElementSibling;
-            next ? refElem.parentNode.insertBefore(this, next) : refElem.parentNode.appendChild(this);
-            return true;
-        } catch (e) {
-            error("DOM.insertAfter", e);
-            return false;
-        }
-    });
+    _ah("insertAfter", _insertAfter);
     _ah("input", function (callback) {
         /*|{
             "info": "HTMLElement class extension to handle and trigger input event",
@@ -9712,52 +10319,8 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ah("on", function (evt, callback, evtObj) {
-        /*|{
-            "info": "HTMLElement class extension to handle and trigger events",
-            "category": "HTMLElement",
-            "parameters":[
-                {"event": "(String) Event name"}],
-
-            "overloads":[
-                {"parameters":[
-                    {"event":"(String) Event name"},
-                    {"callback": "(Function) Callback function when triggered"}]}],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.input",
-            "returnType": "(void)"
-        }|*/
-        if (!callback) {
-//            return _trigger(this, evt);
-            var funcs = this.events[evt], func, i = 0;
-            while (func = funcs[i++]) {
-                func(evtObj);
-            }
-        } else {
-            this.events = this.events || {};
-            this.events[evt] = this.events[evt] || [];
-            this.events[evt].push(callback);
-            !this.getAttribute("on" + evt) && this.setAttribute("on"+evt, "this.on('"+evt+"',null,(event || $w.event));");
-        }
-    });
-    _ah("remove", function () {
-        /*|{
-            "info": "HTMLElement class extension to remove the element from the DOM tree",
-            "category": "HTMLElement",
-            "parameters":[],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.remove",
-            "returnType": "(HTMLElement)"
-        }|*/
-        try {
-            return this.parentNode.removeChild(this);
-        } catch (e) {
-            error("DOM.remove", e);
-            return false;
-        }
-    });
+    _ah("on", _on);
+    _ah("remove", _remove);
     _ah("removeClass", function(names) {
         /*|{
             "info": "HTMLElement class extension to remove a class from the DOM object",
