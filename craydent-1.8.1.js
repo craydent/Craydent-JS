@@ -150,25 +150,6 @@ if (__thisIsNewer) {
             error('fillTemplate.__and', e);
         }
     }
-    function __andNotHelper (record, query, operands, index) {
-        try {
-            var i = 0, q;
-            while (q = query[i++]) {
-                for (var prop in q) {
-                    if (!q.hasOwnProperty(prop)) { continue; }
-                    if (!(prop in operands
-                            && _subQuery(record, q[prop], prop, index)
-						|| _subQuery(record, q[prop], $c.isObject(q[prop]) ? undefined : "$equals", prop, index)
-                        )) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        } catch (e) {
-            error('where.__andNotHelper', e);
-        }
-    }
     function __clean_micro_templates () {
         var _micro_templates = fillTemplate._micro_templates;
         for (var id in _micro_templates) {
@@ -206,6 +187,7 @@ if (__thisIsNewer) {
             ctx.tryEval = tryEval;
             ctx.wait = wait;
             ctx.xmlToJson = xmlToJson;
+			ctx.yieldable = yieldable;
             ctx.zipit = zipit;
             return ctx;
         } catch (e) {
@@ -268,7 +250,6 @@ if (__thisIsNewer) {
 	            }
 	        }
 			for (var i = 0, len = props.length; i < len; i++) {
-			//while (prop = props[i++]) {
 				var prop = props[i];
 				var pre = $c.replace_all(prePost[0],['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]),
 					post = $c.replace_all(prePost[1],['{ENUM_VAR}','{ENUM_VAL}'],[prop,obj[prop]]);
@@ -320,7 +301,6 @@ if (__thisIsNewer) {
                 var id_index = _observing.indexOf(obj);
                 var hash = _observing["hash_"+id_index],
                     pattern = new RegExp(hash+"[a-zA-Z0-9,]*\."+prop+";?|$"),
-                    //nodes = $CSS("[data-craydent-bind*='"+hash+"."+prop+"']");
                     nodes = Array.prototype.slice.call($CSS("[data-craydent-bind*='"+hash+"']")||[]).filter(function(node){
                         return pattern.test(node.getAttribute("data-craydent-bind"));
                     });
@@ -372,8 +352,7 @@ if (__thisIsNewer) {
             return 0;
         });
 
-        j = 0;
-        while (j < sindexes.length) {
+        while (sindexes.length) {
             var e = 0;
             while (eindexes[0] > sindexes[e]) {
                 e++;
@@ -543,7 +522,6 @@ if (__thisIsNewer) {
                 thenStatement = condition["then"];
                 elseStatement = condition["else"];
             }
-            //return [doc].where(boolExpression).length ? thenStatement : elseStatement;
             return __processExpression(doc, boolExpression) ? thenStatement : elseStatement;
         } catch (e) {
             error('aggregate.__parseCond', e);
@@ -589,7 +567,7 @@ if (__thisIsNewer) {
                     return dt.getMilliseconds();
                 case "$dateToString":
                     dt = __processExpression(doc, expr[field].date);
-                    return $c.format(dt,expr[field].format)
+                    return $c.format(dt,expr[field].format);
             }
         } catch (e) {
             error('aggregate.__parseDateExpr', e);
@@ -657,7 +635,7 @@ if (__thisIsNewer) {
                         }
                         rtnSet = rtnSet.concat(arr);
                     }
-                    $c.toSet(rtnSet);
+                    return $c.toSet(rtnSet);
                 case "$setDifference":
                     var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
                         arr2 = $c.duplicate(__processExpression(doc, expr[field][1])),
@@ -696,8 +674,8 @@ if (__thisIsNewer) {
                     var arr1 = $c.duplicate(__processExpression(doc, expr[field][0])),
                         falseCondition = [undefined,null,0,false];
 
-				for (var jlen = arr1.length; j < jlen; j++) {
-					if (falseCondition.indexOf(arr1[j]) != -1) { return false; }
+					for (var jlen = arr1.length; j < jlen; j++) {
+						if (falseCondition.indexOf(arr1[j]) != -1) { return false; }
                     }
                     return true;
             }
@@ -792,7 +770,6 @@ if (__thisIsNewer) {
 				return (value || 0) + (previousValue || 0);
                 case !!accumulator["$avg"]:
 				previousValue = previousValue || [];
-				//previousValue.avg = ((previousValue.avg / (previousValue.n || 1)) + value) / previousValue.n;
 				if (!$c.isNull(value)) { previousValue.push(value); }
 				if (meta.length == meta.index + 1) { previousValue = $c.average(previousValue); }
                     return previousValue;
@@ -909,12 +886,10 @@ if (__thisIsNewer) {
                     compareKeys = ["$cmp", "$eq", "$gt", "$gte", "$lt", "$lte", "$ne"],
                     arithmeticKeys = ["$add", "$subtract", "$multiply", "$divide", "$mod"],
                     stringKeys = ["$concat", "$substr", "$toLower", "$toUpper", "$strcasecmp"],
-                //searchKeys = ["meta"],
                     arrayKeys = ["$size"],
                     variableKeys = ["$map", "$let"],
                     dateKeys = ["$dayOfYear", "$dayOfMonth", "$dayOfWeek", "$year", "$month", "$week", "$hour", "$minute", "$second", "$millisecond", "$dateToString"],
                     conditionalKeys = ["$cond", "$ifNull"];
-                //accumulatorKeys = ["$sum", "$avg", "$first", "$last", "$max", "$min", "$push", "$addToSet"];
 
                 switch (true) {
 					case literalKeys.indexOf(field) != -1:
@@ -929,8 +904,6 @@ if (__thisIsNewer) {
                         return __parseArithmeticExpr(doc, expr, field);
 					case stringKeys.indexOf(field) != -1:
                         return __parseStringExpr(doc, expr, field);
-                    //case searchKeys.contains(field):
-                    //    return __parseTextSearchExpr (doc,expr);
 					case arrayKeys.indexOf(field) != -1:
                         return __parseArrayExpr(doc, expr, field);
 					case variableKeys.indexOf(field) != -1:
@@ -939,8 +912,6 @@ if (__thisIsNewer) {
                         return __parseDateExpr(doc, expr, field);
 					case conditionalKeys.indexOf(field) != -1:
                         return __parseConditionalExpr(doc, expr, field);
-                    //case accumulatorKeys.contains(field):
-                    //    return __parseAccumulatorExpr(doc, expr, field);
                     default:
                         __processExpression (doc,value);
                         break;
@@ -1060,8 +1031,6 @@ if (__thisIsNewer) {
                         sorter.push(pre+prop);
                     }
                     return $c.sortBy(docs,sorter);
-                //case "$geoNear":
-                //    break;
                 case "$out":
                     var rtnDocs = $c.duplicate(docs,true);
                     if ($c.isString(value)) {
@@ -1130,7 +1099,6 @@ if (__thisIsNewer) {
 			callingPath = new Error().stack.split('\n')[3].replace(/.*?\((.*)/,'$1');
 			if (callingPath.indexOf('\\') != -1) {
 				callingPath = callingPath.replace(/\\/g,'/');
-				//delimiter = "\\";
 			}
 			path = callingPath.substring(0,callingPath.lastIndexOf(delimiter) + 1) + path;
 		}
@@ -1138,11 +1106,11 @@ if (__thisIsNewer) {
 	}
 	function __rest_docs(req,res,params){
 		var routes = {
-			all:this.server.routes.all.where({path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
-			delete:this.server.routes.delete.where({path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
-			get:this.server.routes.get.where({path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
-			post:this.server.routes.post.where({path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
-			put:this.server.routes.put.where({path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]})
+			all:$c.where(this.server.routes.all,{path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
+			delete:$c.where(this.server.routes.delete,{path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
+			get:$c.where(this.server.routes.get,{path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
+			post:$c.where(this.server.routes.post,{path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]}),
+			put:$c.where(this.server.routes.put,{path:{$ne:"/craydent/api/docs"}},{path:1,parameters:[]})
 		};
 		if(req.method.toLowerCase() == "post" || params.f == 'json'){
 			return this.send(routes);
@@ -1282,7 +1250,6 @@ if (__thisIsNewer) {
         }
         if ($c.isArray(projection)) {
             if (!(len = projection.length)) {
-//                _copyWithProjectionHelper(record,copy);
                 copy = $c.duplicate(record);
                 return copy;
             }
@@ -1312,7 +1279,7 @@ if (__thisIsNewer) {
                         prop = prop.slice(0,-2);
 						copy[prop] = val.slice(0,1);
                     } else if (projection[prop]['$elemMatch']) {
-						copy[prop] = val.where(projection[prop]['$elemMatch']).slice(0,1);
+						copy[prop] = $c.where(val,projection[prop]['$elemMatch']).slice(0,1);
                     } else if (projection[prop]['$slice']) {
                         var start = 0, length = $c.isInt(projection[prop]['$slice']) ? projection[prop]['$slice'] : 0;
 
@@ -1993,25 +1960,21 @@ if (__thisIsNewer) {
         }
     }
     function _run_func_array(funcs, args) {
-	//try {
-			var self = this;
-				!$c.isArray(funcs) && (funcs = [funcs]);
-			var i = 0, func, rtn = [];
-			while (func = funcs[i++]){
-				try {
-					if ($c.isFunction(func)){
-						rtn = rtn.concat(func.apply(self, args));
-					} else if ($c.isGenerator(func)) {
-						$c.tryEval('$c.syncroit(function *(){rtn = rtn.concat(yield func.apply(self,args));});');
-					}
-				} catch (e) {
-					throw e;
+		var self = this;
+			!$c.isArray(funcs) && (funcs = [funcs]);
+		var i = 0, func, rtn = [];
+		while (func = funcs[i++]){
+			try {
+				if ($c.isFunction(func)){
+					rtn = rtn.concat(func.apply(self, args));
+				} else if ($c.isGenerator(func)) {
+					$c.tryEval('$c.syncroit(function *(){rtn = rtn.concat(yield func.apply(self,args));});');
 				}
-            }
-            return rtn;
-        //} catch (e) {
-        //    error("_run_func_array", e);
-        //}
+			} catch (e) {
+				throw e;
+			}
+		}
+		return rtn;
     }
     function _set (variable, value, defer, options, loc){
         try {
@@ -2129,250 +2092,108 @@ if (__thisIsNewer) {
             error('_subFieldHelper', e);
         }
     }
-    function _subQuery(record, query, operator, field, index) {
+	function _subQuery(query, field, index) {
         try {
-            if (isNull(index)) {
-                index = field;
-                field = null;
+            if (!$c.isObject(query)) {
+                if (field.indexOf('.') != -1) { return "$c.equals($c.getProperty(record.'" + field + "'), " + $c.parseRaw(query) + ")";}
+                return "$c.equals(record['" + field + "'], " + $c.parseRaw(query) + ")";
             }
-            var operands = {
-                    "$or":1,
-                    "$and":1,
-                    "$in":1,
-                    "$nin":1,
-                    "$regex":1,
-                    "$gt":1,
-                    "$lt":1,
-                    "$gte":1,
-                    "$lte":1,
-                    "$exists":1,
-                    "$equals":1,
-					"$eq":1,
-                    "$ne":1,
-                    "$nor":1,
-                    "$type":1,
-                    "$text":1,
-                    "$mod":1,
-                    "$all":1,
-                    "$size":1,
-                    "$where":1,
-                    "$elemMatch":1,
-                    "$not":1},
-				values = __queryNestedProperty(record, field || ""),
-				opts = operator,
-                rtn = false;
+            var expression = "true";
 
-		if (!$c.isArray(opts)) { opts = opts ? [opts] : []; }
-			// prep multiple subqueries
-			for (var prop in query) {
-				if (query.hasOwnProperty(prop) && prop in operands) {
-					opts.push(prop);
-				}
-			}
-			var i = 0, opt;
-			while (opt = opts[i++]) {
-			var val, vindex = 0, vlen = values.length;
-				if (!rtn && i > 1) { return rtn; }
-				switch(opt) {
+
+            // prep multiple subqueries
+            for (var prop in query) {
+                if (!query.hasOwnProperty(prop)){ continue; }
+                switch(prop) {
                     // value is the record in the array
                     // q is the conditional value
                     case "$equals":
-					case "$eq":
-						if (isNull(query) || !values.length) { return false; }
-						var q = $c.getValue(query.hasOwnProperty(opt) ? query[opt] : query);
-
-						rtn = $c.isFunction(q) ? q(record, field, index) : $c.contains(values, q);
-                        break;
-
-                    case "$ne":
-						if (isNull(query) || !values.length) { return false; }
-                        var q = query['$ne'];
-						rtn = !($c.isFunction(q) ? q(record, field, index) : $c.contains(values, q));
-                        break;
-
-                    case "$lt":
-						if (!vlen) { return false; }
-						for (; vindex < vlen; vindex++) {
-							val = values[vindex];
-							if (val < query['$lt']) {
-								rtn = true;
-								break;
-							}
-						}
-                        break;
-
-                    case "$lte":
-						if (!vlen) { return false; }
-						for (; vindex < vlen; vindex++) {
-							val = values[vindex];
-							if (val <= query['$lte']) {
-								rtn = true;
-								break;
-							}
-						}
-                        break;
-                    case "$gt":
-						if (!vlen) { return false; }
-						for (; vindex < vlen; vindex++) {
-							val = values[vindex];
-							if (val > query['$gt']) {
-								rtn = true;
-								break;
-							}
-						}
-                        break;
-                    case "$gte":
-						if (!vlen) { return false; }
-						for (; vindex < vlen; vindex++) {
-							val = values[vindex];
-							if (val >= query['$gte']) {
-								rtn = true;
-								break;
-							}
-						}
-                        break;
-                    case "$nor":
-						var j = 0, q;
-						while (q = query[j++]) {
-							if (_subQuery(record,[q],'$or',field, index)) { return false; }
-                        }
-                        rtn = true;
-                        break;
+                    case "$eq":
                     case "$regex":
-						if (!vlen) { return false; }
-						rtn = $c.contains(values, query["$regex"]);
+                    case "$ne":
+                        var val = $c.getValue(query[prop]), q = "(" + $c.parseRaw(val) + ")";
+                        if ($c.isFunction(val)) {
+                            q += "(record,'" + field + "',index)";
+                        } else {
+                            q = "$c.contains(values," + q + ")";
+                        }
+                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && " + (prop == "$ne" ? "!" : "") + q + ")";
+                        break;
+                    case "$lt":
+                    case "$lte":
+                    case "$gt":
+                    case "$gte":
+                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && $c.contains(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
                         break;
                     case "$exists":
-                        var finished = {validPath:0};
-                        $c.getProperty(record, field,".",finished);
-                        rtn = finished.validPath == query["$exists"];
+                        expression += " && ((finished = {validPath:0}),$c.getProperty(record,'" + field + "','.',finished),finished.validPath == " + query['$exists'] + ")";
                         break;
                     case "$type":
-						if ($c.isNull(query) && !vlen || vlen) {
-							for (; vindex < vlen; vindex++) {
-								val = values[vindex];
-								if (val.constructor == query['$type']) {
-									rtn = true;
-									break;
-								}
-							}
-							break;
-						}
-                        return false;
+                        var qt = $c.isNull(query["$type"]) ? "!" : "";
+                        expression += " && (" + qt + "(values = __queryNestedProperty(record, '" + field + "')).length && $c.contains(values," + $c.getName(query['$type']) + ",'" + prop + "'))";
                     case "$text":
                         //return record.getProperty(field).contains(query['$search']);
                         break;
                     case "$mod":
-						if (!$c.isArray(query['$mod']) || !vlen) { return false; }
-						for (; vindex < vlen; vindex++) {
-							val = values[vindex];
-							if (val % query['$mod'][0] == query['$mod'][1]) {
-								rtn = true;
-								break;
-							}
-						}
+                        var qm = $c.isArray(query['$mod']);
+                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && " + qm + " && $c.contains(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
                         break;
                     case "$all":
-						var val = values[0];
-						if (!$c.isArray(val) || !$c.isArray(query['$all'])) { return false; }
-						var qs = query['$all'];
-						for (var j = 0, jlen = qs.length; j < jlen; j++) {
-							if (!$c.contains(val, qs[j])) { return false; }
-                        }
-                        rtn = true;
+                        var all = $c.parseRaw(query['$all']) || undefined;
+                        expression += " && (values = __queryNestedProperty(record, '" + field + "')),(all = " + all + "),($c.isArray(values[0]) && $c.isArray(all)) && (function(){ for (var j = 0, jlen = all.length; j < jlen; j++){ if (!$c.contains(values[0],all[j])) { return false; }} return true;})()";
                         break;
                     case "$size":
-						var ival = parseInt(query['$size']), val = values[0];
-						if (!$c.isArray(val) || !ival && ival !== 0) { return false; }
-						rtn = val.length == ival;
+                        var ival = parseInt(query['$size']);
+                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) && (" + ival + " === values.length))";
                         break;
                     case "$where":
-						rtn = $c.isFunction(query) ? query.call(record) : $c.tryEval.call(record,"var self = this;(function(){return ("+query+");}).call(self)");
+                        var val = "(" + ($c.isFunction(query['$where']) ? query['$where'].toString() : "function(){return (" + query['$where'] + ");}") + ")";
+                        expression += " && " + val + ".call(record)";
                         break;
                     case "$elemMatch":
-                        //query = { student: "Jane", grade: { $gt: 85 } } } };
-						var val = values[0];
-						if (!$c.isArray(val)) { return false; }
-						rtn = !!$c.where(val,query['$elemMatch'],1).length;
-
-						//var brk = false;
-						//for (var j = 0, jlen = vlen; !brk && j < vlen; j++) {
-						//	var obj = val[j];
-						//	var qval, operand;
-						//	for (var prop in query) {
-						//		if (!query.hasOwnProperty(prop)) { continue; }
-						//		if ($c.isObject(query[prop])) {
-						//			qval = [query[prop]];
-						//			operand = "$or";
-						//		} else {
-						//			qval = query[prop];
-						//			operand = "$equals";
-						//		}
-						//		if (_subQuery(record, qval, operand, prop, index)) {
-						//			brk = true;
-						//			break;
-						//		}
-						//	}
-						//}
-						//rtn = brk;
+                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) && !!$c.where(values," + $c.parseRaw(query['$elemMatch']) + ",1).length)";
                         break;
                     case "$or":
-                        if (!$c.isArray(query)) {
-                            return false;
+                    case "$nor":
+                        var ors = query[prop],o = 0, or,nor = "";
+                        if (!$c.isArray(ors)) { return false; }
+                        if (prop == "$nor") { nor = "!"; }
+                        expression += " && " + nor + "(";
+                        while (or = ors[o++]) {
+                            expression += "(" + _subQuery(or, field, index) + ") || ";
                         }
-					var satisfied = false, j = 0, q;
-					while (!satisfied && (q = query[j++])) {
-						for (var prop in q) {
-							if (!q.hasOwnProperty(prop)) { continue; }
-							var subprop = _subFieldHelper(q[prop], operands);
-                                if (!(satisfied = prop in operands?
-								_subQuery(record, q[prop], prop, index) :
-									(subprop ? _subQuery(record, q[prop], subprop, prop, index) :
-										_subQuery(record, q[prop], "$equals", prop, index)))) {
-                                    break;
-                                }
-                            }
-                        }
-                        rtn = satisfied;
+                        expression += "false)";
+
                         break;
                     case "$and":
-                        rtn = __andNotHelper (record, query, operands, index);
+                        var ands = query['$and'],a = 0, and;
+                        if (!$c.isArray(ands)) { return false; }
+                        expression += " && (";
+                        while (and = ands[a++]) {
+                            expression += "(" + _subQuery(and, field, index) + ") && ";
+                        }
+                        expression += "true)";
+
                         break;
                     case "$not":
-						if ($c.isObject(query['$not'])) {
-							//rtn = !__andNotHelper (record, query['$not'], operands, index);
-							var nquery = {}
-							nquery[field] = query['$not'];
-							rtn = !_subQuery(record, [nquery], '$or', field, index);
+                        if (!$c.isObject(query['$not'])) {
+                            expression += " && $c.contains(values, "+$c.parseRaw(query['$not'])+")";
                             break;
                         }
-						rtn = $c.contains(values, query['$not']);
-                        break;
 
+                        expression += " && !(" + _subQuery(query[prop],field) + ")";
+                        break;
 
                     case "$in":
                     case "$nin":
-                        var isNIN = operator == "$nin";
-                        rtn = isNIN;
-                        for (var fieldProp in query) {
-						if (!query.hasOwnProperty(fieldProp)) { continue; }
-						var k = 0, qv = query[fieldProp];
-							for (var k = 0, klen = qv.length; k < klen; k++) {
-								var q = qv[k];
-								if ($c.isArray(values) && $c.contains(values, q)) {
-                                    rtn = true;
-                                    if (isNIN) {
-                                        return !rtn;
-                                    }
-                                    break;
-                                }
-                            }
-                            break;
-                        }
+                        expression += " && " + (prop == "$nin" ? "!" : "") + "((values = __queryNestedProperty(record, '" + field + "')[0]),$c.contains(" + $c.parseRaw(query[prop]) + ",values))";
+                        break;
+                    default:
+                        expression += " && " + _subQuery(query[prop], prop);
                         break;
                 }
             }
-            return rtn;
+            return expression;
         } catch (e) {
             error('_subQuery', e);
         }
@@ -2473,26 +2294,7 @@ if (__thisIsNewer) {
             error('aggregate._unwind', e);
         }
     }
-    function _whereHelper(objs,condition,callback) {
-        var returnAll = true;
-        for (var prop in condition) {
-            if (condition.hasOwnProperty(prop)) {
-                returnAll = false;
-                break;
-            }
-        }
-        // if sql syntax convert to mongo object syntax
-        if ($c.isString(condition) && condition) {
-            condition = _processClause(condition);
-            returnAll = false;
-        }
 
-		var i = 0, obj;
-		for (var i = 0, len = objs.length; i < len; i++) {
-			var obj = objs[i];
-			if ((returnAll || _subQuery(obj, [condition],'$or', i)) && !callback.call(objs, obj, i)) { break; }
-        }
-    }
 
 
     /*----------------------------------------------------------------------------------------------------------------
@@ -2796,8 +2598,8 @@ if (__thisIsNewer) {
             var need_to_shard = false, browser_url_limit = 1500, query, url, rtn;
             params.dataType = params.dataType || 'json';
             params.hitch = params.hitch || "";
-            params.oncomplete = params.oncomplete || [foo];
 			params.onbefore = params.onbefore || [foo];
+            params.oncomplete = params.oncomplete || [foo];
 			params.onerror = params.onerror || params.onresponse || [foo];
 			params.onsuccess = params.onsuccess || params.onresponse || [foo];
             params.query = params.data || params.query || "";
@@ -3022,7 +2824,6 @@ if (__thisIsNewer) {
             var prm = {};
             if(typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1 && (params.onsuccess.length == 1 && params.onsuccess[0] === foo)){
                 prm = new Promise(cbk);
-                //if (params.onsuccess.length == 1 && params.onsuccess[0] !== foo) {
                 prm._then = prm.then || foo;
                 prm.then = function (res, rej) { //noinspection CommaExpressionJS
                     params.onsuccess.push(res);
@@ -3218,8 +3019,6 @@ if (__thisIsNewer) {
                     expires = ";expires=" + dt.toUTCString();
                 }
                 for (var j = 0, jlen = keys.length; j < jlen; j++) {
-                    //key = encodeURIComponent(keys[i]);
-                    //value = encodeURIComponent(values[i]);
                     $d.cookie = encodeURIComponent(keys[j]) + "=" + encodeURIComponent(values[j]) + expires + path + domain;
                 }
                 return true;
@@ -3617,7 +3416,7 @@ if (__thisIsNewer) {
 			"overloads":[
 				{"parameters":[
 					{"event": "Event to trigger."},
-					{"infinite": "any number of arguments can be passed and will be applied to listening functions."}}],
+					{"infinite": "any number of arguments can be passed and will be applied to listening functions."}]}],
 
 			"url": "http://www.craydent.com/library/1.8.1/docs#emit",
 			"returnType":"(void)"
@@ -3639,7 +3438,6 @@ if (__thisIsNewer) {
 			}
 			return vals;
 		} catch (e) {
-			//error('emit', e);
 			return e != 'catch' && _run_func_array.call(this, arguments.callee.caller['_catch'], args.length == arguments.length ? args.splice(1) : args);
 		}
 	}
@@ -3859,14 +3657,10 @@ if (__thisIsNewer) {
                 }
                 template = $c.contains(template, /\$\{.*?(\|.*?)+?\}/) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
 
-			//if (!decl) {
 				var declarations = template.match($c.addFlags(ttc.DECLARE.syntax, 'g')) || []
 				for (var j = 0, jlen = declarations.length; j < jlen; j++) {
 					template = ttc.DECLARE.parser(template, declarations[j]);
-					//htmlTemplate = ttc.DECLARE.parser(htmlTemplate, declarations[j]);
 				}
-				//decl = true;
-			//}
                 template = __logic_parser(template, obj, bind);
                 html += $c.replace_all(($c.contains(template, vsyntax) ? template.replace(vsyntax,"") : template), ';\\', ';');
             }
@@ -4245,13 +4039,15 @@ if (__thisIsNewer) {
             if ($c.isString(value)) {
                 raw = (!skipQuotes ? "\"" + $c.replace_all(value, '"','\\"') + "\"" : value);
             } else if ($c.isArray(value)) {
-			var tmp = [];
-			for (var i = 0, len = value.length; i < len; i++) {
-				tmp[i] = parseRaw(value[i], skipQuotes, saveCircular, __windowVars, __windowVarNames);
+                var tmp = [];
+                for (var i = 0, len = value.length; i < len; i++) {
+                    tmp[i] = parseRaw(value[i], skipQuotes, saveCircular, __windowVars, __windowVarNames);
                 }
                 raw = "[" + tmp.join(',') + "]";
             } else if ($c.isDate(value)) {
                 return "new Date('"+value.toString()+"')";
+            } else if ($c.isRegExp(value)) {
+                return value.toString();
             } else if (value instanceof Object && !$c.isFunction(value) && !$c.isGenerator(value)) {
                 if (!__windowVars) {
                     __windowVars = [];
@@ -4273,12 +4069,14 @@ if (__thisIsNewer) {
                         __windowVarNames.push(suid());
                     }
                     raw = "{";
+					var sliceit = false;
                     for (var prop in value) {
                         if (value.hasOwnProperty(prop)) {
+							sliceit = true;
                             raw += "\"" + prop + "\": " + parseRaw(value[prop], skipQuotes, saveCircular, __windowVars, __windowVarNames) + ",";
                         }
                     }
-                    raw += raw.slice(0,-1) + "}";
+					raw = (sliceit ? raw.slice(0,-1) : raw) + "}";
                 } else {
                     if (!saveCircular) {
                         raw = "{}";
@@ -4361,22 +4159,28 @@ if (__thisIsNewer) {
 			"overloads":[],
 
 			"url": "http://www.craydent.com/library/1.8.1/docs#syncroit",
-			"returnType": "(void)"
+			"returnType": "(Promise)"
 		}|*/
 		try {
-			var geno = gen();
+			return new Promise(function(res){
+				var geno = gen();
 
-			$c.isGenerator(gen) && (function cb(val) {
-				var obj = geno.next(val);
+				$c.isGenerator(gen) && (function cb(value) {
+					var obj = geno.next(value);
 
-				if (!obj.done) {
-					if ($c.isPromise(obj.value)) { return obj.value.then(cb).catch(cb); }
-					setTimeout(function () { cb(obj.value); }, 0);
-				}
-			})();
-			return geno;
+					if (!obj.done) {
+						if ($c.isPromise(obj.value)) { return obj.value.then(cb).catch(cb); }
+						setTimeout(function () { cb(obj.value); }, 0);
+					} else {
+						var val = obj.value || value;
+						res(val);
+					}
+				})();
+			});
+
 		} catch (e) {
 			error('syncroit', e);
+			throw e;
 		}
 	}
     function tryEval(expression, evaluator) {
@@ -4531,61 +4335,27 @@ if (__thisIsNewer) {
         } catch (e) {
             error('xmlToJson', e);
         }
+    }
 
+    function yieldable(value) {
+        /*|{
+            "info": "Makes a value yieldable via a Promise.",
+            "category": "Global",
+            "parameters":[
+                {"value": "(Mixed) Value to make yieldable"}],
 
-        //try {
-        //    // Create the return object
-        //    var obj = {};
-        //    if ($c.isString(xml)) {
-        //        xml = xml.replace(/&(?!amp;)/gi, '&amp;');
-        //        if ($w.DOMParser) {
-        //            xml = (new DOMParser()).parseFromString(xml, 'text/xml');
-        //        } else {
-        //            var doc;
-        //            doc = new ActiveXObject('Microsoft.XMLDOM');
-        //            doc.async='false';
-        //            xml = doc.loadXML(xml) && doc;
-        //        }
-        //    }
-		//
-        //    if (xml.nodeType == 1 && !ignoreAttributes) { // element
-        //        // do attributes
-        //        if (xml.attributes.length > 0) {
-        //            obj["@attributes"] = {};
-        //            for (var j = 0; j < xml.attributes.length; j++) {
-        //                var attribute = xml.attributes.item(j);
-        //                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
-        //            }
-        //        }
-        //    } else if (xml.nodeType == 3) { // text
-        //        obj = xml.nodeValue;
-        //    }
-		//
-        //    // do children
-        //    if (xml.hasChildNodes()) {
-        //        for(var i = 0; i < xml.childNodes.length; i++) {
-        //            var item = xml.childNodes.item(i);
-        //            var nodeName = item.nodeName;
-        //            if (typeof(obj[nodeName]) == "undefined") {
-        //                if (nodeName != "#text" || !ignoreAttributes) {
-        //                    obj[nodeName] = xmlToJson(item, ignoreAttributes);
-        //                } else if (xml.childNodes.length == 1) {
-        //                    obj = xmlToJson(item, ignoreAttributes);
-        //                }
-        //            } else {
-        //                if (!$c.isArray(obj[nodeName]) || typeof(obj[nodeName].length) == "undefined") {
-        //                    var old = obj[nodeName];
-        //                    obj[nodeName] = [];
-        //                    obj[nodeName].push(old);
-        //                }
-        //                obj[nodeName].push(xmlToJson(item, ignoreAttributes));
-        //            }
-        //        }
-        //    }
-        //    return obj;
-        //} catch (e) {
-        //    error('xmlToJson', e);
-        //}
+            "overloads":[],
+            "url": "http://www.craydent.com/library/1.8.1/docs#yieldable",
+            "returnType": "(Promise)"
+        }|*/
+        try {
+            return new Promise(function (res, rej) {
+                return res(value);
+            });
+
+        } catch (e) {
+            error('yieldable', e);
+        }
     }
     function zipit(files, content/*=NULL*/) {
         /*|{
@@ -5381,9 +5151,6 @@ if (__thisIsNewer) {
                                     code_result += "${i=" + i + "," + var_name + "=" + vname + "s[i],null}" + body;
                                     i++;
                                 }
-                                //for (var i = 0, len = objs.length; i < len; i++) {
-                                //	code_result += "${i=" + i + "," + var_name + "=" + vname + "s[i],null}" + body;
-                                //}
                             }
 
                             return objs ? code_result : "";
@@ -6734,21 +6501,34 @@ if (__thisIsNewer) {
 			"returnType": "(Array)"
 		}|*/
         try {
+		var thiz = this;
             justOne = parseBoolean($c.isNull(justOne) ? true : $c.isNull(justOne.justOne, justOne));
             // if no condition was given, remove all
             if (!condition) {
                 return this.splice(0,justOne ? 1 : this.length);
             }
 
-            var arr = [], indexes = [];
-            _whereHelper(this, condition,function (obj, i) {
+		var arr = [], indexes = [], cb = function (obj, i) {
                 if (justOne) {
                     arr = arr.concat(this.splice(i,1));
                     return false
                 }
                 indexes.push(i);
                 return true;
-            });
+		};
+
+		var ifblock = _subQuery(condition), func = "(function (record,i) {"+
+			"	var values,finished;" +
+			"	if ("+ifblock+") {" +
+			"		if(!cb.call(thiz,record,i)) { throw 'keep going'; }" +
+			"	}" +
+			"})";
+		try {
+			this.filter(eval(func));
+		} catch(e) {
+			if (e != 'keep going') { throw e;}
+		}
+
 			for (var i = indexes.length - 1; i >= 0; i--) {
 				arr = this.splice(indexes[i],1).concat(arr);
             }
@@ -6776,7 +6556,7 @@ if (__thisIsNewer) {
 
 				{"parameters":[
 					{"fields": "(Array) Fields to use as the projection and unique comparison (comma delimited)"},
-					{"condition": "(String) Query following SQL where clause syntax"}]}
+					{"condition": "(String) Query following SQL where clause syntax"}]},
 
 				{"parameters":[
 					{"fields": "(String) Fields to use as the projection and unique comparison (comma delimited)"},
@@ -6791,12 +6571,6 @@ if (__thisIsNewer) {
 		}|*/
         try {
 		if ($c.isString(fields)) { fields = fields.split(","); }
-
-//            var projection = {},len = fields.length;
-//            for (var i = 0; i < len; i++) {
-//                projection[fields[i]] = 1;
-//            }
-
 
 		var records = $c.group(this, {field:fields,cond:condition},true);
 		if (fields.length == 1) {
@@ -6948,7 +6722,7 @@ if (__thisIsNewer) {
          *            {initial: ""}]}],*/
         try {
             var key = params.field || params.key,
-                condition = params.cond,
+				condition = params.cond || {},
                 reduce = params.reduce || foo,
                 initial = params.initial || {},
                 keyf = params.keyf,
@@ -6967,26 +6741,39 @@ if (__thisIsNewer) {
 
             var props = $c.getKeys(initial),
 				fields = $c.getKeys(key),
-                arr = [], result = {}, id = suid();
-            _whereHelper(this, condition,function (obj, i) {
-                // _groupFieldHelper creates a grouping string based on the field value pairs
-				//var fields = key;
-				if (!fields && keyf) {
-                    fields = $c.isFunction(keyf) ? keyf(doc) : keyf;
-                }
-                var prop = _groupFieldHelper(obj, fields), addit = false;
-                if (!result[prop]) {
-                    addit = true;
-                    var tmp = $c.duplicate(initial);
-                    result[prop] = tmp;
-                }
-                var curr = $c.duplicate(obj), item;
-                reduce(curr, result[prop]);
-				item = _copyWithProjection(fields, obj, !removeProps);
-                item[id] = prop;
-                addit && arr.push(item);
-                return true;
-            });
+				arr = [], result = {}, id = suid(),
+				cb = function (ob, i) {
+					// _groupFieldHelper creates a grouping string based on the field value pairs
+					if (!fields && keyf) {
+						fields = $c.isFunction(keyf) ? keyf(doc) : keyf;
+					}
+					var prop = _groupFieldHelper(ob, fields), addit = false;
+					if (!result[prop]) {
+						addit = true;
+						var tmp = $c.duplicate(initial);
+						result[prop] = tmp;
+					}
+					var curr = $c.duplicate(ob), item;
+					reduce(curr, result[prop]);
+					item = _copyWithProjection(fields, ob, !removeProps);
+					item[id] = prop;
+					addit && arr.push(item);
+					return true;
+				};
+
+
+
+			var thiz = this, ifblock = _subQuery(condition), func = "(function (record,i) {"+
+				"	var values,finished;" +
+				"	if ("+ifblock+") {" +
+				"		if(!cb.call(thiz,record,i)) { throw 'keep going'; }" +
+				"	}" +
+				"})";
+			try {
+				var rarr = this.filter(eval(func));
+			} catch(e) {
+				if (e != 'keep going') { throw e;}
+			}
 
 			var keyObj = $c.duplicate(initial);
 			for (var prop in key) {
@@ -7003,81 +6790,6 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    //_ext(Array, 'groupBy', function(clause){ // TO/DO: reconsider this with .group
-    //    /*|{
-    //        "info": "Array class extension to ",
-    //        "category": "Array",
-    //        "parameters":[
-    //            {"clause": "(Mixed) "}],
-	//
-    //        "overloads":[],
-	//
-    //        "url": "http://www.craydent.com/library/1.8.1/docs#array.groupBy",
-    //        "returnType": "(Array)"
-    //    }|*/
-    //    try {
-    //        var props = [];
-//		if ($c.isObject(clause)) { props = $c.getKeys(clause); }
-//		if ($c.isString(clause)) { props = clause.split(','); }
-	//
-    //        clause = "${" + props.join("},${") + "}";
-	//
-    //        var arr = [];
-		//	var temp = {}, i = 0, obj;
-    //        // loop through each record
-//		for (var i = 0, len = this.length; i < len; i++) {
-//			var obj = this[i],
-//				nprop = fillTemplate(clause,obj);
-    //            temp[nprop] = temp[nprop] || {};
-    //            for (var prop in obj) {
-		//			if (!obj.hasOwnProperty(prop)) { continue; }
-    //                var propOnly = prop.replace(/.*\.(.*$)/, '$1'),
-    //                    agg = prop.replace("."+propOnly, '');
-	//
-    //                if (props.indexOf(propOnly)) {
-	//
-    //                    switch (agg) {
-    //                        case "avg":
-    //                            var avg = temp[nprop].avg = temp[nprop].avg || 0,
-    //                                n = temp[nprop].n = temp[nprop].n || 1;
-    //                            temp[nprop].avg = (obj[prop]+avg*n)/temp[nprop].n++;
-    //                            break;
-    //                        case "checksum_agg":
-    //                            break;
-    //                        case "sum":
-    //                            temp[nprop].sum = temp[nprop].sum || 0;
-    //                            temp[nprop].sum += obj[prop];
-    //                            break;
-    //                        case "count":
-    //                            temp[nprop].count = temp[nprop].count || 0;
-    //                            temp[nprop].count++;
-    //                            break;
-    //                        case "stddev":
-    //                            break;
-    //                        case "count_big":
-    //                            break;
-    //                        case "stdevp":
-    //                            break;
-    //                        case "grouping":
-    //                            break;
-    //                        case "var":
-    //                            break;
-    //                        case "grouping_id":
-    //                            break;
-    //                        case "varp":
-    //                            break;
-    //                        case "max":
-    //                            break;
-    //                    }
-    //                }
-    //            }
-    //        }
-	//
-    //        return this;
-    //    } catch (e) {
-    //        error('Array.groupBy', e);
-    //    }
-    //}, true);
     _ext(Array, 'indexOf', function(value) {
         /*|{
             "info": "Array class extension to implement indexOf",
@@ -7212,12 +6924,6 @@ if (__thisIsNewer) {
             "returnType": "(Array)"
         }|*/
         try {
-            //var arr = [], i = 0, a;
-            //while (i < max && (a = this[i++])) {
-            //	arr.push(a);
-            //}
-            //return arr;
-
             skip = skip || 0;
             return this.slice(skip,max);
         } catch (e) {
@@ -7664,163 +7370,175 @@ if (__thisIsNewer) {
 					break;
 				}
 			}
-            _whereHelper(this, condition, function (obj, i) {
-                found  = true;
-                if (plainObject) {
-                    this.splice(i,1,setObject);
-                }
-				if (setObject['$set']) {
-					for (var prop in setObject['$set']) {
-						setObject['$set'].hasOwnProperty(prop) && $c.setProperty(obj, prop, setObject['$set'][prop]);
+
+			var thiz = this, ifblock = _subQuery(condition), func = "(function (record,i) {"+
+				"	var values,finished;" +
+				"	if ("+ifblock+") {" +
+				"		if(!cb.call(thiz,record,i)) { throw 'keep going'; }" +
+				"	}" +
+				"})", cb = function (obj, i) {
+					found  = true;
+					if (plainObject) {
+						this.splice(i,1,setObject);
 					}
-                }
-                if (setObject['$unset']) {
-                    for (var prop in setObject['$unset']) {
-                        setObject['$unset'].hasOwnProperty(prop) && delete obj[prop];
-                    }
-                }
-                if (setObject['$currentDate']) {
-                    for (var prop in setObject['$currentDate']) {
-                        setObject['$currentDate'].hasOwnProperty(prop) && (obj[prop] = new Date());
-                    }
-                }
-                if (setObject['$inc']) {
-                    for (var prop in setObject['$inc']) {
-                        setObject['$inc'].hasOwnProperty(prop) && (obj[prop] += setObject['$inc'][prop]);
-                    }
-                }
-                if (setObject['$max']) {
-                    for (var prop in setObject['$max']) {
-						if (!setObject['$max'].hasOwnProperty(prop)) { continue; }
-						obj[prop] = $c.isNull(obj[prop]) ? setObject['$max'][prop] : obj[prop];
-                        var value = obj[prop];
-						value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
-                    }
-                }
-                if (setObject['$min']) {
-                    for (var prop in setObject['$min']) {
-					if (!setObject['$min'].hasOwnProperty(prop)) { continue; }
-						obj[prop] = $c.isNull(obj[prop]) ? setObject['$min'][prop] : obj[prop];
-                        var value = obj[prop];
-						value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
-                    }
-                }
-                if (setObject['$mul']) {
-                    for (var prop in setObject['$mul']) {
-                        setObject['$mul'].hasOwnProperty(prop) && (obj[prop] *= setObject['$mul'][prop]);
-                    }
-                }
-                if (setObject['$bit']) {
-                    for (var prop in setObject['$bit']) {
-                        if (!setObject['$bit'].hasOwnProperty(prop) || !$c.isInt(obj[prop])) {continue;}
-                        if ($c.isInt(setObject['$bit'][prop]['and'])) {
-                            obj[prop] &= setObject['$bit'][prop]['and'];
-                        } else if ($c.isInt(setObject['$bit'][prop]['or'])) {
-                            obj[prop] |= setObject['$bit'][prop]['and'];
-                        } else if ($c.isInt(setObject['$bit'][prop]['xor'])) {
-                            obj[prop] ^= setObject['$bit'][prop]['and'];
-                        }
-                    }
-                }
-                if (setObject['$rename']) {
-                    for (var prop in setObject['$rename']) {
-                        if (!obj.hasOwnProperty(prop)) { continue; }
-                        var value = obj[prop];
-                        setObject['$rename'].hasOwnProperty(prop) && delete obj[prop] && (obj[setObject['$rename'][prop]] = value);
-                    }
-                }
-
-				// Array operations
-				if (setObject['$']) {
-
-				}
-				if (setObject['$addToSet']) {
-					for (var prop in setObject['$addToSet']) {
-						if (!setObject['$addToSet'].hasOwnProperty(prop)) { continue; }
-						var each;
-						if (each = $c.getProperty(setObject,'$addToSet.'+prop+'.$each')) {
-							for (var i = 0, len = each.length; i < len; i++) {
-								obj[prop].push(each[i]);
+					if (setObject['$set']) {
+						for (var prop in setObject['$set']) {
+							setObject['$set'].hasOwnProperty(prop) && $c.setProperty(obj, prop, setObject['$set'][prop]);
+						}
+					}
+					if (setObject['$unset']) {
+						for (var prop in setObject['$unset']) {
+							setObject['$unset'].hasOwnProperty(prop) && delete obj[prop];
+						}
+					}
+					if (setObject['$currentDate']) {
+						for (var prop in setObject['$currentDate']) {
+							setObject['$currentDate'].hasOwnProperty(prop) && (obj[prop] = new Date());
+						}
+					}
+					if (setObject['$inc']) {
+						for (var prop in setObject['$inc']) {
+							setObject['$inc'].hasOwnProperty(prop) && (obj[prop] += setObject['$inc'][prop]);
+						}
+					}
+					if (setObject['$max']) {
+						for (var prop in setObject['$max']) {
+							if (!setObject['$max'].hasOwnProperty(prop)) { continue; }
+							obj[prop] = $c.isNull(obj[prop]) ? setObject['$max'][prop] : obj[prop];
+							var value = obj[prop];
+							value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
+						}
+					}
+					if (setObject['$min']) {
+						for (var prop in setObject['$min']) {
+						if (!setObject['$min'].hasOwnProperty(prop)) { continue; }
+							obj[prop] = $c.isNull(obj[prop]) ? setObject['$min'][prop] : obj[prop];
+							var value = obj[prop];
+							value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
+						}
+					}
+					if (setObject['$mul']) {
+						for (var prop in setObject['$mul']) {
+							setObject['$mul'].hasOwnProperty(prop) && (obj[prop] *= setObject['$mul'][prop]);
+						}
+					}
+					if (setObject['$bit']) {
+						for (var prop in setObject['$bit']) {
+							if (!setObject['$bit'].hasOwnProperty(prop) || !$c.isInt(obj[prop])) {continue;}
+							if ($c.isInt(setObject['$bit'][prop]['and'])) {
+								obj[prop] &= setObject['$bit'][prop]['and'];
+							} else if ($c.isInt(setObject['$bit'][prop]['or'])) {
+								obj[prop] |= setObject['$bit'][prop]['and'];
+							} else if ($c.isInt(setObject['$bit'][prop]['xor'])) {
+								obj[prop] ^= setObject['$bit'][prop]['and'];
 							}
-						} else {
-							obj[prop].push(setObject['$addToSet'][prop]);
 						}
 					}
-					$c.toSet(obj[prop]);
-				}
-				if (setObject['$pop']) {
-					for (var prop in setObject['$pop']) {
-						if(!setObject['$pop'].hasOwnProperty(prop) || !$c.isArray(obj[prop])) { continue; }
-						if (setObject['$pop'][prop] == 1) { obj[prop].pop(); }
-						else if (setObject['$pop'][prop] == -1) { obj[prop].shift(); }
-					}
-				}
-				if (setObject['$pullAll']) {
-					for (var prop in setObject['$pullAll']) {
-						var arr = $c.getProperty(obj,prop),
-							values = setObject['$pullAll'][prop];
-						if (!$c.isArray(arr)) { continue; }
-						__pullHelper(arr,values);
-					}
-				}
-				if (setObject['$pull']) {
-					for (var prop in setObject['$pull']) {
-						var arr = $c.getProperty(obj,prop),
-							values = setObject['$pullAll'][prop];
-						if (!$c.isArray(arr)) { continue; }
-						if ($c.isArray(values)) {
-							__pullHelper(arr,values);
-						} else if ($c.isObject(values)) {
-							$c.delete(values,false);
+					if (setObject['$rename']) {
+						for (var prop in setObject['$rename']) {
+							if (!obj.hasOwnProperty(prop)) { continue; }
+							var value = obj[prop];
+							setObject['$rename'].hasOwnProperty(prop) && delete obj[prop] && (obj[setObject['$rename'][prop]] = value);
 						}
 					}
-				}
-				if (setObject['$push']) {
-					for (var prop in setObject['$push']) {
-						if (!setObject['$push'].hasOwnProperty(prop)) { continue; }
-						var each = $c.getProperty(setObject,'$push.'+prop+'.$each'),
-							slice = $c.getProperty(setObject,'$push.'+prop+'.$slice'),
-							sort = $c.getProperty(setObject,'$push.'+prop+'.$sort'),
-							position = $c.getProperty(setObject,'$push.'+prop+'.$position');
 
+					// Array operations
+					if (setObject['$']) {
 
-						if (each) {
-							if ($c.isNull(position)) {
+					}
+					if (setObject['$addToSet']) {
+						for (var prop in setObject['$addToSet']) {
+							if (!setObject['$addToSet'].hasOwnProperty(prop)) { continue; }
+							var each;
+							if (each = $c.getProperty(setObject,'$addToSet.'+prop+'.$each')) {
 								for (var i = 0, len = each.length; i < len; i++) {
 									obj[prop].push(each[i]);
 								}
 							} else {
-								for (var i = 0, len = each.length; i < len; i++) {
-									$c.insertBefore(obj[prop], position++, each[i]);
-								}
+								obj[prop].push(setObject['$addToSet'][prop]);
 							}
-
-						} else {
-							obj[prop].push(setObject['$push'][prop]);
 						}
-
-						if (each && sort) {
-							var sorter = []
-							for (var p in sort) {
-								if (!sort.hasOwnProperty(p)) { continue; }
-								if (sort[p] == 1) {
-									sorter.push(p)
-								} else if (sort[p] == -1) {
-									sorter.push("!"+p)
-								}
-							}
-							$c.sortBy(obj[prop],sorter);
-						}
-
-						if (each && !$c.isNull(slice)) {
-							obj[prop] = obj[prop].slice(slice);
+						$c.toSet(obj[prop]);
+					}
+					if (setObject['$pop']) {
+						for (var prop in setObject['$pop']) {
+							if(!setObject['$pop'].hasOwnProperty(prop) || !$c.isArray(obj[prop])) { continue; }
+							if (setObject['$pop'][prop] == 1) { obj[prop].pop(); }
+							else if (setObject['$pop'][prop] == -1) { obj[prop].shift(); }
 						}
 					}
-				}
+					if (setObject['$pullAll']) {
+						for (var prop in setObject['$pullAll']) {
+							var arr = $c.getProperty(obj,prop),
+								values = setObject['$pullAll'][prop];
+							if (!$c.isArray(arr)) { continue; }
+							__pullHelper(arr,values);
+						}
+					}
+					if (setObject['$pull']) {
+						for (var prop in setObject['$pull']) {
+							var arr = $c.getProperty(obj,prop),
+								values = setObject['$pullAll'][prop];
+							if (!$c.isArray(arr)) { continue; }
+							if ($c.isArray(values)) {
+								__pullHelper(arr,values);
+							} else if ($c.isObject(values)) {
+								$c.delete(values,false);
+							}
+						}
+					}
+					if (setObject['$push']) {
+						for (var prop in setObject['$push']) {
+							if (!setObject['$push'].hasOwnProperty(prop)) { continue; }
+							var each = $c.getProperty(setObject,'$push.'+prop+'.$each'),
+								slice = $c.getProperty(setObject,'$push.'+prop+'.$slice'),
+								sort = $c.getProperty(setObject,'$push.'+prop+'.$sort'),
+								position = $c.getProperty(setObject,'$push.'+prop+'.$position');
 
 
-				return  !!options.multi;
-            });
+							if (each) {
+								if ($c.isNull(position)) {
+									for (var i = 0, len = each.length; i < len; i++) {
+										obj[prop].push(each[i]);
+									}
+								} else {
+									for (var i = 0, len = each.length; i < len; i++) {
+										$c.insertBefore(obj[prop], position++, each[i]);
+									}
+								}
+
+							} else {
+								obj[prop].push(setObject['$push'][prop]);
+							}
+
+							if (each && sort) {
+								var sorter = []
+								for (var p in sort) {
+									if (!sort.hasOwnProperty(p)) { continue; }
+									if (sort[p] == 1) {
+										sorter.push(p)
+									} else if (sort[p] == -1) {
+										sorter.push("!"+p)
+									}
+								}
+								$c.sortBy(obj[prop],sorter);
+							}
+
+							if (each && !$c.isNull(slice)) {
+								obj[prop] = obj[prop].slice(slice);
+							}
+						}
+					}
+
+
+					return  !!options.multi;
+			};
+			try {
+				this.filter(eval(func));
+			} catch(e) {
+				if (e != 'keep going') { throw e;}
+			}
+
 
 			if (!found && options.upsert) {
 				this.push($c.update([{}],{},setObject)[0] || setObject);
@@ -7855,8 +7573,6 @@ if (__thisIsNewer) {
             "returnType": "(Object)"
         }|*/
         try {
-			//prop = prop || "_id";
-			//callback = callback || foo;
 			var usePrimaryKey = true;
 			if (!$c.isArray(records)) { records = [records]; }
             if ($c.isFunction(prop)) {
@@ -7876,7 +7592,8 @@ if (__thisIsNewer) {
 
             var condition = {}, uIndex = [], iIndex = [], sIndex = [], uArr = [], iArr = [], sArr = [], j = 0;
             condition[prop] = {$in:ids};
-            _whereHelper(this, condition, function (obj,i) {
+
+			var cb = function (obj,i) {
                 var ref = refs[obj[prop]],
                     record = ref.record,
 					isEqual = callback && callback(obj,record),
@@ -7892,7 +7609,15 @@ if (__thisIsNewer) {
                 arr.push(obj);
                 ids.splice(ref.index-(j++), 1);
                 return true;
-            });
+			};
+			var ifblock = _subQuery(condition), func = "(function (record,i) {"+
+				"	var values,finished;" +
+				"	if ("+ifblock+") {" +
+				"		cb(record,i);" +
+				"	}" +
+				"})";
+			this.filter(eval(func));
+
 			for (var i = 0, len = ids.length; i < len; i++) {
 				var objRef = refs[ids[i]];
                 iIndex.push(this.length);
@@ -7944,9 +7669,6 @@ if (__thisIsNewer) {
         }|*/
         try {
 			var useReference = !projection;
-			//if (arguments.length == 2 && $c.isBoolean(projection)) {
-			//	useReference = $c.isBoolean(projection);
-			//}
 
             // if no condition was given, return all
 			if (!condition) { return this.slice(0,limit); }
@@ -7971,7 +7693,6 @@ if (__thisIsNewer) {
 				});
 			} catch (e) { }
 
-			//if (!projection && !condition["$where"] && !/"\$or":|"\$and":|"\$in":|"\$nin":|"\$regex":|"\$gt":|"\$lt":|"\$gte":|"\$lte":|"\$exists":|"\$equals":|"\$eq":|"\$ne":|"\$nor":|"\$type":|"\$text":|"\$mod":|"\$all":|"\$size":|"\$elemMatch":|"\$not":/.test(condStr)) {
 			if (simple) {
 				limit = limit || this.length;
 				this.temp_count = 0;
@@ -8005,27 +7726,26 @@ if (__thisIsNewer) {
 				if (!useQueryNested) {
 					func = ($c.tryEval("function(cobj,index,arr){ return arr.temp_count++ < arr.temp_limit && "+boolCond+"1;}") || func);
 				}
-				//try {
-				//	delete this.temp_count;
-				//	delete this.ttemp_limit;
-				//} catch(e) {
-				//	console.log('broke',e);
-				//}
-				//var arr = this.filter(func);
+
 				return this.filter(func);
-				//return limit ? arr.slice(0,limit) : arr;
 			}
 
 			var arr = [];
-            _whereHelper(this, condition, function (obj,i) {
-				arr.push(useReference ? obj : _copyWithProjection(projection, obj));
-				if (limit > 0 && arr.length == limit) {
-					return false;
-				}
-				return true;
-            });
-
-            return arr;
+			var ifblock = _subQuery(condition), func = "(function (record,i) {"+
+				"	var values,finished;" +
+				"	if (limit > 0 && arr.length == limit) { throw 'keep going'; }" +
+				"	if ("+ifblock+") {" +
+				"		if (useReference) { return true; }" +
+				"		return arr.push(_copyWithProjection(projection, record));" +
+				"	}" +
+				"})";
+			try {
+				var rarr = this.filter(eval(func));
+			} catch(e) {
+				if (e != 'keep going') { throw e;}
+			}
+			if (!useReference) { return arr; }
+			return rarr;
         } catch (e) {
             error("Array.where", e);
             return false;
@@ -8228,7 +7948,6 @@ if (__thisIsNewer) {
                 month = datetime.getMonth() + 1,
                 year = datetime.getFullYear(),
                 firstMonday = new Date((new Date('1/6/' + year)).getTime() + (1-(new Date('1/6/' + year)).getDay())*(24*60*60*1000)),
-                //week = Math.ceil(Math.ceil((datetime - (firstMonday - (new Date('1/1/'+year)))) - (new Date('12/31/' + (year - 1))))/(7*24*60*60*1000)),
                 week = $c.getWeek(datetime) - 1,
                 dayOfYear = $c.getDayOfYear(datetime),
 				dayOfYearFrom1 = dayOfYear - 1,
@@ -8326,7 +8045,6 @@ if (__thisIsNewer) {
             var d = new Date(+this);
             d.setHours(0, 0, 0);
 			var fdate = new Date(d.getFullYear(), 0, 1);
-			//d.setDate(d.getDate() + 4 - (d.getDay() || 7));
 			return Math.ceil((((d - fdate) / 8.64e7) + 1 +fdate.getDay()) / 7);
         } catch (e) {
             error("Date.getWeek", e);
@@ -8466,10 +8184,9 @@ if (__thisIsNewer) {
 				$c.namespace[className] = $c.namespaces && $c.namespaces[className];
                 for (var prop in cls) {
 					if (inheritAsOwn && !cls.hasOwnProperty(prop)) { continue; }
-                    this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];//function(){return $c.getValue(cls[prop],arguments);};
+					this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];
                 }
 				if (!inheritAsOwn) {
-                    console.log(extendee);
                     for (var prop in extendee) {
                         if (!extendee.hasOwnProperty(prop)) { continue; }
                         this[prop] = this[prop] || extendee[prop];
@@ -8647,10 +8364,63 @@ if (__thisIsNewer) {
                 case $c.isArray(this):
 					if ($c.isFunction(func) || $c.isRegExp(val)) {
 						return $c.indexOfAlt(this,val,func) != -1;
+                    } else if ($c.isString(func)) {
+                        var f = foo;
+                        switch(func){
+                            case "$lt":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i] < val) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                            case "$lte":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i] <= val) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                            case "$gt":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i] > val) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                            case "$gte":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i] >= val) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                            case "$mod":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i] % val[0] == val[1]) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                            case "$type":
+                                f = function(vals){
+                                    for (var i = 0, len = vals.length; i < len; i++) {
+                                        if (vals[i].constructor == val) { return true; }
+                                    }
+                                    return false;
+                                };
+                                break;
+                        }
+                        return !!f(this);
 					} else if ($c.isArray(val)) {
 						for (var i = 0, len = val.length; i < len; i++) {
 							var item = val[i];
-							if ($c.contains(this,item)) {
+							if ($c.contains(this,item,func)) {
 								return item;
                             }
                         }
@@ -8686,10 +8456,7 @@ if (__thisIsNewer) {
             "returnType": "(Object)"
         }|*/
         try {
-            if (!this) {
-                return undefined;
-            }
-			//return _duplicate(typeof(this.constructor) == "function" ? new this.constructor() : {}, this, true);
+            if (!this) { return undefined; }
 			return _duplicate({}, this, true);
         } catch (e) {
             error("Object.copyObject", e);
@@ -8705,9 +8472,9 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"option": "(Mixed) Query used in Array.where when counting elements in an Array"}]},
 				{"parameters":[
-		 			{option": "(String) Word or phrase to count in the String"}]},
+		 			{"option": "(String) Word or phrase to count in the String"}]},
 				{"parameters":[
-					{option": "(RegExp) Word or phrase pattern to count in the String"}]}],
+					{"option": "(RegExp) Word or phrase pattern to count in the String"}]}],
 	
 			"url": "http://www.craydent.com/library/1.8.1/docs#object.count",
 			"returnType": "(Int)"
@@ -9390,7 +9157,7 @@ if (__thisIsNewer) {
             error('Object.map', e)
         }
     });
-    _ao("merge", function (secondary, condition) {//shareOnly) {
+    _ao("merge", function (secondary, condition) {
         /*|
             {"info": "Object class extension to merge objects",
             "category": "Object",
@@ -9442,24 +9209,6 @@ if (__thisIsNewer) {
                     }
                 }
             }
-			//if (recurse) {
-			//	var args = [],
-			//		removeCount = 1;
-			//	for (var aprop in arguments) {
-			//		if (!arguments.hasOwnProperty(aprop)) { continue; }
-			//		if ($c.isInt(aprop)) {
-			//			args.push(arguments[aprop]);
-			//		}
-			//	}
-			//	var noThis = false;
-			//	if (typeof craydent_this != "undefined") {
-			//		noThis = true;
-			//		removeCount = 2;
-			//	}
-			//	args.splice(0,removeCount,objtmp);
-			//	console.log(args);
-			//	objtmp = $c.merge.apply(noThis?craydent_this:this, args);
-			//}
 			return intersect ? intersectObj : objtmp;
         } catch (e) {
             error('Object.merge', e);
