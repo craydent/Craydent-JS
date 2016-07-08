@@ -1214,6 +1214,37 @@ if (__thisIsNewer) {
             return false;
         }
     }
+    function _binarySearch(sarr, prop, value, sindex, eindex, findIndex){
+        sindex = $c.isNull(sindex) ? 0 : sindex;
+        eindex = $c.isNull(eindex) ? sarr.length - 1 : eindex;
+        if (findIndex) {
+            if (eindex == -1) { return 0; }
+            if (sarr[sindex][prop] > value) { return sindex; }
+            if (sarr[eindex][prop] < value) { return eindex; }
+        }
+        if (sindex == eindex) {
+            if (sarr[sindex][prop] != value) { return []; }
+            return [sarr[sindex]];
+        }
+
+        var index = sindex + parseInt((eindex - sindex) / 2);
+
+        if (sarr[index][prop] > value) {
+            return _binarySearch(sarr, prop, value, sindex, index, findIndex);
+        }
+
+        if (sarr[index][prop] < value) {
+            return _binarySearch(sarr, prop, value, index, eindex, findIndex);
+        }
+        while (sarr[sindex][prop] < value) { sindex++; }
+        while (sarr[eindex][prop] > value) { eindex--; }
+
+        if (findIndex) { return eindex; }
+
+        var len = eindex - sindex + 1;
+        if (sindex == 0 && len == sarr.length) { return sarr; }
+        return sarr.slice(sindex, eindex + len);
+    }
     function _condense (objs, check_values) {
         try {
             var skip = [], arr = [], without = false;
@@ -1636,6 +1667,46 @@ if (__thisIsNewer) {
             }
         } catch (e) {
             error(($c.isDomElement(this) ? "DOM" : _getFuncName(this.constructor)) + ".remove", e);
+            return false;
+        }
+    }
+    function _insertAt(index, value) {
+        /*|{
+            "info": "Array class extension to add to the array at a specific index and push the all indexes down : HTMLElement class extension to insert element at a specified index",
+            "category": "Array",
+            "parameters":[
+                {"index": "(Int) Index to add after"},
+                {"value": "(Mixed) Value to add"}],
+
+            "overloads":[],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAt",
+            "returnType": "(Bool)"
+        }|*/
+        try {
+            if ($c.isArray(this)) {
+                this.splice(index, 0, value);
+                return true;
+            }
+            if($c.isDomElement(index)) {
+                var temp = index;
+                index = value;
+                value = temp;
+            }
+            if ($c.isDomElement(value)) {
+                var children = this.children;
+                index = index || 0;
+                if (children.length > index) {
+                    this.insertBefore(value, children[index]);
+                    return true;
+                } else if (children.length == index) {
+                    this.appendChild(value);
+                    return true;
+                }
+                return false;
+            }
+        } catch (e) {
+            error(($c.isArray(this) ? "Array" : "DOM") + ".insertAt", e);
             return false;
         }
     }
@@ -2144,7 +2215,7 @@ if (__thisIsNewer) {
                         break;
                     case "$size":
                         var ival = parseInt(query['$size']);
-                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) && (" + ival + " === values.length))";
+                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) ? (" + ival + " === values.length) : (values == undefined && 0 === " + ival + "))";
                         break;
                     case "$where":
                         var val = "(" + ($c.isFunction(query['$where']) ? query['$where'].toString() : "function(){return (" + query['$where'] + ");}") + ")";
@@ -6485,6 +6556,40 @@ if (__thisIsNewer) {
         }|*/
         return _condense(this, check_values);
     }, true);
+    _ext(Array, 'createIndex', function (indexes) {
+        /*|{
+            "info": "Array class extension to create indexes for faster searches during where",
+            "category": "Array",
+            "parameters":[
+                {"properties": "(String) Property or comma delimited property list to index."}],
+
+            "overloads":[
+                {"parameters":[
+                    {"indexes": "(String[]) Array of properties to index"}]}],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.condense",
+            "returnType": "(Array)"
+        }|*/
+        try {
+            if (!indexes || !indexes.length) { return false; }
+            if (!$c.isArray(indexes)) { indexes = indexes.split(','); }
+            this.__indexes = {};
+
+            for (var i = 0, len = indexes.length; i < len; i++) {
+                var prop = indexes[i], arr = [];
+
+                for (var j = 0, jlen = this.length; j < jlen; j++) {
+                    var index = _binarySearch(arr, prop, this[j][prop], null, null, true);
+                    $c.insertAt(arr,index,this[j]);
+
+                }
+                this.__indexes[prop] = arr;
+            }
+        } catch(e) {
+            error("Array.createIndex", e);
+            return false;
+        }
+    });
     _ext(Array, 'delete', function(condition, justOne) {
 		/*|{
 			"info": "Array class extension to delete records",
@@ -6849,6 +6954,7 @@ if (__thisIsNewer) {
         }
     }, true);
     _ext(Array, 'insertAfter', _insertAfter, true);
+    _ext(Array, 'insertAt', _insertAt, true);
     _ext(Array, 'insertBefore', function(index, value) {
         /*|{
             "info": "Array class extension to add to the array before a specific index",
@@ -7694,9 +7800,45 @@ if (__thisIsNewer) {
 			} catch (e) { }
 
 			if (simple) {
-				limit = limit || this.length;
-				this.temp_count = 0;
-				this.temp_limit = limit;
+                limit = limit || this.length;
+                var props = [],indexProps = [];
+                for (var prop in condition) {
+                    if(condition.hasOwnProperty(prop)) {
+                        //props.push(prop);
+                        if (this.__indexes && this.__indexes[prop]) {
+                            indexProps.push(prop);
+                        }
+                    }
+                }
+                var arr = this;
+                if (indexProps.length) {
+                    var prop, i = 0;
+
+                    var orderedLists = [], fi = 0,len = arr.length;
+                    while (prop = indexProps[i++]) {
+                        var ordered = _binarySearch(arr.__indexes[prop],prop,condition[prop]);
+                        if (len > ordered.length) {
+                            len = ordered.length;
+                            fi = i - 1;
+                        }
+                        orderedLists.push(ordered);
+                    }
+                    if (len < 1000) {
+                        var farr = orderedLists[fi];
+                        arr = [];
+                        for (var i = 0; i < len; i++) {
+                            var addit = true;
+                            for (var j = 0, jlen = orderedLists.length; j < jlen; j++) {
+                                if (fi == j) { continue; }
+                                if (orderedLists[j].indexOf(farr[i]) == -1) {
+                                    addit = false;
+                                    break;
+                                }
+                            }
+                            addit && arr.push(farr[i]);
+                        }
+                    }
+                }
 				var boolCond = "", useQueryNested = false, func = function (cobj,index,arr) {
 					if (arr.temp_count++ < this.temp_limit) { return false; }
 						for (var prop in condition) {
@@ -7711,23 +7853,30 @@ if (__thisIsNewer) {
 					return true;
 				};
 				for (var prop in condition) {
-					if (condition.hasOwnProperty(prop)) {
-						if (prop.indexOf('.') != -1) { useQueryNested = true; break; }
-						var q = $c.isString(condition[prop]) ? "\"" : "";
-						if ($c.isRegExp(condition[prop])) {
-							boolCond += condition[prop] + ".test(cobj[\"" + prop + "\"]) && ";
-						} else if (typeof condition[prop] == "object") {
-							boolCond += "$c.equals(cobj[\"" + prop + "\"]," + JSON.stringify(condition[prop]) + ") && ";
-						} else {
-							boolCond += "cobj[\"" + prop + "\"]==" + q + condition[prop] + q + " && ";
-						}
-					}
+                    if (!condition.hasOwnProperty(prop) || indexProps.indexOf(prop) != -1) { continue; }
+                    if (prop.indexOf('.') != -1) { useQueryNested = true; break; }
+                    var q = $c.isString(condition[prop]) ? "\"" : "";
+                    if ($c.isRegExp(condition[prop])) {
+                        boolCond += condition[prop] + ".test(cobj[\"" + prop + "\"]) && ";
+                    } else if (typeof condition[prop] == "object") {
+                        boolCond += "$c.equals(cobj[\"" + prop + "\"]," + JSON.stringify(condition[prop]) + ") && ";
+                    } else {
+                        boolCond += "cobj[\"" + prop + "\"]==" + q + condition[prop] + q + " && ";
+                    }
 				}
 				if (!useQueryNested) {
-					func = ($c.tryEval("function(cobj,index,arr){ return arr.temp_count++ < arr.temp_limit && "+boolCond+"1;}") || func);
+                    var limitLogic = "";
+                    if (limit) { limitLogic = "arr.temp_count++ < arr.temp_limit && "; }
+                    func = ($c.tryEval("function(cobj,index,arr){ return " + limitLogic + boolCond + "true;}") || func);
 				}
+                arr.temp_count = 0;
+                arr.temp_limit = limit;
 
-				return this.filter(func);
+                arr = arr.filter(func);
+                delete arr.temp_count;
+                delete arr.temp_limit;
+
+                return arr;
 			}
 
 			var arr = [];
@@ -9786,35 +9935,7 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ah("insertAt", function (elem, pos){
-        /*|{
-            "info": "HTMLElement class extension to insert element at a specified index",
-            "category": "HTMLElement",
-            "parameters":[
-                {"elem": "(HTMLElement) Element to insert"},
-                {"pos": "(Int) Index to add element"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.insertAt",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            var children = this.children;
-            pos = pos || 0;
-            if (children.length > pos) {
-                this.insertBefore(elem, children[pos]);
-                return true;
-            } else if (children.length == pos) {
-                this.appendChild(elem);
-                return true;
-            }
-            return false;
-        } catch (e) {
-            error("DOM.insertAt", e);
-            return false;
-        }
-    });
+    _ah("insertAt", _insertAt);
     _ah("invalid", function (callback) {
         /*|{
             "info": "HTMLElement class extension to handle and trigger invalid event",
@@ -11273,10 +11394,10 @@ if (__thisIsNewer) {
 
         if (typeof JSON.parseAdvanced !== 'function') {
             JSON.parseAdvanced = function (text, reviver) {
-                var tjson = JSON.parse(text,reviver);
-
+                return _parseAdvanced($c.isObject(text) ? text : JSON.parse(text,reviver));
             };
             function _parseAdvanced (obj) {
+                if (!obj) { return; }
                 for (var prop in obj) {
                     if (!obj.hasOwnProperty(prop)) { continue; }
                     if (prop.indexOf('.') != -1) {
@@ -11285,19 +11406,23 @@ if (__thisIsNewer) {
                             type = parts[1],
                             value;
 
-                        if (type == "number") {
+                        if (type == "Number") {
                             value = Number(obj[prop]);
-                        } else if (type == "function") {
+                        } else if (type == "Function") {
                             value = $c.tryEval(obj[prop]);
+                        } else if (type == "RegExp") {
+                            value = new RegExp($c.strip(obj[prop],'/'));
                         } else {
                             value = new $g[type](obj[prop]);
                         }
 
                         obj[name] = value;
                         delete obj[prop];
-
+                    } else if ($c.isObject(obj[prop])) {
+                        obj[prop] = _parseAdvanced(obj[prop]);
                     }
                 }
+                return obj;
             }
         }
     }());
