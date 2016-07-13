@@ -1,5 +1,5 @@
 /*/---------------------------------------------------------/*/
-/*/ Craydent LLC v1.8.1                                     /*/
+/*/ Craydent LLC v1.9.0                                     /*/
 /*/	Copyright 2011 (http://craydent.com/about)              /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
 /*/	(http://craydent.com/license)                           /*/
@@ -8,7 +8,7 @@
 /*----------------------------------------------------------------------------------------------------------------
  /-	Global CONSTANTS and variables
  /---------------------------------------------------------------------------------------------------------------*/
-var __version = "1.8.1",
+var __version = "1.9.0",
     __thisIsNewer = true,
     $w = typeof window != "undefined" ? window : {location:(typeof location != "undefined"?location:{href:''}),console:(typeof console != "undefined"?console:{})},
     $g = $w,
@@ -3415,7 +3415,7 @@ if (__thisIsNewer) {
 
             "overloads":[
                 {"parameters":[
-                    {"imgURL": "(String) full or relative url to image""}]}],
+                    {"imgURL": "(String) full or relative url to image"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#cacheImages",
             "returnType": "(void)"
@@ -5774,6 +5774,55 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	String class Extensions
      /---------------------------------------------------------------------------------------------------------------*/
+    _ext(String, 'acronymize', function (capsOnly, delimiter) {
+        /*|{
+            "info": "String class extension to capitalize parts of the string",
+            "category": "String",
+            "parameters":[
+                {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."}],
+
+            "overloads":[
+                {"parameters":[
+                    {"match": "(RegExp) Pattern to match to qualify the Acronym."}]},
+
+                 {"parameters":[
+                     {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."},
+                     {"delimiter": "(String) Character that delimits the string."}]},
+
+                 {"parameters":[
+                     {"match": "(RegExp) Pattern to match to qualify the Acronym."},
+                     {"delimiter": "(String) Character that delimits the string."}]},
+
+                 {"parameters":[
+                     {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."},
+                     {"delimiter": "(RegExp) RegExp pattern that delimits the string."}]},
+
+                 {"parameters":[
+                     {"match": "(RegExp) Pattern to match to qualify the Acronym."},
+                     {"delimiter": "(RegExp) RegExp pattern that delimits the string."}]}],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#string.capitalize",
+            "returnType": "(String)"
+        }|*/
+        try {
+            delimiter = delimiter || " ";
+            if ($c.isBoolean(capsOnly)) {
+                if (capsOnly) {
+                    capsOnly = /[A-Z]/
+                } else {
+                    capsOnly = /[a-zA-Z]/
+                }
+            }
+            var words = this.split(delimiter),
+                acronym = "";
+            for (var i = 0, len = words.length; i < len; i++) {
+                if (capsOnly.test(words[0])) { acronym += words[0]; }
+            }
+            return acronym.toUpperCase();
+        } catch (e) {
+            error("String.acronymize", e);
+        }
+    }, true);
     _ext(String, 'capitalize', function (pos, everyWord) {
         /*|{
             "info": "String class extension to capitalize parts of the string",
@@ -7945,8 +7994,11 @@ if (__thisIsNewer) {
                     'Alaska Daylight Time':'AKDT',
                     'Alaska Standard Time':'AKST',
                     'Arab Standard Time (Kuwait, Riyadh)':'AST',
+                    'Arab Standard Time':'AST',
                     'Arabian Standard Time (Abu Dhabi, Muscat)':'AST',
+                    'Arabian Standard Time':'AST',
                     'Arabic Standard Time (Baghdad)':'AST',
+                    'Arabic Standard Time':'AST',
                     'Argentina Time':'ART',
                     'Armenia Summer Time':'AMST',
                     'Armenia Time':'AMT',
@@ -7968,15 +8020,20 @@ if (__thisIsNewer) {
                     'Brasilia Time':'BRT',
                     'British Indian Ocean Time':'BIOT',
                     'British Summer Time (British Standard Time from Feb 1968 to Oct 1971)':'BST',
+                    'British Summer Time':'BST',
                     'Brunei Time':'BDT',
                     'Cape Verde Time':'CVT',
                     'Central Africa Time':'CAT',
                     'Central Daylight Time (North America)':'CDT',
+                    'Central Daylight Time':'CDT',
                     'Central European Daylight Time':'CEDT',
                     'Central European Summer Time (Cf. HAEC)':'CEST',
+                    'Central European Summer Time':'CEST',
                     'Central European Time':'CET',
                     'Central Standard Time (Australia)':'CST',
+                    'Central Standard Time':'CST',
                     'Central Standard Time (North America)':'CST',
+                    'Central Standard Time':'CST',
                     'Chamorro Standard Time':'CHST',
                     'Chatham Daylight Time':'CHADT',
                     'Chatham Standard Time':'CHAST',
@@ -7994,11 +8051,14 @@ if (__thisIsNewer) {
                     'East Africa Time':'EAT',
                     'Easter Island Standard Time':'EAST',
                     'Eastern Caribbean Time (does not recognise DST)':'ECT',
+                    'Eastern Caribbean Time':'ECT',
                     'Eastern Daylight Time (North America)':'EDT',
+                    'Eastern Daylight Time':'EDT',
                     'Eastern European Daylight Time':'EEDT',
                     'Eastern European Summer Time':'EEST',
                     'Eastern European Time':'EET',
                     'Eastern Standard Time (North America)':'EST',
+                    'Eastern Standard Time':'EST',
                     'Ecuador Time':'ECT',
                     'Falkland Islands Summer Time':'FKST',
                     'Falkland Islands Time':'FKT',
@@ -8041,7 +8101,9 @@ if (__thisIsNewer) {
                     'Moscow Standard Time':'MSK',
                     'Moscow Summer Time':'MSD',
                     'Mountain Daylight Time (North America)':'MDT',
+                    'Mountain Daylight Time':'MDT',
                     'Mountain Standard Time (North America)':'MST',
+                    'Mountain Standard Time':'MST',
                     'Myanmar Standard Time':'MST',
                     'Nepal Time':'NPT',
                     'New Zealand Daylight Time':'NZDT',
@@ -8052,7 +8114,9 @@ if (__thisIsNewer) {
                     'Norfolk Time':'NFT',
                     'Omsk Time':'OMST',
                     'Pacific Daylight Time (North America)':'PDT',
+                    'Pacific Daylight Time':'PDT',
                     'Pacific Standard Time (North America)':'PST',
+                    'Pacific Standard Time':'PST',
                     'Pakistan Standard Time':'PKT',
                     'Philippine Standard Time':'PST',
                     'Phoenix Island Time':'PHOT',
@@ -8081,8 +8145,9 @@ if (__thisIsNewer) {
                     'Yekaterinburg Time':'YEKT'
                 },
 				ct = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
-				currentTimezone = "\\"+ct.split('').join("\\"),
-				currentTimezoneLong = "\\"+$c.keyOf(timezones,ct).split('').join("\\");
+                ctkey = $c.keyOf(timezones,ct),
+				currentTimezone = "\\"+(!ctkey ? (timezones[ct] || "") : ct).split('').join("\\"),
+				currentTimezoneLong = "\\"+(ctkey || ct).split('').join("\\"),
                 minuteWithZero = (minute < 10 ? "0" + minute : minute),
                 secondsWithZero = (second < 10 ? "0" + second : second);
 
@@ -8333,7 +8398,7 @@ if (__thisIsNewer) {
 				$c.namespace[className] = $c.namespaces && $c.namespaces[className];
                 for (var prop in cls) {
 					if (inheritAsOwn && !cls.hasOwnProperty(prop)) { continue; }
-					this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];
+					this.prototype[prop] = /*this[prop] || */ this.prototype[prop] || cls[prop];
                 }
 				if (!inheritAsOwn) {
                     for (var prop in extendee) {
