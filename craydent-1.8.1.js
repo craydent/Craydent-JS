@@ -3344,7 +3344,7 @@ if (__thisIsNewer) {
 
             "overloads":[
                 {"parameters":[
-                    {"imgURL": "(String) full or relative url to image""}]}],
+                    {"imgURL": "(String) full or relative url to image"}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#cacheImages",
             "returnType": "(void)"
@@ -8184,7 +8184,7 @@ if (__thisIsNewer) {
 				$c.namespace[className] = $c.namespaces && $c.namespaces[className];
                 for (var prop in cls) {
 					if (inheritAsOwn && !cls.hasOwnProperty(prop)) { continue; }
-					this.prototype[prop] = /*this[prop] ||*/ this.prototype[prop] || cls[prop];
+					this.prototype[prop] = /*this[prop] || */ this.prototype[prop] || cls[prop];
                 }
 				if (!inheritAsOwn) {
                     for (var prop in extendee) {
