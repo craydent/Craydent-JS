@@ -1,13 +1,13 @@
 /*/---------------------------------------------------------/*/
 /*/ Craydent LLC v1.8.2                                     /*/
-/*/	Copyright 2011 (http://craydent.com/about)              /*/
+/*/ Copyright 2011 (http://craydent.com/about)              /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
-/*/	(http://craydent.com/license)                           /*/
+/*/ (http://craydent.com/license)                           /*/
 /*/---------------------------------------------------------/*/
 
 /*----------------------------------------------------------------------------------------------------------------
- /-	Global CONSTANTS and variables
- /---------------------------------------------------------------------------------------------------------------*/
+/-	global constants and variables
+/---------------------------------------------------------------------------------------------------------------*/
 var __version = "1.8.2",
     __thisIsNewer = true,
     $w = typeof window != "undefined" ? window : {location:(typeof location != "undefined"?location:{href:''}),console:(typeof console != "undefined"?console:{})},
