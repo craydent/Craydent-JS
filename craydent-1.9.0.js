@@ -7877,12 +7877,18 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"condition": "(Mixed) Query following find/where clause syntax"},
 					{"useReference": "(Bool) Flag to make a copy instead of using references"},
-					{"limit": "(Int) Limit the number of the results returned."}]}],
+					{"limit": "(Int) Limit the number of the results returned."}]},
+
+                {"parameters":[
+                    {"condition": "(Function) Function to be passed to .filter (this overload is an alias to the Array.filter method)."}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#array.where",
             "returnType": "(Array)"
         }|*/
         try {
+            if ($c.isFunction(condition)) {
+                return this.filter(condition);
+            }
 			var useReference = !projection,
                 _qnp = __queryNestedProperty,
                 _clt = _contains_lessthan,
