@@ -1120,6 +1120,9 @@ describe ('No Conflict Array', function () {
 			{ _id: 1, results: [ { product: "abc", score: 10 }, { product: "xyz", score: 5 } ] },
 			{"_id":3,"results":[{"product":"abc","score":7},{"product":"xyz","score":8}]}
 		]);
+		temp = [{ _id: 1, results:  { product: "abc", score: 10 } },{ _id: 2, results:  { product: "abcd", score: 10 } } ];
+		expect($c.where(temp, {'results.product':'abc'})).toEqual([{ _id: 1, results:  { product: "abc", score: 10 } }]);
+		expect($c.where(temp, {'_id':1,'results.product':'abcd'})).toEqual([]);
 	});
 });
 describe ('No Conflict Date', function () {

@@ -13,20 +13,20 @@
   <script src="lib/jasmine-2.4.1/boot.js"></script>
 
   <!-- include source files here... -->
-  <script src="/craydent-library/craydent-1.9.0.js"></script>
+  <script src="/craydent-library/craydent-1.8.2.js"></script>
   <script>$c.DEBUG_MODE=true;console.log("***********************************"+$c.VERSION+"***********************************");document.getElementsByTagName('title')[0].innerHTML = 'Craydent v'+$c.VERSION;</script>
 
   <!-- include spec files here... -->
   <script src="spec/unit_test-spec.js"></script>
   <script>
-
+  function bar() {
 
     var arr = [];
 
     for (var i = 0; i < 100000; i++) {
-      arr.push({id:i + 1,value:"hello",v:"bye"});
+      arr.push({id: i + 1, value: "hello", v: "bye"});
     }
-    arr.push({id:0,value:"hello",v:"bye"});
+    arr.push({id: 0, value: "hello", v: "bye"});
     $g.arr = arr;
     //
     //
@@ -52,9 +52,11 @@
     //return
 
     var iterations = 10000,
-            query = { id:50, value : "hello" },
+            query = {id: 50, value: "hello"},
 //    query = { id : 50 },
-            func = function(item){ return item.value == "hello" && item.id == 50;};
+            func = function (item) {
+              return item.value == "hello" && item.id == 50;
+            };
 //    func = function(item){ return item.id == 50;};
 
     arr[0].v = "bbye";
@@ -70,6 +72,7 @@
       }
       console.log(lotimer / iterations, 'dash', _.filter(arr, query).length);
     }
+
     //**********************where ***********************************
     function swhere() {
       var whtimer = 0;
@@ -106,6 +109,7 @@
 
       console.log(fitimer / iterations, 'filter', arr.filter(func).length);
     }
+
     //console.log(lotimer,whtimer,fitimer,itimer);
 
     //**********************where complex ***********************************
@@ -116,9 +120,8 @@
         $c.where(arr, {id: {$lt: 20}});
         whctimer += new Date() - start;
       }
-      console.log(whctimer / iterations, 'mongo where', $c.where(arr, {id:{$lt:20}}).length);
+      console.log(whctimer / iterations, 'mongo where', $c.where(arr, {id: {$lt: 20}}).length);
     }
-
 
 
     console.log("**************** {id:50, value: \"hello\"} ****************");
@@ -128,8 +131,10 @@
     native();
     dash();
 
-    query = { id : 50 };
-    func = function(item){ return item.id == 50;};
+    query = {id: 50};
+    func = function (item) {
+      return item.id == 50;
+    };
     delete arr.__indexes;
     console.log("**************** {id:50} ****************");
     cwhere();
@@ -137,7 +142,8 @@
     iwhere();
     native();
     dash();
-
+  }
+    //bar();
   </script>
 
 </head>

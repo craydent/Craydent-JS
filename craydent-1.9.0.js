@@ -7959,11 +7959,11 @@ if (__thisIsNewer) {
 				var boolCond = "", useQueryNested = false, func = function (cobj,index,arr) {
 					if (arr.temp_count++ < this.temp_limit) { return false; }
 						for (var prop in condition) {
-							if (cobj[prop]) {
-								return cobj[prop] === condition[prop];
-							} else if (prop.indexOf('.') != -1 && !$c.contains(_qnp(cobj, prop),condition[prop])) {
-								return false;
-							} else if ($c.isNull(cobj[prop])) {
+                            if (prop.indexOf('.') != -1) {
+                                if (!$c.contains(_qnp(cobj, prop),condition[prop])) {
+									return false;
+                                }
+                            } else if (cobj[prop] && cobj[prop] !== condition[prop] || $c.isNull(cobj[prop])) {
 								return false;
 							}
 						}
@@ -8094,7 +8094,7 @@ if (__thisIsNewer) {
                     'Central European Summer Time (Cf. HAEC)':'CEST',
                     'Central European Summer Time':'CEST',
                     'Central European Time':'CET',
-                    'Central Standard Time (Australia)':'CST',
+                    'Central Standard Time (Australia)':'ACST',
                     'Central Standard Time':'CST',
                     'Central Standard Time (North America)':'CST',
                     'Central Standard Time':'CST',
