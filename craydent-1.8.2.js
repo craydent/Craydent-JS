@@ -3045,7 +3045,7 @@ if (__thisIsNewer) {
             }
 
             if (!c && !values.length) { return {}; }
-            if (options.path && $c.isString(options.path)) {path = 'path=' + options.path + ';'}
+            if (options.path && $c.isString(options.path)) {path = 'path=' + (options.path || '/') + ';'}
             if (options.domain && $c.isString(options.domain)) {domain = 'domain=' + options.domain + ';'}
             if (options["delete"]) {
                 $d.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;' + path + domain;
@@ -3501,7 +3501,7 @@ if (__thisIsNewer) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
     }
-    function fillTemplate (htmlTemplate, objs, offset, max, bound) {
+    function fillTemplate (htmlTemplate, objs, offset, max, bound, newlineToHtml) {
         /*|{
             "info": "Function for templetizing",
             "category": "Global",
@@ -3511,6 +3511,10 @@ if (__thisIsNewer) {
                 {"objs": "(Objects[]) Objects to fill the template variables"}],
 
             "overloads":[
+                {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
+                    {"objs": "(Objects[]) Objects to fill the template variables"},
+                    {"options": "(Object) Options to use: max,offset,bound,newlineToHtml"}]},
                 {"parameters":[
                     {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
@@ -3525,7 +3529,14 @@ if (__thisIsNewer) {
                     {"objs": "(Objects[]) Objects to fill the template variables"},
                     {"offset": "(Int) The start index of the Object array"},
                     {"max": "(Int) The maximum number of records to process"},
-                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]}],
+                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]},
+                {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
+                    {"objs": "(Objects[]) Objects to fill the template variables"},
+                    {"offset": "(Int) The start index of the Object array"},
+                    {"max": "(Int) The maximum number of records to process"},
+                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"},
+                    {"newlineToHtml":"(Boolean) Flag to replace all new line chars (\\n) to the HTML <br /> tag.  Default is true."}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#fillTemplate",
             "returnType": "(String)"
@@ -3539,7 +3550,12 @@ if (__thisIsNewer) {
                 fillTemplate.refs = [];
             }
             if (!htmlTemplate) { return ""; }
-            if ($c.isBoolean(offset)) {
+            if ($c.isObject(offset)) {
+                bound = offset.bound;
+                max = offset.max || 0;
+                newlineToHtml = isNull(offset.newlineToHtml) ? true : offset.newlineToHtml;
+                offset = offset.offset;
+            } else if ($c.isBoolean(offset)) {
                 bound = offset;
                 max = offset = 0;
             } else if (!isNull(offset) && isNull(max)) {
@@ -3656,7 +3672,12 @@ if (__thisIsNewer) {
                         } else {
                             objval = parseRaw(objval, $c.isString(objval));
                         }
-                        objval = $c.replace_all(objval, ['\n',';'],['<br />',';\\']);
+                        var replacee_arr = [';'], replacer_arr = [';\\'];
+                        if (newlineToHtml) {
+                            replacee_arr.push('\n');
+                            replacer_arr.push('<br />');
+                        }
+                        objval = $c.replace_all(objval, replacee_arr,replacer_arr);
 						if (objval.indexOf('${') != -1) {
                             objval = fillTemplate(objval,[obj]);
                         }
@@ -7764,9 +7785,9 @@ if (__thisIsNewer) {
                 var props = [],indexProps = [];
                 if (this.__indexes) {
 					for (var prop in condition) {
-						if(condition.hasOwnProperty(prop)) {
+						if (condition.hasOwnProperty(prop)) {
 							//props.push(prop);
-								if (this.__indexes[prop]) {
+							if (this.__indexes[prop]) {
 								indexProps.push(prop);
 							}
 						}
