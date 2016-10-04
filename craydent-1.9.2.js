@@ -478,8 +478,8 @@ if (__thisIsNewer) {
             if (value1 > value2) { cmp = 1; }
 
 		if ($c.isNull(cmp)) {
-			value1 = ~sortOrder.indexOf([null, undefined].indexOf(value1) ? value1 : value1.constructor);
-			value2 = ~sortOrder.indexOf([null, undefined].indexOf(value2) ? value2 : value2.constructor);
+			value1 = sortOrder.indexOf(~[null, undefined].indexOf(value1) ? value1 : value1.constructor);
+			value2 = sortOrder.indexOf(~[null, undefined].indexOf(value2) ? value2 : value2.constructor);
 
                 if (value1 < value2) { cmp = -1; }
                 if (value1 > value2) { cmp = 1; }
@@ -893,25 +893,25 @@ if (__thisIsNewer) {
                     conditionalKeys = ["$cond", "$ifNull"];
 
                 switch (true) {
-					case ~literalKeys.indexOf(field):
+					case !!~literalKeys.indexOf(field):
                         return expr;
-					case ~boolKeys.indexOf(field):
+					case !!~boolKeys.indexOf(field):
                         return __parseBooleanExpr(doc, expr, field);
-					case ~setKeys.indexOf(field):
+					case !!~setKeys.indexOf(field):
                         return __parseSetExpr(doc, expr, field);
-					case ~compareKeys.indexOf(field):
+					case !!~compareKeys.indexOf(field):
                         return __parseComparisonExpr(doc, expr, field);
-					case ~arithmeticKeys.indexOf(field):
+					case !!~arithmeticKeys.indexOf(field):
                         return __parseArithmeticExpr(doc, expr, field);
-					case ~stringKeys.indexOf(field):
+					case !!~stringKeys.indexOf(field):
                         return __parseStringExpr(doc, expr, field);
-					case ~arrayKeys.indexOf(field):
+					case !!~arrayKeys.indexOf(field):
                         return __parseArrayExpr(doc, expr, field);
-					case ~variableKeys.indexOf(field):
+					case !!~variableKeys.indexOf(field):
                         return __parseVariableExpr(doc, expr, field);
-					case ~dateKeys.indexOf(field):
+					case !!~dateKeys.indexOf(field):
                         return __parseDateExpr(doc, expr, field);
-					case ~conditionalKeys.indexOf(field):
+					case !!~conditionalKeys.indexOf(field):
                         return __parseConditionalExpr(doc, expr, field);
                     default:
                         __processExpression (doc,value);
@@ -1909,27 +1909,27 @@ if (__thisIsNewer) {
 
                     //=, <>, >, >=, <, <=, IN, BETWEEN, LIKE, IS NULL or IS NOT NULL
                     switch (true) {
-                        case ~(index = predicateClause.indexOf('=')) :
+                        case !!~(index = predicateClause.indexOf('=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$equals':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case ~(index = predicateClause.indexOf('<>')) :
+                        case !!~(index = predicateClause.indexOf('<>')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$ne':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case ~(index = predicateClause.indexOf('>')) :
+                        case !!~(index = predicateClause.indexOf('>')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$gt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case ~(index = predicateClause.indexOf('>=')) :
+                        case !!~(index = predicateClause.indexOf('>=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$gte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push({'$gte':cond});
                             break;
-                        case ~(index = predicateClause.indexOf('<')) :
+                        case !!~(index = predicateClause.indexOf('<')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$lt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case ~(index = predicateClause.indexOf('<=')) :
+                        case !!~(index = predicateClause.indexOf('<=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$lte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
@@ -1938,7 +1938,7 @@ if (__thisIsNewer) {
 							aquery['$and'].push({'$gte':$c.tryEval(nums[0])});
 							aquery['$and'].push({'$lte':$c.tryEval(nums[1])});
                             break;
-                        case ~(index = $c.indexOfAlt(predicateClause,/ in /i)) :
+                        case !!~(index = $c.indexOfAlt(predicateClause,/ in /i)) :
 						var _in = $c.tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
                             if (!_in) {
                                 //noinspection ExceptionCaughtLocallyJS
@@ -1947,15 +1947,15 @@ if (__thisIsNewer) {
                             cond[predicateClause.substring(0, index).trim()] = _in;
                             aquery['$and'].push({'$in':cond});
                             break;
-                        case ~(index = $c.indexOfAlt(predicateClause,/is null/i)) :
+                        case !!~(index = $c.indexOfAlt(predicateClause,/is null/i)) :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$equals':cond});
                             break;
-                        case ~(index = $c.indexOfAlt(predicateClause,/is not null/i)) :
+                        case !!~(index = $c.indexOfAlt(predicateClause,/is not null/i)) :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$ne':cond});
                             break;
-                        case ~(index = $c.indexOfAlt(predicateClause,/ like /i)) :
+                        case !!~(index = $c.indexOfAlt(predicateClause,/ like /i)) :
                             var likeVal = "^" + $c.replace_all(_trim(predicateClause.substring(index + 6),null,[' ', "'", '"']),"%",".*?") + "$";
                             cond[predicateClause.substring(0, index).trim()] = {'$regex': new RegExp(likeVal,'i')};
                             aquery['$and'].push(cond);
@@ -2950,7 +2950,7 @@ if (__thisIsNewer) {
                 };
                 //}
             } else {
-                prm = cbk(foo);
+                prm = cbk(foo,foo);
                 prm.then = function (callback) { //noinspection CommaExpressionJS
                     return params.onsuccess.push(callback),this; };
             }
@@ -4732,7 +4732,7 @@ if (__thisIsNewer) {
             "returnType": "(Float)"
         }|*/
         try {
-            return $c.isChrome() ? -1 : _getBrowserVersion.call(this, "Safari");
+            return isChrome() ? -1 : _getBrowserVersion.call(this, "Safari");
         } catch(e){
             error('SafariVersion', e);
         }
@@ -4839,7 +4839,7 @@ if (__thisIsNewer) {
              "returnType": "(Bool)"
         }|*/
         try {
-            return !$c.isWebkit() && !$c.isKHTML() && (/gecko/i.test(this.navigator.userAgent));
+            return !isWebkit() && !isKHTML() && (/gecko/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isGecko', e);
         }
@@ -4857,7 +4857,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             var rv = IEVersion();
-            return (~rv && rv < 7.0);
+            return !!(~rv && rv < 7.0);
         } catch (e) {
             error('isIE6', e);
         }
@@ -4942,7 +4942,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return !$c.isWebkit() && (/khtml/i.test(this.navigator.userAgent));
+            return !isWebkit() && (/khtml/i.test(this.navigator.userAgent));
         } catch (e) {
             error('isKHTML', e);
         }
@@ -5082,7 +5082,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             var nu = this.navigator.userAgent;
-            return !$c.isChrome() && (/chrome/i.test(nu)) && (/apple/i.test(nu));
+            return !isChrome() && (/chrome/i.test(nu)) && (/apple/i.test(nu));
         } catch(e){
             error('isSafari', e);
         }
@@ -5194,7 +5194,7 @@ if (__thisIsNewer) {
     $w["_$observer_overwrite"] = $w["_$observer_overwrite"] || Object.observe;
     Object.observe = observe;
     if (!$w.__craydentLoaded) {
-        var Craydent = {
+        var $c, Craydent = $c = {
                 BROWSER:{
                     CURRENT: _browser,
                     CURRENT_VERSION:(~_ie && _ie) || (~_chrm && _chrm) || (~_ff && _ff) || (~_saf && _saf),
@@ -5879,7 +5879,6 @@ if (__thisIsNewer) {
                 xmlToJson:xmlToJson,
                 zipit:zipit
         },
-        $c = Craydent,
         __$$ = [
                 {
                     "func": '$',
@@ -6655,7 +6654,7 @@ if (__thisIsNewer) {
 			if (pipeline["$group"]) { hasGroup = true; }
 				rtn = __processStage(rtn, pipeline);
             }
-		return rtn.sample && !hasGroup ? rtn.sample : rtn;
+		    return rtn.sample && !hasGroup ? rtn.sample : rtn;
         } catch (e) {
             error("Array.aggregate", e);
         }
@@ -8861,7 +8860,7 @@ if (__thisIsNewer) {
                             }
                         }
                     }
-                    return false;
+                    return !!~this.indexOf(val);
                 case $c.isString(this):
                     return !!~($c.isRegExp(val) ? this.search(val) : this.indexOf(val));
                 case $c.isObject(this):
