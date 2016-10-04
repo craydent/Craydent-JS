@@ -1167,7 +1167,7 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"character": "(Char[]) Character to remove in the String"}]}],
 	
-			"url": "http://www.craydent.com/library/1.8.1/docs#String.trim",
+			"url": "http://www.craydent.com/library/1.9.0/docs#String.trim",
 			"returnType": "(Bool)"
 		}|*/
 		try {
@@ -1406,7 +1406,6 @@ if (__thisIsNewer) {
 			fstr = func.toString().replace(/this/g,'craydent_this'),
 
 			// extra code to account for when this == global
-			//		extra_code = "if($c.isNull(craydent_this) && this == $c){return;}",
 			extra_code = "if(arguments.length == 0 && this == $c){return;}",
                 fnew = args.length === 0 || (args.length === 1 && !_trim(args[0])) ?
 				fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' (craydent_this){'+extra_code) :
@@ -1504,7 +1503,7 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"arr": "(String[]) An array of strings to check"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.endsWith",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.endsWith",
 			"returnType": "(Mix)"
          }|*/
         try {
@@ -1648,7 +1647,7 @@ if (__thisIsNewer) {
 					{"regex": "(RegExp) Regular expression to check value against"},
 					{"pos": "(Int) Index offset to start"}]}],
 	
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.indexOfAlt",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.indexOfAlt",
 			"returnType": "(Integer)"
 		}|*/
 	
@@ -1687,7 +1686,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAfter",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.insertAfter",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -1716,7 +1715,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAt",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.insertAt",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -1842,7 +1841,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#function.on",
+            "url": "http://www.craydent.com/library/1.9.0/docs#function.on",
             "returnType": "(void)"
         }|*/
         if ($c.isDomElement(this)) {
@@ -2002,7 +2001,6 @@ if (__thisIsNewer) {
                         }
                     }
                 } else if (action == "$$PRUNE") {
-                    //return undefined;
                 } else {
                     //noinspection ExceptionCaughtLocallyJS
                     throw "exception: $redact's expression should not return anything aside from the variables $$KEEP, $$DESCEND, and $$PRUNE, but returned " + parseRaw(action);
@@ -2025,7 +2023,7 @@ if (__thisIsNewer) {
                     {"value": "(Mixed) Value to remove (when using with Arrays)"},
                     {"indexOf": "(Function) Callback function to use to find the item based on the value (when using with Arrays)"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.remove",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.remove",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -2157,7 +2155,7 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"arr": "(String[]) An array of strings to check"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.startsWith",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.startsWith",
             "returnType": "(Bool)"
          }|*/
         try {
@@ -2320,7 +2318,7 @@ if (__thisIsNewer) {
 				{"parameters":[
 				{"separator": "(Char) Character to use as delimiter"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#String.toCurrencyNotation",
+			"url": "http://www.craydent.com/library/1.9.0/docs#String.toCurrencyNotation",
 			"returnType": "(String)"
 		}|*/
         sep = sep || ",";
@@ -2426,7 +2424,7 @@ if (__thisIsNewer) {
                     {"fn": "(Function) method implementation"},
                     {"override": "(Bool) if true, override the previously defined prototype"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#addObjectPrototype",
+            "url": "http://www.craydent.com/library/1.9.0/docs#addObjectPrototype",
             "returnType": "(void)"
          }|*/
         try {
@@ -2476,7 +2474,7 @@ if (__thisIsNewer) {
                     {"fn": "(Function) method implementation"},
                     {"override": "(Bool) if true, override the previously defined prototype"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#addHTMLPrototype",
+            "url": "http://www.craydent.com/library/1.9.0/docs#addHTMLPrototype",
             "returnType": "(void)"
         }|*/
         try {
@@ -2512,7 +2510,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#Benchmarker",
+            "url": "http://www.craydent.com/library/1.9.0/docs#Benchmarker",
             "returnType": "(void)"
         }|*/
         try {
@@ -2545,7 +2543,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"records": "(Object) Object used to create the iterator to iterate each property"}]}],
 
-             "url": "http://www.craydent.com/library/1.8.1/docs#Cursor",
+             "url": "http://www.craydent.com/library/1.9.0/docs#Cursor",
              "returnType": "(Cursor)"
          }|*/
         try {
@@ -2598,7 +2596,7 @@ if (__thisIsNewer) {
                     {"records": "(Array) Array used to create the initial items in the ordered list"},
                     {"sorter": "(Function) Function for sorting logic"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#OrderedList",
+            "url": "http://www.craydent.com/library/1.9.0/docs#OrderedList",
             "returnType": "(OrderedList)"
         }|*/
         try {
@@ -2628,7 +2626,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#Queue",
+            "url": "http://www.craydent.com/library/1.9.0/docs#Queue",
             "returnType": "(Queue)"
          }|*/
         try {
@@ -2654,7 +2652,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#Set",
+            "url": "http://www.craydent.com/library/1.9.0/docs#Set",
             "returnType": "(Set)"
         }|*/
         try {
@@ -2700,7 +2698,7 @@ if (__thisIsNewer) {
                     {"params": "(Object) specs with common properties:<br />(String) url<br />(String) dataType<br />(Mixed) hitch<br />(Function[]) onerror<br />(Function[])onsuccess"},
                     {"returnData": "(String) Specifies which data to return when using Promise pattern"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#ajax",
+            "url": "http://www.craydent.com/library/1.9.0/docs#ajax",
             "returnType": "(void)"
         }|*/
         try {
@@ -2964,7 +2962,7 @@ if (__thisIsNewer) {
             "category": "Global",
             "parameters":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#Request",
+            "url": "http://www.craydent.com/library/1.9.0/docs#Request",
             "returnType": "(XMLHttpRequest)"
         }|*/
         var ajaxHttpCaller;
@@ -3093,7 +3091,7 @@ if (__thisIsNewer) {
                     {"value": "(String) Value to store"},
                     {"option": "(Object) Specify path and/or expiration of cookie"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$COOKIE",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$COOKIE",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -3177,7 +3175,7 @@ if (__thisIsNewer) {
                     {"value": "(String) value to store"},
                     {"options": "(Object) Options to defer, ignore case, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$GET",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$GET",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -3262,7 +3260,7 @@ if (__thisIsNewer) {
                     {"value": "(String) value to set"},
                     {"options": "(Object) options to defer, no history, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$SET",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$SET",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -3327,7 +3325,7 @@ if (__thisIsNewer) {
                     {"variables": "(String[]) variable names"},
                     {"options": "(Object) options to ignoreCase, defer, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$DEL",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$DEL",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -3396,7 +3394,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"options": "specify options for no history, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$COMMIT",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$COMMIT",
             "returnType": "(void)"
         }|*/
         try {
@@ -3434,7 +3432,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#$ROLLBACK",
+            "url": "http://www.craydent.com/library/1.9.0/docs#$ROLLBACK",
             "returnType": "(void)"
         }|*/
         try {
@@ -3458,7 +3456,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"imgURL": "(String) full or relative url to image"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#cacheImages",
+            "url": "http://www.craydent.com/library/1.9.0/docs#cacheImages",
             "returnType": "(void)"
         }|*/
         try {
@@ -3481,7 +3479,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#cout",
+            "url": "http://www.craydent.com/library/1.9.0/docs#cout",
             "returnType": "(void)"
         }|*/
         try {
@@ -3503,7 +3501,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#cuid",
+            "url": "http://www.craydent.com/library/1.9.0/docs#cuid",
             "returnType": "(String)"
         }|*/
         try {
@@ -3530,7 +3528,7 @@ if (__thisIsNewer) {
 					{"event": "Event to trigger."},
 					{"infinite": "any number of arguments can be passed and will be applied to listening functions."}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#emit",
+			"url": "http://www.craydent.com/library/1.9.0/docs#emit",
 			"returnType":"(void)"
 		}|*/
 		try {
@@ -3563,7 +3561,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#error",
+            "url": "http://www.craydent.com/library/1.9.0/docs#error",
             "returnType": "(void)"
         }|*/
         try {
@@ -3609,7 +3607,7 @@ if (__thisIsNewer) {
                     {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"},
                     {"newlineToHtml":"(Boolean) Flag to replace all new line chars (\\n) to the HTML <br /> tag.  Default is true."}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#fillTemplate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#fillTemplate",
             "returnType": "(String)"
         }|*/
         try {
@@ -3819,7 +3817,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#foo",
+            "url": "http://www.craydent.com/library/1.9.0/docs#foo",
             "returnType": "(void)"
         }|*/
     }
@@ -3830,7 +3828,7 @@ if (__thisIsNewer) {
             "parameters":[
                 {"prefix": "(String) ID prefix to use"}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#getUniqueId",
+            "url": "http://www.craydent.com/library/1.9.0/docs#getUniqueId",
             "returnType": "(String)"
         }|*/
         try {
@@ -3860,7 +3858,7 @@ if (__thisIsNewer) {
 					{"value": "(Mixed) Value to check"},
 					{"defaultValue": "(Mixed) Value to return if null"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#isNull",
+			"url": "http://www.craydent.com/library/1.9.0/docs#isNull",
 			"returnType": "()"
 		}|*/
         var isnull = value == null || value == undefined;
@@ -3885,7 +3883,7 @@ if (__thisIsNewer) {
                     {"bubble": "(Bool) Whether or not to cancel bubbling up"},
                     {"returnValue": "(Bool) return value when propagating"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#killPropagation",
+            "url": "http://www.craydent.com/library/1.9.0/docs#killPropagation",
             "returnType": "(void)"
         }|*/
         try {
@@ -3915,7 +3913,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#logit",
+            "url": "http://www.craydent.com/library/1.9.0/docs#logit",
             "returnType": "(void)"
         }|*/
         try {
@@ -3945,7 +3943,7 @@ if (__thisIsNewer) {
                     {"clazz":"(Class) Class to add to the given namespace"},
                     {"fn":"(Function) Method to call after the class has been added to the namespace"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#namespace",
+            "url": "http://www.craydent.com/library/1.9.0/docs#namespace",
             "returnType":"(void)"
         }|*/
         try {
@@ -3969,7 +3967,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#next",
+			"url": "http://www.craydent.com/library/1.9.0/docs#next",
 			"returnType":"(void)"
 		}|*/
 		try {
@@ -3996,7 +3994,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"format": "(String) Format syntax to return formatted string of now"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#now",
+            "url": "http://www.craydent.com/library/1.9.0/docs#now",
             "returnType":"(Mixed)"
         }|*/
         try {
@@ -4029,7 +4027,7 @@ if (__thisIsNewer) {
                     {"callback": "(Function) Method to call when the object changes"},
                     {"acceptList": "(String[]) List of events to listen on"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#observe",
+            "url": "http://www.craydent.com/library/1.9.0/docs#observe",
             "returnType": "(void)"
         }|*/
         try {
@@ -4132,7 +4130,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#parseBoolean",
+            "url": "http://www.craydent.com/library/1.9.0/docs#parseBoolean",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -4162,7 +4160,7 @@ if (__thisIsNewer) {
                     {"skipQuotes": "(Bool) Flag to skip quotes for strings"},
                     {"saveCircular": "(Bool) Flag to save circular references"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#parseRaw",
+            "url": "http://www.craydent.com/library/1.9.0/docs#parseRaw",
             "returnType": "(String)"
         }|*/
         try {
@@ -4179,7 +4177,7 @@ if (__thisIsNewer) {
                 }
                 raw = "[" + tmp.join(',') + "]";
             } else if ($c.isDate(value)) {
-                return "new Date('"+value.toString()+"')";
+                return "new Date('" + value.toString() + "')";
             } else if ($c.isRegExp(value)) {
                 return value.toString();
             } else if (value instanceof Object && !$c.isFunction(value) && !$c.isGenerator(value)) {
@@ -4240,7 +4238,7 @@ if (__thisIsNewer) {
                     {"num2": "(Number) Upper bound"},
                     {"inclusive": "(Bool) Flag to include the given numbers"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#rand",
+            "url": "http://www.craydent.com/library/1.9.0/docs#rand",
             "returnType": "(Number)"
         }|*/
         try {
@@ -4267,7 +4265,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"length": "(Integer) Custom length of the short unique identifier"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#suid",
+            "url": "http://www.craydent.com/library/1.9.0/docs#suid",
             "returnType": "(String)"
         }|*/
         try {
@@ -4292,7 +4290,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#syncroit",
+			"url": "http://www.craydent.com/library/1.9.0/docs#syncroit",
 			"returnType": "(Promise)"
 		}|*/
 		try {
@@ -4329,7 +4327,7 @@ if (__thisIsNewer) {
                     {"expression": "(Mixed) Expression to evaluate"},
                     {"evaluator": "(Function) Method to use to evaluate the expression"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#tryEval",
+            "url": "http://www.craydent.com/library/1.9.0/docs#tryEval",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -4358,7 +4356,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#wait",
+            "url": "http://www.craydent.com/library/1.9.0/docs#wait",
             "returnType": "(void)"
         }|*/
         try {
@@ -4433,7 +4431,7 @@ if (__thisIsNewer) {
                     {"xml": "(Mixed) XML string or XML DOM"},
                     {"ignoreAttributes": "(Bool) Flag to ignore attributes"}]}],
 
-         "url": "http://www.craydent.com/library/1.8.1/docs#xmlToJson",
+         "url": "http://www.craydent.com/library/1.9.0/docs#xmlToJson",
          "returnType": "(Object)"
         }|*/
 
@@ -4479,7 +4477,7 @@ if (__thisIsNewer) {
                 {"value": "(Mixed) Value to make yieldable"}],
 
             "overloads":[],
-            "url": "http://www.craydent.com/library/1.8.1/docs#yieldable",
+            "url": "http://www.craydent.com/library/1.9.0/docs#yieldable",
             "returnType": "(Promise)"
         }|*/
         try {
@@ -4504,7 +4502,7 @@ if (__thisIsNewer) {
                     {"files": "(String) Name of the file"},
                     {"content": "(String) contents of the file"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#zipit",
+            "url": "http://www.craydent.com/library/1.9.0/docs#zipit",
             "returnType": "(void)"
         }|*/
         try {
@@ -4542,7 +4540,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#ChromeVersion",
+            "url": "http://www.craydent.com/library/1.9.0/docs#ChromeVersion",
             "returnType": "(Float)"
         }|*/
         try {
@@ -4559,7 +4557,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#FirefoxVersion",
+            "url": "http://www.craydent.com/library/1.9.0/docs#FirefoxVersion",
             "returnType": "(Float)"
         }|*/
         try {
@@ -4576,7 +4574,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#IEVersion",
+            "url": "http://www.craydent.com/library/1.9.0/docs#IEVersion",
             "returnType": "(Float)"
         }|*/
         try {
@@ -4601,7 +4599,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#OperaVersion",
+            "url": "http://www.craydent.com/library/1.9.0/docs#OperaVersion",
             "returnType": "(Float)"
         }|*/
         try {
@@ -4618,7 +4616,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#SafariVersion",
+            "url": "http://www.craydent.com/library/1.9.0/docs#SafariVersion",
             "returnType": "(Float)"
         }|*/
         try {
@@ -4636,7 +4634,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isAmaya",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isAmaya",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4653,7 +4651,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isAndroid",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isAndroid",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4670,7 +4668,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isBlackBerry",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isBlackBerry",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4687,7 +4685,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isChrome",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isChrome",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4704,7 +4702,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isFirefox",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isFirefox",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4725,7 +4723,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-             "url": "http://www.craydent.com/library/1.8.1/docs#isGecko",
+             "url": "http://www.craydent.com/library/1.9.0/docs#isGecko",
              "returnType": "(Bool)"
         }|*/
         try {
@@ -4742,7 +4740,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isIE6",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isIE6",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4760,7 +4758,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isIE",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isIE",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4777,7 +4775,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isIPad",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isIPad",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4794,7 +4792,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isIphone",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isIphone",
             "returnType": "(Bool)"
         }|*/
         try{
@@ -4811,7 +4809,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isIPod",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isIPod",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4828,7 +4826,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isKHTML",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isKHTML",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4845,7 +4843,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isLinux",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isLinux",
             "returnType": "(Bool)"
         }|*/
         try{
@@ -4862,7 +4860,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isMac",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isMac",
             "returnType": "(Bool)"
         }|*/
         try{
@@ -4879,7 +4877,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isMobile",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isMobile",
             "returnType": "(Bool)"
         }|*/
         try{
@@ -4896,7 +4894,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isOpera",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isOpera",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4916,7 +4914,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isPalmOS",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isPalmOS",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4933,7 +4931,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isPresto",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isPresto",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4950,7 +4948,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isPrince",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isPrince",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4967,7 +4965,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isSafari",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isSafari",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -4985,7 +4983,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isSymbian",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isSymbian",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -5003,7 +5001,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isTrident",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isTrident",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -5020,7 +5018,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isWebkit",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isWebkit",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -5037,7 +5035,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isWindows",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isWindows",
             "returnType": "(Bool)"
         }|*/
         try{
@@ -5054,7 +5052,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#isWindowsMobile",
+            "url": "http://www.craydent.com/library/1.9.0/docs#isWindowsMobile",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -5244,7 +5242,6 @@ if (__thisIsNewer) {
                                 code_result = $c.replace_all(code_result,id, FOR.helper(block, obj.body));
                             }
                             var ____execMatches = code_result.match($c.TEMPLATE_TAG_CONFIG.VARIABLE), ____execMatchIndex = 0;
-                            //____execMatches[____execMatchIndex] = 0;
                             while (____execMatchIndex < ____execMatches.length) {
                                 code_result = code_result.replace(____execMatches[____execMatchIndex],$c.tryEval(ttc.VARIABLE_NAME(____execMatches[____execMatchIndex])));
                                 ____execMatchIndex++;
@@ -5505,7 +5502,6 @@ if (__thisIsNewer) {
                         "break": /(\$\{break\})|(\{\{break\}\})/i,
                         "helper": function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                            //csyntax = SWITCH["case"],
                                 switchmatch = $c.condense((code.match(SWITCH.begin) || [])),
 								endlength = code.match(SWITCH.end)[0].length,
 								startindex = $c.indexOfAlt(code, SWITCH.begin),
@@ -5634,11 +5630,9 @@ if (__thisIsNewer) {
                                 str = eval("(function(){" + body + ";return echo.out; })()");
                             } catch (e) {
                                 if (cindex != -1) {
-                                    //echo.out = "";
                                     tend = findex != -1 ? findex : eindex;
                                     var catchBlock = code.substring(cindex, tend),
                                         catchLine = catchBlock.match(TRY["catch"]),
-                                    //errorString = JSON.stringify(e);
                                         errorString = $c.replace_all(e.toString(),'\'','\\\'');
                                     catchBlock = catchBlock.replace(catchLine[0], '');
 
@@ -5667,7 +5661,6 @@ if (__thisIsNewer) {
                                 id = obj.id;
 
                             return __logic_parser(TRY.helper(obj.code.replace(id, block), lookups));
-                            //return __logic_parser(code_result);
                         }
 
                     },
@@ -5814,7 +5807,7 @@ if (__thisIsNewer) {
 
         for (var i = 0, len = __$$.length; i < len; i++) {
             var __$ = __$$[i];
-            $w[__$.overwrite] = $w[__$.overwrite] || /*$w[__$.default] ||*/ $w[__$.func] || foo;
+            $w[__$.overwrite] = $w[__$.overwrite] || /*$w[__$.default] || */ $w[__$.func] || foo;
             $w[__$.func] = eval('$w.'+__$.func+' = (function (object, single) {try {return _craydentSelector(\''+__$.selector+'\', \''+__$.overwrite+'\', object, single);} catch (e) {error('+__$.func+', e);}})');
             $w[__$.func].duplicate = __dup;
             $w[__$.overwrite] && $w[__$.func].duplicate($w[__$.overwrite]);
@@ -5864,7 +5857,7 @@ if (__thisIsNewer) {
                      {"match": "(RegExp) Pattern to match to qualify the Acronym."},
                      {"delimiter": "(RegExp) RegExp pattern that delimits the string."}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.capitalize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.capitalize",
             "returnType": "(String)"
         }|*/
         try {
@@ -5898,7 +5891,7 @@ if (__thisIsNewer) {
                 {"pos": "(Int) Index of the string to capitalize"},
                 {"everyWord": "(Bool) Flag to capital every word"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.capitalize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.capitalize",
             "returnType": "(String)"
         }|*/
         try {
@@ -5924,7 +5917,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.convertUTCDate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.convertUTCDate",
             "returnType": "(String)"
         }|*/
         try {
@@ -5954,7 +5947,7 @@ if (__thisIsNewer) {
                     {"end_index": "(Integer) End index to cut"},
                     {"replacement": "(String) String to put in place of the cut"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.cut",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.cut",
             "returnType": "(String)"
         }|*/
         try {
@@ -5981,7 +5974,7 @@ if (__thisIsNewer) {
                     {"before": "(Int) Number of characters to use before using ellipsis"},
                     {"after": "(Int) Number of characters to use after the ellipsis"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.ellipsis",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.ellipsis",
             "returnType": "(String)"
         }|*/
         try {
@@ -6011,7 +6004,7 @@ if (__thisIsNewer) {
                     {"objs": "(Objects[]) Objects to fill the template variables"},
                     {"max": "(Int) The maximum number of records to process"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.fillTemplate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.fillTemplate",
             "returnType": "(String)"
          }|*/
         try {
@@ -6045,7 +6038,7 @@ if (__thisIsNewer) {
                     {"cssClass": "(String) Class to add for highlighting"},
                     {"tag": "(String) Tag to use to surround the search"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.cut",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.cut",
             "returnType": "(String)"
         }|*/
         try {
@@ -6079,7 +6072,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.ireplace_all",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.ireplace_all",
             "returnType": "(String)"
         }|*/
         try {
@@ -6097,7 +6090,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.isCuid",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.isCuid",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -6116,7 +6109,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.isBlank",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.isBlank",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -6133,7 +6126,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.isValidEmail",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.isValidEmail",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -6158,7 +6151,7 @@ if (__thisIsNewer) {
                     {"regex": "(RegExp) Regular expression to check value against"},
                     {"pos": "(Int) Max index to go up to in the search"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.lastIndexOfAlt",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.lastIndexOfAlt",
             "returnType": "(Int)"
         }|*/
         try {
@@ -6190,7 +6183,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.ltrim",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.ltrim",
             "returnType": "(String)"
         }|*/
         try {
@@ -6207,7 +6200,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.pluralize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.pluralize",
             "returnType": "(String)"
         }|*/
         try {
@@ -6248,7 +6241,7 @@ if (__thisIsNewer) {
 					{"replace": "(String[]) Array of string to replace"},
 					{"subject": "(String[]) Array of string to replace with"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.replace_all",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.replace_all",
             "returnType": "(String)"
         }|*/
         try {
@@ -6265,7 +6258,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.reverse",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.reverse",
             "returnType": "(String)"
         }|*/
         try {
@@ -6283,7 +6276,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.rtrim",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.rtrim",
             "returnType": "(String)"
         }|*/
         try {
@@ -6300,7 +6293,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.sanitize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.sanitize",
             "returnType": "(String)"
         }|*/
         try {
@@ -6328,7 +6321,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.singularize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.singularize",
             "returnType": "(String)"
         }|*/
         try {
@@ -6369,7 +6362,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.strip",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.strip",
             "returnType": "(String)"
         }|*/
         return _strip(this, character);
@@ -6385,7 +6378,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"options": "(Object) specs with optional properties:<br />(Bool) gmt<br />(Int) offset<br />(String) format"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.toDateTime",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.toDateTime",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -6458,7 +6451,7 @@ if (__thisIsNewer) {
          {"assignmentChar": "(Char) Character to use as assignment delimiter. Defaults to '&'."},
          {"delimiter": "(Char) Character to use as pair delimiter"}]}],
 
-         "url": "http://www.craydent.com/library/1.8.1/docs#string.toObject",
+         "url": "http://www.craydent.com/library/1.9.0/docs#string.toObject",
          "returnType": "(Object)"
          }|*/
         try {
@@ -6482,7 +6475,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#string.toDomElement",
+            "url": "http://www.craydent.com/library/1.9.0/docs#string.toDomElement",
             "returnType": "(HTMLElement)"
         }|*/
         try {
@@ -6541,7 +6534,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.aggregate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.aggregate",
             "returnType": "(Array)"
         }|*/
         try {
@@ -6564,7 +6557,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.aggregate",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.aggregate",
 			"returnType": "(Array)"
 		 }|*/
 		try {
@@ -6603,7 +6596,7 @@ if (__thisIsNewer) {
                     {"childFinder": "(String) Property name of the object to use as a grouping."},
                     {"options":"(Object) Options to customize properties,  Valid property is:<br />childProperty"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.buildTree",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.buildTree",
             "returnType": "(Array)"
         }|*/
         try {
@@ -6663,7 +6656,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"check_values": "(Bool) Flag to remove duplicates"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.condense",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.condense",
             "returnType": "(Array)"
         }|*/
         return _condense(this, check_values);
@@ -6679,7 +6672,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"indexes": "(String[]) Array of properties to index"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.condense",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.condense",
             "returnType": "(Array)"
         }|*/
         try {
@@ -6714,7 +6707,7 @@ if (__thisIsNewer) {
 					{"condition": "(Mixed) Query following find/where clause syntax"},
 					{"justOne": "(Boolean) Flag for deleting just one records [Default is: true]"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.delete",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.delete",
 			"returnType": "(Array)"
 		}|*/
         try {
@@ -6788,7 +6781,7 @@ if (__thisIsNewer) {
 					{"fields": "(Array) Fields to use as the projection and unique comparison (comma delimited)"},
 					{"condition": "(Object) Query following MongoDB find clause syntax"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.distinct",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.distinct",
 			"returnType": "(Array)"
 		}|*/
         try {
@@ -6820,7 +6813,7 @@ if (__thisIsNewer) {
                     {"callback": "(Function) Callback to test for each element"},
                     {"thisObject": "(Object) Context for the callback function"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.every",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.every",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -6846,7 +6839,7 @@ if (__thisIsNewer) {
                     {"func": "(Function) Callback function used to determine if value should be returned"},
                     {"thiss": "(Mixed) Specify the context on callback function"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.filter",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.filter",
             "returnType": "(Array)"
         }|*/
         try {
@@ -6886,7 +6879,7 @@ if (__thisIsNewer) {
 					{"condition": "(Mixed) Query following find/where clause syntax"},
 					{"useReference": "(Bool) Flag to make a copy instead of using references"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.where",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.where",
 			"returnType": "(Array)"
 		}|*/
 		return $c.where(this,condition, projection);
@@ -6908,7 +6901,7 @@ if (__thisIsNewer) {
 					{"condition": "(Mixed) Query following find/where clause syntax"},
 					{"useReference": "(Bool) Flag to make a copy instead of using references"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.where",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.where",
 			"returnType": "(Object)"
 		}|*/
 		return $c.where(this, condition, projection, 1)[0];
@@ -6922,7 +6915,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.group",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.group",
             "returnType": "(Array)"
         }|*/
 
@@ -7024,7 +7017,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.indexOf",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.indexOf",
             "returnType": "(Int)"
         }|*/
         return _indexOf(this, value);
@@ -7040,7 +7033,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.innerJoin",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.innerJoin",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7056,7 +7049,7 @@ if (__thisIsNewer) {
             "parameters":[
                 {"value": "(Mixed) value to add"}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.insert",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.insert",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -7085,7 +7078,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertBefore",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.insertBefore",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -7106,7 +7099,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.joinLeft",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.joinLeft",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7125,7 +7118,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.joinRight",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.joinRight",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7146,7 +7139,7 @@ if (__thisIsNewer) {
                     {"max": "(Int) Maximum number of items to return"},
                     {"skip": "(Int) Number of items to skip"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.limit",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.limit",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7168,7 +7161,7 @@ if (__thisIsNewer) {
                     {"callback": "(Function) Callback function used to apply changes"},
                     {"thisObject": "(Mixed) Specify the context on callback function"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.map",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.map",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7198,7 +7191,7 @@ if (__thisIsNewer) {
 					{"reduce": "(Function) Function used to condense the items"},
 					{"options": "(Object) Options specified in the Mongo Doc"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.mapReduce",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.mapReduce",
 			"returnType": "(Array)"
 		}|*/
         try {
@@ -7250,7 +7243,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.normalize",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.normalize",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7292,7 +7285,7 @@ if (__thisIsNewer) {
                     {"value": "(Mixed) Value to remove"},
                     {"indexOf": "(Function) Callback function to use to find the item based on thevalue"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.removeAll",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.removeAll",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7321,7 +7314,7 @@ if (__thisIsNewer) {
             "parameters":[
                 {"index": "(Int) Index of the item to remove"}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.removeAt",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.removeAt",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -7343,7 +7336,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.replaceAt",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.replaceAt",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7360,7 +7353,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.scramble",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.scramble",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7425,7 +7418,7 @@ if (__thisIsNewer) {
                     {"lookup": "(Object) Look up object to use as values instead of the array values."},
                     {"options": "(Object) Options to pass. Valid options are:<br />i<br />ignoreCase"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.sortBy",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.sortBy",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7487,7 +7480,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.stdev",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.stdev",
 			"returnType": "(Array)"
 		}|*/
 		try {
@@ -7515,7 +7508,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.sum",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.sum",
 			"returnType": "(Array)"
 		}|*/
 		try {
@@ -7536,7 +7529,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.toSet",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.toSet",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7570,7 +7563,7 @@ if (__thisIsNewer) {
                     {"setClause": "(Mixed) Set clause used to update the records"},
 					{"options": "(Object) Options to specify if mulit update and/or upsert"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.update",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.update",
             "returnType": "(Array)"
         }|*/
         try {
@@ -7800,7 +7793,7 @@ if (__thisIsNewer) {
                     {"prop": "(String) Property to use as the primary key"},
                     {"callback": "(Function) Method to use to determine if the records are equal"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.upsert",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.upsert",
             "returnType": "(Object)"
         }|*/
         try {
@@ -7900,7 +7893,7 @@ if (__thisIsNewer) {
 					{"useReference": "(Bool) Flag to make a copy instead of using references"},
 					{"limit": "(Int) Limit the number of the results returned."}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.where",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.where",
             "returnType": "(Array)"
         }|*/
         try {
@@ -8052,7 +8045,7 @@ if (__thisIsNewer) {
                     {"options": "(Object) specs with optional properties:<br />(Bool) gmt<br />(Int) offset"}]}],
 
 			"description":"<h2>Format syntax is as follows:</h2><br /><h3>Day Options</h3><p>d or %d: 2 digit day leading 0<br />D: textual representation of a day, three letters<br />j: day without leading 0<br />l (lower case L): full textual representation of the day of the week<br />N: ISO-8601 numeric representation of the day of the week<br />S: English ordinal suffix for the day of the month, 2 characters<br />w: Numeric representation of the day of the week (starting from 1)<br />%w: Numeric representation of the day of the week (starting from 0)<br />z: The day of the year (starting from 0)<br />%j: day of the year (starting from 1)</p><h3>Week Options</h3><p>W: ISO-8601 week number of the year, weeks starting on Monday<br />U: ISO-8601 week number of the year, weeks starting on Monday with leading 0<br /></p><h3>Month Options</h3><p>F: full textual representation of a month, such as January or March<br />m or %m: Numeric representation of a month, with leading zeros<br />M or %M: short textual representation of a month, three letters<br />n: Numeric representation of a month, without leading zeros<br />t: Number of days in the given month<br /></p><h3>Year Options</h3><p>L: 0 or 1 indicating whether it's a leap year<br />o: full numeric representation of a year, 4 digits.  If 'W' belongs to the previous or next year, that year is used instead.<br />Y or %Y: full numeric representation of a year, 4 digits<br />y: two digit representation of a year<br /></p><h3>Time Options</h3><p>a: Lowercase Ante Meridiem and Post Meridiem<br />A: Uppercase Ante Meridiem and Post Meridiem<br />B: Swatch Internet time<br />g: 12-hour format of an hour without leading zeros<br />G: 24-hour format of an hour without leading zeros<br />h: 12-hour format of an hour with leading zeros<br />H or %H: 24-hour format of an hour with leading zeros<br />i: Minutes with leading zeros<br />s or %S: Seconds, with leading zeros<br />u: Microseconds<br />%L: Milliseconds<br /></p><h3>Timezone Options</h3><p>e: Timezone identifier<br />I: 0 or 1 indicating whether or not the date is in daylight saving time<br />O: Difference to Greenwich time (GMT) in hours<br />P: Difference to Greenwich time (GMT) with colon between hours and minutes<br />T: Timezone abbreviation<br />Z: Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive<br /></p><h3>Other Options</h3><p>c: ISO 8601 date<br />r: RFC 2822 formatted date<br />U: Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)</p>",
-            "url": "http://www.craydent.com/library/1.8.1/docs#date.format",
+            "url": "http://www.craydent.com/library/1.9.0/docs#date.format",
             "returnType": "(String)"
         }|*/
         try {
@@ -8320,7 +8313,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#array.getDayOfYear",
+			"url": "http://www.craydent.com/library/1.9.0/docs#array.getDayOfYear",
 			"returnType": "(Int)"
 		}|*/
         try {
@@ -8337,7 +8330,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.getWeek",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.getWeek",
             "returnType": "(Int)"
         }|*/
         try {
@@ -8357,7 +8350,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#array.isValidDate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#array.isValidDate",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8380,7 +8373,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#number.aboutEqualTo",
+            "url": "http://www.craydent.com/library/1.9.0/docs#number.aboutEqualTo",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8397,7 +8390,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#number.",
+            "url": "http://www.craydent.com/library/1.9.0/docs#number.",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8414,7 +8407,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#number.",
+            "url": "http://www.craydent.com/library/1.9.0/docs#number.",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8436,7 +8429,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#function.getParameters",
+            "url": "http://www.craydent.com/library/1.9.0/docs#function.getParameters",
             "returnType": "(Array)"
         }|*/
         try {
@@ -8453,7 +8446,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#function.getName",
+            "url": "http://www.craydent.com/library/1.9.0/docs#function.getName",
             "returnType": "(String)"
         }|*/
         try {
@@ -8474,7 +8467,7 @@ if (__thisIsNewer) {
                     {"extendee":"(Object) Class to extend"},
                     {"inheritAsOwn":"(Boolean) Flag to inherit and for values hasOwnProperty to be true."}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#function.extends",
+            "url": "http://www.craydent.com/library/1.9.0/docs#function.extends",
 			"returnType": "(Function)"
         }|*/
         try {
@@ -8512,7 +8505,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#function.on",
+			"url": "http://www.craydent.com/library/1.9.0/docs#function.on",
 			"returnType": "(String)"
 		}|*/
         try {
@@ -8532,7 +8525,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#function.then",
+			"url": "http://www.craydent.com/library/1.9.0/docs#function.then",
 			"returnType": "(String)"
 		}|*/
 		try {
@@ -8550,7 +8543,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#function.catch",
+			"url": "http://www.craydent.com/library/1.9.0/docs#function.catch",
 			"returnType": "(String)"
 		}|*/
 		try {
@@ -8572,7 +8565,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#regexp.addFlag",
+            "url": "http://www.craydent.com/library/1.9.0/docs#regexp.addFlag",
             "returnType": "(RegExp)"
         }|*/
         try {
@@ -8598,7 +8591,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.",
             "returnType": "(Object)"
         }|*/
         try {
@@ -8650,7 +8643,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"arr": "(Array) Array of values to return first matching value"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.contains",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.contains",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8721,7 +8714,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.copyObject",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.copyObject",
             "returnType": "(Object)"
         }|*/
         try {
@@ -8745,7 +8738,7 @@ if (__thisIsNewer) {
 				{"parameters":[
 					{"option": "(RegExp) Word or phrase pattern to count in the String"}]}],
 	
-			"url": "http://www.craydent.com/library/1.8.1/docs#object.count",
+			"url": "http://www.craydent.com/library/1.9.0/docs#object.count",
 			"returnType": "(Int)"
 		}|*/
 		try {
@@ -8787,7 +8780,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"recursive": "(Boolean) Flag to copy all child objects recursively"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.duplicate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.duplicate",
             "returnType": "(Object)"
         }|*/
         try {
@@ -8805,7 +8798,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.eachProperty",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.eachProperty",
             "returnType": "(Object)"
         }|*/
         try {
@@ -8828,7 +8821,7 @@ if (__thisIsNewer) {
 				{"compare": "(Object) Object to compare against"},
 				{"props": "(String[]) Array of property values to compare against"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.equals",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.equals",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8876,7 +8869,7 @@ if (__thisIsNewer) {
                     {"callback": "(Function) Callback to apply to each value"},
                     {"thisObject": "(Mixed) Context for the callback function"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.every",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.every",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -8897,7 +8890,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.getClass",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.getClass",
             "returnType": "(String)"
         }|*/
         try {
@@ -8928,7 +8921,7 @@ if (__thisIsNewer) {
                     {"delimiter": "(Char) Separator used to parse path"},
                     {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.getProperty",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.getProperty",
             "returnType": "(Mixed)"
         }|*/
         try {
@@ -8967,7 +8960,7 @@ if (__thisIsNewer) {
 					{"args": "(Mixed[]) An array of arguments to pass to context when it is a function"},
 					{"dflt": "(Mixed) Default value to return if context is not a function"}]}],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#object.getProperty",
+			"url": "http://www.craydent.com/library/1.9.0/docs#object.getProperty",
 			"returnType": "(Mixed)"
 		}|*/
         try {
@@ -8990,7 +8983,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.has",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.has",
             "returnType": "(Boolean)"
         }|*/
         var args = arguments;
@@ -9011,7 +9004,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isArray",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isArray",
             "returnType": "(Bool)"
         }|*/
         return _isArray(this);
@@ -9030,7 +9023,7 @@ if (__thisIsNewer) {
                     {"upperBound": "(Mixed) Upper bound comparison"},
                     {"inclusive": "(Bool) Flag to include give bounds"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isBetween",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isBetween",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9052,7 +9045,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isBoolean",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isBoolean",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9070,7 +9063,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isDate",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isDate",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9088,7 +9081,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isDomElement",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isDomElement",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9106,7 +9099,7 @@ if (__thisIsNewer) {
 
          "overloads":[],
 
-         "url": "http://www.craydent.com/library/1.8.1/docs#object.isEmpty",
+         "url": "http://www.craydent.com/library/1.9.0/docs#object.isEmpty",
          "returnType": "(Bool)"
          }|*/
         try {
@@ -9129,7 +9122,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isFloat",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isFloat",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9147,7 +9140,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isFunction",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isFunction",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9165,7 +9158,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#object.isGenerator",
+			"url": "http://www.craydent.com/library/1.9.0/docs#object.isGenerator",
 			"returnType": "(Bool)"
 		}|*/
 		try {
@@ -9183,7 +9176,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isGeoLocation",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isGeoLocation",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9201,7 +9194,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isInt",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isInt",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9219,7 +9212,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isNumber",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isNumber",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9237,7 +9230,7 @@ if (__thisIsNewer) {
 
 			"overloads":[],
 
-			"url": "http://www.craydent.com/library/1.8.1/docs#object.isPromise",
+			"url": "http://www.craydent.com/library/1.9.0/docs#object.isPromise",
 			"returnType": "(Bool)"
 		}|*/
 		try {
@@ -9255,7 +9248,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isObject",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isObject",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9273,7 +9266,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isRegExp",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isRegExp",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9291,7 +9284,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isString",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isString",
             "returnType": "(Bool)"
         }|*/
         return _isString(this);
@@ -9303,7 +9296,7 @@ if (__thisIsNewer) {
             "parameters":[
                 {"compare": "(Mixed) Superset to compare against"}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.isSubset",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.isSubset",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9332,7 +9325,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.itemCount",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.itemCount",
             "returnType": "(Int)"
         }|*/
         try {
@@ -9359,7 +9352,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.keyOf",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.keyOf",
             "returnType": "(String)"
         }|*/
         try {
@@ -9382,7 +9375,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.getKeys",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.getKeys",
             "returnType": "(Array)"
         }|*/
         try {
@@ -9412,7 +9405,7 @@ if (__thisIsNewer) {
                     {"callback": "(Function) Callback to apply to each value"},
                     {"thisObject": "(Mixed) Context for the callback function"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.map",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.map",
             "returnType": "(void)"
         }|*/
         try {
@@ -9438,7 +9431,7 @@ if (__thisIsNewer) {
                     {"secondary": "(Object) Object to merge with"},
 					{"condition": "(Mixed) Flags to recurse, merge only shared value, clone, intersect etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.merge",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.merge",
             "returnType": "(Object)"
         }|*/
         try {
@@ -9502,7 +9495,7 @@ if (__thisIsNewer) {
                     {"value": "(Mixed) Value to set"},
                     {"options": "(Object) Options for ignoring inheritance, validPath, etc"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#object.setProperty",
+            "url": "http://www.craydent.com/library/1.9.0/docs#object.setProperty",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9549,7 +9542,7 @@ if (__thisIsNewer) {
                     {"prefix": "(Char) Character to prefix the property name"},
                     {"urlEncode": "(Bool) Flag to url encode the property and value"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#",
+            "url": "http://www.craydent.com/library/1.9.0/docs#",
             "returnType": "(String)"
         }|*/
         try {
@@ -9671,7 +9664,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.addClass",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.addClass",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9699,7 +9692,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.blur",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.blur",
             "returnType": "(void)"
         }|*/
         this.on("blur", callback);
@@ -9714,7 +9707,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.change",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.change",
             "returnType": "(void)"
         }|*/
         this.on("change", callback);
@@ -9729,7 +9722,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.click",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.click",
             "returnType": "(void)"
         }|*/
         this.on("click", callback);
@@ -9744,7 +9737,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.contextmenu",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.contextmenu",
             "returnType": "(void)"
         }|*/
         this.on("contextmenu", callback);
@@ -9759,7 +9752,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dblclick",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dblclick",
             "returnType": "(void)"
         }|*/
         this.on("dblclick", callback);
@@ -9774,7 +9767,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.drag",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.drag",
             "returnType": "(void)"
         }|*/
         this.on("drag", callback);
@@ -9789,7 +9782,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dragend",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dragend",
             "returnType": "(void)"
         }|*/
         this.on("dragend", callback);
@@ -9804,7 +9797,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dragenter",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dragenter",
             "returnType": "(void)"
         }|*/
         this.on("dragenter", callback);
@@ -9819,7 +9812,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dragleave",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dragleave",
             "returnType": "(void)"
         }|*/
         this.on("dragleave", callback);
@@ -9834,7 +9827,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dragover",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dragover",
             "returnType": "(void)"
         }|*/
         this.on("dragover", callback);
@@ -9849,7 +9842,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.dragstart",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.dragstart",
             "returnType": "(void)"
         }|*/
         this.on("dragstart", callback);
@@ -9864,7 +9857,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.drop",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.drop",
             "returnType": "(void)"
         }|*/
         this.on("drop", callback);
@@ -9879,7 +9872,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.focus",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.focus",
             "returnType": "(void)"
         }|*/
         this.on("focus", callback);
@@ -9894,7 +9887,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.formchange",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.formchange",
             "returnType": "(void)"
         }|*/
         this.on("formchange", callback);
@@ -9909,7 +9902,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.forminput",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.forminput",
             "returnType": "(void)"
         }|*/
         this.on("forminput", callback);
@@ -9924,7 +9917,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"tagName": "(String) Used to get the direct parent with a specific HTML tag"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.getContainer",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.getContainer",
             "returnType": "(HTMLElement)"
         }|*/
         try {
@@ -9947,7 +9940,7 @@ if (__thisIsNewer) {
             "parameters":[
                 {"name": "(String) Class name to check"}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.hasClass",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.hasClass",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -9966,7 +9959,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.height",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.height",
             "returnType": "(Number)"
         }|*/
         try {
@@ -9984,7 +9977,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.hide",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.hide",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10015,7 +10008,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.input",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.input",
             "returnType": "(void)"
         }|*/
         this.on("input", callback);
@@ -10029,7 +10022,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.insertAlphabetically",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.insertAlphabetically",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10066,7 +10059,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.invalid",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.invalid",
             "returnType": "(void)"
         }|*/
         this.on("invalid", callback);
@@ -10079,7 +10072,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.isOrphan",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.isOrphan",
             "returnType": "(void)"
         }|*/
         try {
@@ -10108,7 +10101,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.keydown",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.keydown",
             "returnType": "(void)"
         }|*/
         this.on("keydown", callback);
@@ -10123,7 +10116,7 @@ if (__thisIsNewer) {
             {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.keypress",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.keypress",
             "returnType": "(void)"
         }|*/
         this.on("keypress", callback);
@@ -10138,7 +10131,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.keyup",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.keyup",
             "returnType": "(void)"
         }|*/
         this.on("keyup", callback);
@@ -10151,7 +10144,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.left",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.left",
             "returnType": "(Number)"
         }|*/
         try {
@@ -10171,7 +10164,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mousedown",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mousedown",
             "returnType": "(void)"
         }|*/
         this.on("mousedown", callback);
@@ -10186,7 +10179,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mousemove",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mousemove",
             "returnType": "(void)"
         }|*/
         this.on("mousemove", callback);
@@ -10201,7 +10194,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mouseout",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mouseout",
             "returnType": "(void)"
         }|*/
         this.on("mouseout", callback);
@@ -10216,7 +10209,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mouseover",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mouseover",
             "returnType": "(void)"
         }|*/
         this.on("mouseover", callback);
@@ -10231,7 +10224,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mouseup",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mouseup",
             "returnType": "(void)"
         }|*/
         this.on("mouseup", callback);
@@ -10246,7 +10239,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.mousewheel",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.mousewheel",
             "returnType": "(void)"
         }|*/
         this.on("mousewheel", callback);
@@ -10261,7 +10254,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"tagName": "(String) Used to get next sibling with a specific HTML tag"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.moveDown",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.moveDown",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10290,7 +10283,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"tagName": "(String) Used to get previous sibling with a specific HTML tag"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.moveUp",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.moveUp",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10320,7 +10313,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.removeClass",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.removeClass",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10348,7 +10341,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.replace",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.replace",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10368,7 +10361,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.reset",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.reset",
             "returnType": "(void)"
         }|*/
         this.on("reset", callback);
@@ -10383,7 +10376,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.scroll",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.scroll",
             "returnType": "(void)"
         }|*/
         this.on("scroll", callback);
@@ -10398,7 +10391,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                 {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.select",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.select",
             "returnType": "(void)"
         }|*/
         this.on("select", callback);
@@ -10411,7 +10404,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.show",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.show",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10440,7 +10433,7 @@ if (__thisIsNewer) {
                 {"parameters":[
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.submit",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.submit",
             "returnType": "(void)"
         }|*/
         this.on("submit", callback);
@@ -10453,7 +10446,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.hookEvent",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.hookEvent",
             "returnType": "(Bool)"
         }|*/
         try {
@@ -10493,7 +10486,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.top",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.top",
             "returnType": "(Number)"
         }|*/
         try {
@@ -10512,7 +10505,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.toString",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.toString",
             "returnType": "(String)"
         }|*/
         try {
@@ -10536,7 +10529,7 @@ if (__thisIsNewer) {
                     {"event":"(String) Event name"},
                     {"callback": "(Function) Callback function when triggered"}]}],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.input",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.input",
             "returnType": "(void)"
         }|*/
         this.events = this.events || {};
@@ -10558,7 +10551,7 @@ if (__thisIsNewer) {
 
             "overloads":[],
 
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.width",
+            "url": "http://www.craydent.com/library/1.9.0/docs#htmlelement.width",
             "returnType": "(Number)"
         }|*/
         try {

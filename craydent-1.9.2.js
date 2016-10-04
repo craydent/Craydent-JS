@@ -1,14 +1,14 @@
 /*/---------------------------------------------------------/*/
-/*/ Craydent LLC v1.8.1                                     /*/
-/*/	Copyright 2011 (http://craydent.com/about)              /*/
+/*/ Craydent LLC v1.9.2                                     /*/
+/*/ Copyright 2011 (http://craydent.com/about)              /*/
 /*/ Dual licensed under the MIT or GPL Version 2 licenses.  /*/
-/*/	(http://craydent.com/license)                           /*/
+/*/ (http://craydent.com/license)                           /*/
 /*/---------------------------------------------------------/*/
 
 /*----------------------------------------------------------------------------------------------------------------
- /-	Global CONSTANTS and variables
- /---------------------------------------------------------------------------------------------------------------*/
-var __version = "1.8.1",
+/-	Global CONSTANTS and variables
+/---------------------------------------------------------------------------------------------------------------*/
+var __version = "1.9.2",
     __thisIsNewer = true,
     $w = typeof window != "undefined" ? window : {location:(typeof location != "undefined"?location:{href:''}),console:(typeof console != "undefined"?console:{})},
     $g = $w,
@@ -172,6 +172,7 @@ if (__thisIsNewer) {
             ctx.cuid = cuid;
             ctx.emit = emit;
             ctx.error = error;
+            ctx.exclude = exclude;
             ctx.fillTemplate = fillTemplate;
             ctx.foo = foo;
             ctx.isNull = isNull;
@@ -336,9 +337,9 @@ if (__thisIsNewer) {
     function __processBlocks (start, end, code, lookups) {
         lookups = lookups || {};
         var blocks = [], sindexes = [], sindex = 0, eindexes = [], eindex = 0;
-        while ((sindex = $c.indexOfAlt(code,start, sindex)) != -1 && (eindex = $c.indexOfAlt(code,end, eindex)) != -1) {
-            sindex != -1 && (sindexes.push(sindex), sindex++);
-            eindex != -1 && (eindexes.push(eindex), eindex++);
+        while (~(sindex = $c.indexOfAlt(code,start, sindex)) && ~(eindex = $c.indexOfAlt(code,end, eindex))) {
+            ~sindex && (sindexes.push(sindex), sindex++);
+            ~eindex && (eindexes.push(eindex), eindex++);
         }
         // if true syntax error, start end missmatch
         if (sindexes.length != eindexes.length) {
@@ -477,8 +478,8 @@ if (__thisIsNewer) {
             if (value1 > value2) { cmp = 1; }
 
 		if ($c.isNull(cmp)) {
-			value1 = sortOrder.indexOf([null, undefined].indexOf(value1) != -1 ? value1 : value1.constructor);
-			value2 = sortOrder.indexOf([null, undefined].indexOf(value2) != -1 ? value2 : value2.constructor);
+			value1 = ~sortOrder.indexOf([null, undefined].indexOf(value1) ? value1 : value1.constructor);
+			value2 = ~sortOrder.indexOf([null, undefined].indexOf(value2) ? value2 : value2.constructor);
 
                 if (value1 < value2) { cmp = -1; }
                 if (value1 > value2) { cmp = 1; }
@@ -535,7 +536,7 @@ if (__thisIsNewer) {
                     return __parseCond(doc, expr);
                 case "$ifNull":
                     var value = __processExpression(doc, expr["$ifNull"][0]);
-                    return isNull(value) ? __processExpression(doc, expr["$ifNull"][1]) : value;
+                    return isNull(value,__processExpression(doc, expr["$ifNull"][1]));
             }
         } catch (e) {
             error('aggregate.__parseConditionExpr', e);
@@ -584,13 +585,13 @@ if (__thisIsNewer) {
                         if (!$c.isArray(set1) || !$c.isArray(set2)){
                             //noinspection ExceptionCaughtLocallyJS
                             throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
-                            (typeof (!$c.isArray(set1) ? set1 : set2)).captialize();
+                            $c.captialize(typeof (!$c.isArray(set1) ? set1 : set2));
                         }
                         $c.toSet(set1);
 						$c.toSet(set2);
                         if (set1.length != set2.length) { return false; }
 					for (var jlen = set1.length; j < jlen; j++) {
-						if (set2.indexOf(set1[j]) == -1) { return false; }
+						if (!~set2.indexOf(set1[j])) { return false; }
                         }
                     }
                     return true;
@@ -599,14 +600,14 @@ if (__thisIsNewer) {
                         errorMessage = "Exception: All operands of $setIntersection must be arrays. One argument is of type: ";
                     if(!$c.isArray(rtnSet)) {
                         //noinspection ExceptionCaughtLocallyJS
-                        throw errorMessage + (typeof rtnSet).captialize();
+                        throw errorMessage + $c.captialize(typeof rtnSet);
                     }
                     $c.toSet(rtnSet);
 				while (exp = expr[field][i++]) {
 					var set1 = $c.duplicate(__processExpression(doc, exp));
                         if (!$c.isArray(set1)){
                             //noinspection ExceptionCaughtLocallyJS
-                            throw errorMessage + + (typeof set1).captialize();
+                            throw errorMessage + $c.capitalize(typeof set1);
                         }
                         $c.toSet(set1);
                         if (set1.length < rtnSet.length) {
@@ -615,7 +616,7 @@ if (__thisIsNewer) {
                             rtnSet = settmp;
                         }
 					for (var jlen = rtnSet.length; j < jlen; j++) {
-						if (set1.indexOf(rtnSet[j]) == -1) { $c.removeAt(rtnSet,j--); jlen--; }
+						if (!~set1.indexOf(rtnSet[j])) { $c.removeAt(rtnSet,j--); jlen--; }
                         }
                         if (!rtnSet.length) { return rtnSet; }
                     }
@@ -625,13 +626,13 @@ if (__thisIsNewer) {
                         errorMessage = "Exception: All operands of $setUnion must be arrays. One argument is of type: ";
                     if(!$c.isArray(rtnSet)) {
                         //noinspection ExceptionCaughtLocallyJS
-                        throw errorMessage + (typeof rtnSet).captialize();
+                        throw errorMessage + $c.capitalize(typeof rtnSet);
                     }
 					while (exp = expr[field][i++]) {
 						var arr = $c.duplicate(__processExpression(doc, exp));
                         if (!$c.isArray(arr)){
                             //noinspection ExceptionCaughtLocallyJS
-                            throw errorMessage + + (typeof arr).captialize();
+                            throw errorMessage + $c.capitalize(typeof arr);
                         }
                         rtnSet = rtnSet.concat(arr);
                     }
@@ -643,12 +644,12 @@ if (__thisIsNewer) {
                     if (!$c.isArray(arr1) || !$c.isArray(arr2)){
                         //noinspection ExceptionCaughtLocallyJS
                         throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
-                        (typeof (!$c.isArray(arr1) ? arr1 : arr2)).captialize();
+                        $c.capitalize(typeof (!$c.isArray(arr1) ? arr1 : arr2));
                     }
-				for (var jlen = arr1.length; j < jlen; j++) {
-					var st = arr1[j];
-					if (arr2.indexOf(st) == -1 && rtnSet.indexOf(st) == -1) {
-						rtnSet.push(st);
+                    for (var jlen = arr1.length; j < jlen; j++) {
+                        var st = arr1[j];
+                        if (!~arr2.indexOf(st) && !~rtnSet.indexOf(st)) {
+                            rtnSet.push(st);
                         }
                     }
                     return rtnSet;
@@ -659,7 +660,7 @@ if (__thisIsNewer) {
                     if (!$c.isArray(arr1) || !$c.isArray(arr2)){
                         //noinspection ExceptionCaughtLocallyJS
                         throw "Exception: All operands of $setEquals must be arrays. One argument is of type: " +
-                        (typeof (!$c.isArray(arr1) ? arr1 : arr2)).captialize();
+                        $c.capitalize(typeof (!$c.isArray(arr1) ? arr1 : arr2));
                     }
                     return $c.isSubset(arr1,arr2);
                 case "$anyElementTrue":
@@ -667,7 +668,7 @@ if (__thisIsNewer) {
                         falseCondition = [undefined,null,0,false];
 
 					while (st = arr1[j++]) {
-						if (falseCondition.indexOf(st) == -1) { return true; }
+						if (!~falseCondition.indexOf(st)) { return true; }
                     }
                     return false;
                 case "$allElementsTrue":
@@ -675,7 +676,7 @@ if (__thisIsNewer) {
                         falseCondition = [undefined,null,0,false];
 
 					for (var jlen = arr1.length; j < jlen; j++) {
-						if (falseCondition.indexOf(arr1[j]) != -1) { return false; }
+						if (~falseCondition.indexOf(arr1[j])) { return false; }
                     }
                     return true;
             }
@@ -767,54 +768,54 @@ if (__thisIsNewer) {
 		);
             switch (true) {
                 case !!accumulator["$sum"]:
-				return (value || 0) + (previousValue || 0);
+				    return (value || 0) + (previousValue || 0);
                 case !!accumulator["$avg"]:
-				previousValue = previousValue || [];
-				if (!$c.isNull(value)) { previousValue.push(value); }
-				if (meta.length == meta.index + 1) { previousValue = $c.average(previousValue); }
+                    previousValue = previousValue || [];
+                    if (!$c.isNull(value)) { previousValue.push(value); }
+                    if (meta.length == meta.index + 1) { previousValue = $c.average(previousValue); }
                     return previousValue;
                 case !!accumulator["$first"]:
-				if($c.isNull(previousValue)) { previousValue = value; }
+				    if($c.isNull(previousValue)) { previousValue = value; }
                     return previousValue;
                 case !!accumulator["$last"]:
-				return $c.isNull(value) ? previousValue : value;
+                    return $c.isNull(value, previousValue);
                 case !!accumulator["$max"]:
-				if ($c.isNull(previousValue)) { previousValue = -9007199254740991; }
-				if ($c.isNull(value)) { value = -9007199254740991 }
-				if (meta.length == meta.index + 1 && value == previousValue == -9007199254740991) { return undefined; }
-				return Math.max(value, previousValue);
+                    if ($c.isNull(previousValue)) { previousValue = -9007199254740991; }
+                    if ($c.isNull(value)) { value = -9007199254740991 }
+                    if (meta.length == meta.index + 1 && value == previousValue == -9007199254740991) { return undefined; }
+                    return Math.max(value, previousValue);
                 case !!accumulator["$min"]:
-				if ($c.isNull(previousValue)) { previousValue = 9007199254740991; }
-				if ($c.isNull(value)) { value = 9007199254740991 }
-				if (meta.length == meta.index + 1 && value == previousValue == 9007199254740991) { return undefined; }
+                    if ($c.isNull(previousValue)) { previousValue = 9007199254740991; }
+                    if ($c.isNull(value)) { value = 9007199254740991 }
+                    if (meta.length == meta.index + 1 && value == previousValue == 9007199254740991) { return undefined; }
                     return Math.min(value, (previousValue || 9007199254740991));
                 case !!accumulator["$push"]:
-				previousValue = previousValue || [];
-				if (!$c.isNull(value)) { previousValue.push(value); }
-				return previousValue;
+                    previousValue = previousValue || [];
+                    if (!$c.isNull(value)) { previousValue.push(value); }
+                    return previousValue;
                 case !!accumulator["$addToSet"]:
                     previousValue = previousValue || [];
-				if (!$c.isNull(value) && previousValue.indexOf(value) == -1) { previousValue.push(value); }
+				    if (!$c.isNull(value) && !~previousValue.indexOf(value)) { previousValue.push(value); }
                     return previousValue;
-			case !!accumulator["$stdDevSamp"]:
-				if (meta.sample && meta.sample.indexOf(doc) != -1) {
-					if (!$c.isNull(value)) {
-						previousValue = previousValue || [];
-						previousValue.push(value);
-					}
-				}
-				if (meta.length == meta.index + 1) {
-					previousValue = $c.stdev(previousValue || []);
-				}
-				return $c.isNull(previousValue) ? null : previousValue;
-			case !!accumulator["$stdDevPop"]:
-				if (!$c.isNull(value)) {
-					previousValue = previousValue || [];
-					previousValue.push(value); }
-				if (meta.length == meta.index + 1) {
-					previousValue = $c.stdev(previousValue);
-				}
-				return $c.isNull(previousValue) ? null : previousValue;
+                case !!accumulator["$stdDevSamp"]:
+                    if (meta.sample && ~meta.sample.indexOf(doc)) {
+                        if (!$c.isNull(value)) {
+                            previousValue = previousValue || [];
+                            previousValue.push(value);
+                        }
+                    }
+                    if (meta.length == meta.index + 1) {
+                        previousValue = $c.stdev(previousValue || []);
+                    }
+                    return $c.isNull(previousValue) ? null : previousValue;
+                case !!accumulator["$stdDevPop"]:
+                    if (!$c.isNull(value)) {
+                        previousValue = previousValue || [];
+                        previousValue.push(value); }
+                    if (meta.length == meta.index + 1) {
+                        previousValue = $c.stdev(previousValue);
+                    }
+                    return $c.isNull(previousValue) ? null : previousValue;
             }
         } catch (e) {
             error('aggregate.__processAccumulator', e);
@@ -826,8 +827,8 @@ if (__thisIsNewer) {
                 tagend = node.indexOf('>'),
                 tag = node.substring(1, tagend),
                 attIndex = $c.indexOfAlt(tag,/\s|>/),
-                nodename = attIndex == -1 ? tag : tag.substring(0, $c.indexOfAlt(tag,/\s|>/)),
-                attr = attIndex == -1 ? "" : tag.substring($c.indexOfAlt(tag,/\s|>/)),
+                nodename = !~attIndex ? tag : tag.substring(0, $c.indexOfAlt(tag,/\s|>/)),
+                attr = !~attIndex ? "" : tag.substring($c.indexOfAlt(tag,/\s|>/)),
                 text = node.substring(tagend + 1, node.indexOf('<', tagend));
 
             if (attr) {
@@ -892,25 +893,25 @@ if (__thisIsNewer) {
                     conditionalKeys = ["$cond", "$ifNull"];
 
                 switch (true) {
-					case literalKeys.indexOf(field) != -1:
+					case ~literalKeys.indexOf(field):
                         return expr;
-					case boolKeys.indexOf(field) != -1:
+					case ~boolKeys.indexOf(field):
                         return __parseBooleanExpr(doc, expr, field);
-					case setKeys.indexOf(field) != -1:
+					case ~setKeys.indexOf(field):
                         return __parseSetExpr(doc, expr, field);
-					case compareKeys.indexOf(field) != -1:
+					case ~compareKeys.indexOf(field):
                         return __parseComparisonExpr(doc, expr, field);
-					case arithmeticKeys.indexOf(field) != -1:
+					case ~arithmeticKeys.indexOf(field):
                         return __parseArithmeticExpr(doc, expr, field);
-					case stringKeys.indexOf(field) != -1:
+					case ~stringKeys.indexOf(field):
                         return __parseStringExpr(doc, expr, field);
-					case arrayKeys.indexOf(field) != -1:
+					case ~arrayKeys.indexOf(field):
                         return __parseArrayExpr(doc, expr, field);
-					case variableKeys.indexOf(field) != -1:
+					case ~variableKeys.indexOf(field):
                         return __parseVariableExpr(doc, expr, field);
-					case dateKeys.indexOf(field) != -1:
+					case ~dateKeys.indexOf(field):
                         return __parseDateExpr(doc, expr, field);
-					case conditionalKeys.indexOf(field) != -1:
+					case ~conditionalKeys.indexOf(field):
                         return __parseConditionalExpr(doc, expr, field);
                     default:
                         __processExpression (doc,value);
@@ -962,7 +963,7 @@ if (__thisIsNewer) {
                 }
                 if (!tag) {
                     etag = part.indexOf('>');
-                    if (etag == -1) {
+                    if (!~etag) {
                         if (!i) {
                             obj['#text'] += $c.strip(part, ['\n', ' ']);
                         } else {
@@ -972,7 +973,7 @@ if (__thisIsNewer) {
                     }
                     tag = part.split(/\s|>/)[0];
                     node += "<" + part;
-                } else if ((etag = part.indexOf('/' + tag + '>')) != -1) {
+                } else if (~(etag = part.indexOf('/' + tag + '>'))) {
                     var text = $c.strip(part.substr(etag + tag.length + 2),['\n', ' ']);
                     if (text) {
                         obj['#text'] += text;
@@ -1025,7 +1026,7 @@ if (__thisIsNewer) {
                     for (var prop in value) {
                         if (!value.hasOwnProperty(prop)) { continue; }
                         var pre = "";
-                        if (value[prop] == -1) {
+                        if (!~value[prop]) {
                             pre = "!";
                         }
                         sorter.push(pre+prop);
@@ -1097,7 +1098,7 @@ if (__thisIsNewer) {
 		// first clause is for linux based files systems, second clause is for windows based file system
 		if (!(path.startsWith('/') || /^[a-zA-Z]:\/|^\/\/.*/.test(path))) {
 			callingPath = new Error().stack.split('\n')[3].replace(/.*?\((.*)/,'$1');
-			if (callingPath.indexOf('\\') != -1) {
+			if (~callingPath.indexOf('\\')) {
 				callingPath = callingPath.replace(/\\/g,'/');
 			}
 			path = callingPath.substring(0,callingPath.lastIndexOf(delimiter) + 1) + path;
@@ -1138,7 +1139,7 @@ if (__thisIsNewer) {
                 func = $c.strip(funcValue.splice(0,1)[0],";");
 				for (var i = 0, len = funcValue.length; i < len; i++) {
 					var fv = funcValue[i];
-					if (fv.indexOf("${") != -1) {
+					if (~fv.indexOf("${")) {
 						funcValue[i] = fillTemplate(fv, obj);
                     }
                     try {
@@ -1146,7 +1147,7 @@ if (__thisIsNewer) {
                     } catch (e) {}
                 }
 				funcValue = funcValue.map(function(item){ return $c.tryEval(item) || item; });
-				template = template.indexOf(match[1]) != -1 ? template.replace(match[1], (match[1] = $c.replace_all(match[1],['\\[', '\\]'], ['[', ']']))) : template;
+				template = ~template.indexOf(match[1]) ? template.replace(match[1], (match[1] = $c.replace_all(match[1],['\\[', '\\]'], ['[', ']']))) : template;
 				template = $c.replace_all(template,"${" + pre + match[1] + post +"}",
 					$c.getProperty($g, func) ? $c.getProperty($g, func).apply(obj, funcValue) : ($c.tryEval("("+func+")")||foo).apply(obj,funcValue) || "");
             }
@@ -1179,7 +1180,7 @@ if (__thisIsNewer) {
 						arr = [],
 						alter = false;
 				if ($c.isBoolean(ref)) { alter = true; }
-	
+
 				for (var i = 0, len = this.length; i < len; i++) {
 					var item = this[i];
 					$c.isString(item) && (arr[i] = item.toString().trim()) || (arr[i] = item);
@@ -1214,6 +1215,37 @@ if (__thisIsNewer) {
             return false;
         }
     }
+    function _binarySearch(sarr, prop, value, sindex, eindex, findIndex){
+        sindex = $c.isNull(sindex) ? 0 : sindex;
+        eindex = $c.isNull(eindex) ? sarr.length - 1 : eindex;
+        if (findIndex) {
+            if (!~eindex) { return 0; }
+            if (sarr[sindex][prop] > value) { return sindex; }
+            if (sarr[eindex][prop] < value) { return eindex; }
+        }
+        if (sindex == eindex) {
+            if (sarr[sindex][prop] != value) { return []; }
+            return [sarr[sindex]];
+        }
+
+        var index = sindex + parseInt((eindex - sindex) / 2);
+
+        if (sarr[index][prop] > value) {
+            return _binarySearch(sarr, prop, value, sindex, index, findIndex);
+        }
+
+        if (sarr[index][prop] < value) {
+            return _binarySearch(sarr, prop, value, index, eindex, findIndex);
+        }
+        while (sarr[sindex][prop] < value) { sindex++; }
+        while (sarr[eindex][prop] > value) { eindex--; }
+
+        if (findIndex) { return eindex; }
+
+        var len = eindex - sindex + 1;
+        if (sindex == 0 && len == sarr.length) { return sarr; }
+        return sarr.slice(sindex, eindex + len);
+    }
     function _condense (objs, check_values) {
         try {
             var skip = [], arr = [], without = false;
@@ -1224,23 +1256,59 @@ if (__thisIsNewer) {
 				var obj = objs[i];
                 if (check_values) {
 				var index = i;
-					if (without && check_values.indexOf(obj) != -1) {
+					if (without && ~check_values.indexOf(obj)) {
 					skip.push(i);
                         continue;
                     }
-				if (skip.indexOf(i) != -1) { continue; }
-                    while ((index = objs.indexOf(obj,index+1)) != -1) {
+				if (~skip.indexOf(i)) { continue; }
+                    while (~(index = objs.indexOf(obj,index+1))) {
                         skip.push(index);
                     }
 
                 }
-				obj !== "" && !$c.isNull(obj) && (skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) == -1 && !$c.isNull(obj) && arr.push(obj);
+				obj !== "" && !$c.isNull(obj) && !~(skip.indexOf && skip.indexOf(i) || _indexOf(skip, i)) && !$c.isNull(obj) && arr.push(obj);
             }
             return arr;
         } catch (e) {
             error("_condence", e);
             return false;
         }
+    }
+    function _contains_lessthan (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i] < val) { return true; }
+        }
+        return false;
+    }
+    function _contains_greaterthan (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i] > val) { return true; }
+        }
+        return false;
+    }
+    function _contains_lessthanequal (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i] <= val) { return true; }
+        }
+        return false;
+    }
+    function _contains_greaterthanequal (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i] >= val) { return true; }
+        }
+        return false;
+    }
+    function _contains_mod (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i] % val[0] == val[1]) { return true; }
+        }
+        return false;
+    }
+    function _contains_type (vals, val) {
+        for (var i = 0, len = vals.length; i < len; i++) {
+            if (vals[i].constructor == val) { return true; }
+        }
+        return false;
     }
 	function _copyWithProjection(projection, record, preserveProperties) {
         var copy = {}, len = 0;
@@ -1339,15 +1407,13 @@ if (__thisIsNewer) {
 			fstr = func.toString().replace(/this/g,'craydent_this'),
 
 			// extra code to account for when this == global
-			//		extra_code = "if($c.isNull(craydent_this) && this == $c){return;}",
 			extra_code = "if(arguments.length == 0 && this == $c){return;}",
                 fnew = args.length === 0 || (args.length === 1 && !_trim(args[0])) ?
 				fstr.toString().replace(/(\(\s*?\)\s*?\{)/, ' (craydent_this){'+extra_code) :
 				"(" + fstr.toString().replace(/\((.*?)\)\s*?\{/, '(craydent_this,$1){'+extra_code) + ")";
 
             if (!override && eval("typeof("+name+")") !== "undefined") {
-                eval("$c."+name+" = "+fnew);
-                return;
+                return eval("$c."+name+" = "+fnew);
             }
 			return eval("$c."+name+" = "+fnew);
         } catch (ex) {
@@ -1374,8 +1440,8 @@ if (__thisIsNewer) {
             var argIndex = 3;
 
             // remove all properties if it is the root level
-            var ref = arguments[argIndex] || {objects:[{obj:original,path:"this"}]},
-                current_path = arguments[argIndex+1] || "this";
+            var ref = arguments[argIndex] || {objects:[{obj:original,path:"obj"}]},
+                current_path = arguments[argIndex+1] || "obj";
             (arguments[argIndex+2] || (arguments[argIndex+2] = {})) && (arguments[argIndex+2].command = arguments[argIndex+2].command || "");
             if (!(ref.objects.length == 1)) {
                 for (var prop in obj){
@@ -1384,18 +1450,18 @@ if (__thisIsNewer) {
                     }
                 }
             }
-            var loop_func = function (prop, original) {
+            var loop_func = function (prop, original) { // 0 => property, 1 => original object, 2 => reference path object, 3 => current path, 4 => command object
                 if (original.hasOwnProperty(prop) && original[prop] && (!$c.isFunction(original[prop]) || !recursive)) {
                     var index = $c.indexOfAlt(ref.objects,original[prop], function(obj,value){
                             return obj.obj===value;
                         }),
                         new_path = current_path+"["+parseRaw(prop)+"]";
 
-                    if (index != -1) {
+                    if (~index) {
                         return arguments[argIndex+1].command += new_path + "="+ref.objects[index].path+";";
                     }
 
-                    if (typeof(original[prop]) == "object" && recursive) {
+                    if (typeof(original[prop]) in {"object":1,"function":1} && recursive) {
                         obj[prop] = typeof(original[prop].constructor) == "function" ? new original[prop].constructor() : {};
                         ref.objects.push({obj:original[prop],path:new_path});
                         return _duplicate(obj[prop], original[prop], true, ref, new_path, arguments[argIndex+1]);
@@ -1492,7 +1558,7 @@ if (__thisIsNewer) {
     function _getBrowserVersion(browser){
         try {
 			var index = this.navigator.userAgent.indexOf(browser);
-			if (index == -1 && this["is"+browser]()) return -1;
+			if (!~index && this["is"+browser]()) return -1;
             var version = parseFloat(this.navigator.userAgent.substring(index+browser.length+1));
 			return version === 0 || version ? version : -1;
         } catch(e){
@@ -1573,18 +1639,18 @@ if (__thisIsNewer) {
 			"parameters":[
 				{"value": "(Mixed) value to find"},
 				{"func": "(Function) Callback function used to do the comparison"}],
-	
+
 			"overloads":[
 				{"parameters":[
 					{"regex": "(RegExp) Regular expression to check value against"}]},
 				{"parameters":[
 					{"regex": "(RegExp) Regular expression to check value against"},
 					{"pos": "(Int) Index offset to start"}]}],
-	
+
 			"url": "http://www.craydent.com/library/1.8.1/docs#array.indexOfAlt",
 			"returnType": "(Integer)"
 		}|*/
-	
+
 		try {
 			if ($c.isArray(this)) {
 				var func = option;
@@ -1636,6 +1702,46 @@ if (__thisIsNewer) {
             }
         } catch (e) {
             error(($c.isDomElement(this) ? "DOM" : _getFuncName(this.constructor)) + ".remove", e);
+            return false;
+        }
+    }
+    function _insertAt(index, value) {
+        /*|{
+            "info": "Array class extension to add to the array at a specific index and push the all indexes down : HTMLElement class extension to insert element at a specified index",
+            "category": "Array",
+            "parameters":[
+                {"index": "(Int) Index to add after"},
+                {"value": "(Mixed) Value to add"}],
+
+            "overloads":[],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.insertAt",
+            "returnType": "(Bool)"
+        }|*/
+        try {
+            if ($c.isArray(this)) {
+                this.splice(index, 0, value);
+                return true;
+            }
+            if($c.isDomElement(index)) {
+                var temp = index;
+                index = value;
+                value = temp;
+            }
+            if ($c.isDomElement(value)) {
+                var children = this.children;
+                index = index || 0;
+                if (children.length > index) {
+                    this.insertBefore(value, children[index]);
+                    return true;
+                } else if (children.length == index) {
+                    this.appendChild(value);
+                    return true;
+                }
+                return false;
+            }
+        } catch (e) {
+            error(($c.isArray(this) ? "Array" : "DOM") + ".insertAt", e);
             return false;
         }
     }
@@ -1700,7 +1806,7 @@ if (__thisIsNewer) {
         try {
             var index = condition.indexOf('('),
                 parts = {before:'',after:'',block:{}};
-            if (index != -1) {
+            if (~index) {
                 var lindex = condition.lastIndexOf('(');
                 parts.before = condition.substring(0,index).trim();
                 parts.after = condition.substring(lindex).trim();
@@ -1769,7 +1875,7 @@ if (__thisIsNewer) {
     function _orderListHelper(value, sorter, arr) {
         try {
             var ii = 0, i = 0, len = arr.length;
-            if (sorter(value, arr[0]) == -1) { return 0; }
+            if (!~sorter(value, arr[0])) { return 0; }
             if (sorter(value, arr[len - 1]) === 1) { return len; }
             while (len > 1) {
                 len = Math.ceil(len/2);
@@ -1788,7 +1894,7 @@ if (__thisIsNewer) {
     function _processClause (clause) {
         try {
             var index = $c.indexOfAlt(clause,/between/i);
-            if (index != -1) { // contains between predicate
+            if (~index) { // contains between predicate
                 //replace AND in the between to prevent confusion for AND clause separator
                 clause.replace(/between( .*? )and( .*?)( |$)/gi,'between$1&and$2$3');
             }
@@ -1803,27 +1909,27 @@ if (__thisIsNewer) {
 
                     //=, <>, >, >=, <, <=, IN, BETWEEN, LIKE, IS NULL or IS NOT NULL
                     switch (true) {
-                        case (index = predicateClause.indexOf('=')) != -1 :
+                        case ~(index = predicateClause.indexOf('=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$equals':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case (index = predicateClause.indexOf('<>')) != -1 :
+                        case ~(index = predicateClause.indexOf('<>')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$ne':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case (index = predicateClause.indexOf('>')) != -1 :
+                        case ~(index = predicateClause.indexOf('>')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$gt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case (index = predicateClause.indexOf('>=')) != -1 :
+                        case ~(index = predicateClause.indexOf('>=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$gte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push({'$gte':cond});
                             break;
-                        case (index = predicateClause.indexOf('<')) != -1 :
+                        case ~(index = predicateClause.indexOf('<')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$lt':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
-                        case (index = predicateClause.indexOf('<=')) != -1 :
+                        case ~(index = predicateClause.indexOf('<=')) :
 							cond[predicateClause.substring(0, index).trim()] = {'$lte':$c.tryEval(predicateClause.substring(index + 1).trim())};
                             aquery['$and'].push(cond);
                             break;
@@ -1832,7 +1938,7 @@ if (__thisIsNewer) {
 							aquery['$and'].push({'$gte':$c.tryEval(nums[0])});
 							aquery['$and'].push({'$lte':$c.tryEval(nums[1])});
                             break;
-                        case (index = $c.indexOfAlt(predicateClause,/ in /i)) != -1 :
+                        case ~(index = $c.indexOfAlt(predicateClause,/ in /i)) :
 						var _in = $c.tryEval(predicateClause.substring(index + 4).trim().replace(/\((.*)\)/,'[$1]'));
                             if (!_in) {
                                 //noinspection ExceptionCaughtLocallyJS
@@ -1841,15 +1947,15 @@ if (__thisIsNewer) {
                             cond[predicateClause.substring(0, index).trim()] = _in;
                             aquery['$and'].push({'$in':cond});
                             break;
-                        case (index = $c.indexOfAlt(predicateClause,/is null/i)) != -1 :
+                        case ~(index = $c.indexOfAlt(predicateClause,/is null/i)) :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$equals':cond});
                             break;
-                        case (index = $c.indexOfAlt(predicateClause,/is not null/i)) != -1 :
+                        case ~(index = $c.indexOfAlt(predicateClause,/is not null/i)) :
                             cond[predicateClause.substring(0, index).trim()] = null;
                             aquery['$and'].push({'$ne':cond});
                             break;
-                        case (index = $c.indexOfAlt(predicateClause,/ like /i)) != -1 :
+                        case ~(index = $c.indexOfAlt(predicateClause,/ like /i)) :
                             var likeVal = "^" + $c.replace_all(_trim(predicateClause.substring(index + 6),null,[' ', "'", '"']),"%",".*?") + "$";
                             cond[predicateClause.substring(0, index).trim()] = {'$regex': new RegExp(likeVal,'i')};
                             aquery['$and'].push(cond);
@@ -1895,7 +2001,6 @@ if (__thisIsNewer) {
                         }
                     }
                 } else if (action == "$$PRUNE") {
-                    //return undefined;
                 } else {
                     //noinspection ExceptionCaughtLocallyJS
                     throw "exception: $redact's expression should not return anything aside from the variables $$KEEP, $$DESCEND, and $$PRUNE, but returned " + parseRaw(action);
@@ -1928,7 +2033,7 @@ if (__thisIsNewer) {
             if ($c.isArray(this)) {
                 indexOf = indexOf || this.indexOf;
                 var index = indexOf.call(this, value);
-                if (index == -1) {
+                if (!~index) {
                     return false;
                 }
                 return this.splice(index, 1)[0];
@@ -1949,7 +2054,7 @@ if (__thisIsNewer) {
 		var str = this, last = 0;
 		for (var i = 0, len = replace.length; i < len; i++) {
 			var rep = replace[i];
-				var reg = new RegExp(__convert_regex_safe(rep), flag);
+            var reg = new RegExp(__convert_regex_safe(rep), flag);
 			if (!$c.contains(str, reg)) { continue; }
 			str = str.replace(reg, subject[i] === undefined ? subject[last] : subject[i]);
 			if (subject[last + 1]) { last++; }
@@ -2095,10 +2200,15 @@ if (__thisIsNewer) {
 	function _subQuery(query, field, index) {
         try {
             if (!$c.isObject(query)) {
-                if (field.indexOf('.') != -1) { return "$c.equals($c.getProperty(record.'" + field + "'), " + $c.parseRaw(query) + ")";}
+                if (~field.indexOf('.')) { return "$c.equals($c.getProperty(record.'" + field + "'), " + $c.parseRaw(query) + ")";}
                 return "$c.equals(record['" + field + "'], " + $c.parseRaw(query) + ")";
             }
-            var expression = "true";
+            var expression = "true", comparison_map = {
+                "$lt":"_clt",
+                "$lte":"_clte",
+                "$gt":"_cgt",
+                "$gte":"_cgte"
+            };
 
 
             // prep multiple subqueries
@@ -2117,41 +2227,41 @@ if (__thisIsNewer) {
                         } else {
                             q = "$c.contains(values," + q + ")";
                         }
-                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && " + (prop == "$ne" ? "!" : "") + q + ")";
+                        expression += " && ((values = _qnp(record, '" + field + "')).length && " + (prop == "$ne" ? "!" : "") + q + ")";
                         break;
                     case "$lt":
                     case "$lte":
                     case "$gt":
                     case "$gte":
-                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && $c.contains(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
+                        expression += " && ((values = _qnp(record, '" + field + "')).length && " + comparison_map[prop] + "(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
                         break;
                     case "$exists":
                         expression += " && ((finished = {validPath:0}),$c.getProperty(record,'" + field + "','.',finished),finished.validPath == " + query['$exists'] + ")";
                         break;
                     case "$type":
                         var qt = $c.isNull(query["$type"]) ? "!" : "";
-                        expression += " && (" + qt + "(values = __queryNestedProperty(record, '" + field + "')).length && $c.contains(values," + $c.getName(query['$type']) + ",'" + prop + "'))";
+                        expression += " && (" + qt + "(values = _qnp(record, '" + field + "')).length && _ct(values," + $c.getName(query['$type']) + ",'" + prop + "'))";
                     case "$text":
                         //return record.getProperty(field).contains(query['$search']);
                         break;
                     case "$mod":
                         var qm = $c.isArray(query['$mod']);
-                        expression += " && ((values = __queryNestedProperty(record, '" + field + "')).length && " + qm + " && $c.contains(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
+                        expression += " && ((values = _qnp(record, '" + field + "')).length && " + qm + " && _cm(values," + $c.parseRaw(query[prop]) + ",'" + prop + "'))";
                         break;
                     case "$all":
                         var all = $c.parseRaw(query['$all']) || undefined;
-                        expression += " && (values = __queryNestedProperty(record, '" + field + "')),(all = " + all + "),($c.isArray(values[0]) && $c.isArray(all)) && (function(){ for (var j = 0, jlen = all.length; j < jlen; j++){ if (!$c.contains(values[0],all[j])) { return false; }} return true;})()";
+                        expression += " && (values = _qnp(record, '" + field + "')),(all = " + all + "),($c.isArray(values[0]) && $c.isArray(all)) && (function(){ for (var j = 0, jlen = all.length; j < jlen; j++){ if (!$c.contains(values[0],all[j])) { return false; }} return true;})()";
                         break;
                     case "$size":
                         var ival = parseInt(query['$size']);
-                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) && (" + ival + " === values.length))";
+                        expression += " && (values = _qnp(record, '" + field + "')[0]),($c.isArray(values) ? (" + ival + " === values.length) : (values == undefined && 0 === " + ival + "))";
                         break;
                     case "$where":
                         var val = "(" + ($c.isFunction(query['$where']) ? query['$where'].toString() : "function(){return (" + query['$where'] + ");}") + ")";
                         expression += " && " + val + ".call(record)";
                         break;
                     case "$elemMatch":
-                        expression += " && (values = __queryNestedProperty(record, '" + field + "')[0]),($c.isArray(values) && !!$c.where(values," + $c.parseRaw(query['$elemMatch']) + ",1).length)";
+                        expression += " && (values = _qnp(record, '" + field + "')[0]),($c.isArray(values) && !!$c.where(values," + $c.parseRaw(query['$elemMatch']) + ",1).length)";
                         break;
                     case "$or":
                     case "$nor":
@@ -2186,10 +2296,10 @@ if (__thisIsNewer) {
 
                     case "$in":
                     case "$nin":
-                        expression += " && " + (prop == "$nin" ? "!" : "") + "((values = __queryNestedProperty(record, '" + field + "')[0]),$c.contains(" + $c.parseRaw(query[prop]) + ",values))";
+                        expression += " && " + (prop == "$nin" ? "!" : "") + "((values = _qnp(record, '" + field + "')[0]),$c.contains(" + $c.parseRaw(query[prop]) + ",values))";
                         break;
                     default:
-                        expression += " && " + _subQuery(query[prop], prop);
+                        expression += " && " + _subQuery(query[prop], $c.replace_all(prop,'\'','\\\''));
                         break;
                 }
             }
@@ -2203,7 +2313,7 @@ if (__thisIsNewer) {
 			"info": "Number/String class extension to change number to currency",
 			"category": "String",
 			"parameters":[],
-	
+
 			"overloads":[
 				{"parameters":[
 				{"separator": "(Char) Character to use as delimiter"}]}],
@@ -2595,7 +2705,7 @@ if (__thisIsNewer) {
 			if ($c.isString(params)) {
 				params = { url : params };
 			}
-            var need_to_shard = false, browser_url_limit = 1500, query, url, rtn;
+            var need_to_shard = false, browser_url_limit = 1500, query, url, rtn, alwaysResolve = params.alwaysResolve === false ?  false : true;
             params.dataType = params.dataType || 'json';
             params.hitch = params.hitch || "";
 			params.onbefore = params.onbefore || [foo];
@@ -2620,6 +2730,9 @@ if (__thisIsNewer) {
             }
             if (!$c.isArray(params.onsuccess)) {
                 params.onsuccess = [params.onsuccess];
+            }
+            if (params.onsuccess.length > 1 || params.onsuccess[0] == foo) {
+                alwaysResolve = params.alwaysResolve || false;
             }
             // commented line below is a valid parameter value
             /*
@@ -2650,7 +2763,7 @@ if (__thisIsNewer) {
             */
             params.thiss = this;
             params.url = params.url || "";
-            var cbk = (function (res) {
+            var cbk = (function (res, rej) {
                 if (params.dataType.toLowerCase() == 'jsonp') {
                     var head = $d.getElementsByTagName('head')[0],
                         func = params.jsonpCallback || '_cjson' + Math.floor(Math.random() * 1000000),
@@ -2667,8 +2780,10 @@ if (__thisIsNewer) {
                             ajax.call(thiss, params);
                         } else {
                             var code = data.code || 500;
+                            var resrej = res;
                             if (!$c.isNull(data.hasErrors) && data.hasErrors || !$c.isNull(data.hasErrors) && !data.success) {
                                 _run_func_array.call((params.context || params.thiss), params.onerror, [data, params.hitch, params.thiss, params.context, data.code || 500]);
+                                resrej = alwaysResolve ? res : rej;
                             } else {
                                 _run_func_array.call((params.context || params.thiss), params.onsuccess, [data, params.hitch, params.thiss, params.context, code = 200]);
                             }
@@ -2688,7 +2803,7 @@ if (__thisIsNewer) {
                             if (returnData == "response" || returnData == "res" || returnData == "request" || returnData == "req") {
                                 rtn = tag;
                             }
-                            res(rtn);
+                            resrej(rtn);
                         }
                     };
                     if (params.shard_data && params.query && !$c.isObject(params.query) && params.query.length > browser_url_limit) {
@@ -2740,7 +2855,7 @@ if (__thisIsNewer) {
                         (query || "") +
                         ((params.__EOF && params.__EOF === "true" && ("&EOQ=true")) || "") +
                         ((params.__FIRST && ("&FIRST=true")) || "");
-                    url += (params.url.indexOf('?') != -1 ? "&" : "?") + (params.jsonp || "callback=") + func + (query || "");
+                    url += (~params.url.indexOf('?') ? "&" : "?") + (params.jsonp || "callback=") + func + (query || "");
 
                     tag['type'] = "text/javascript";
                     tag.async = "async";
@@ -2754,7 +2869,7 @@ if (__thisIsNewer) {
                                 this.onload = this.onreadystatechange = null;
 
                                 // Remove the script
-                                if (head && this.parentNode && IEVersion() == -1) {
+                                if (head && this.parentNode && !~IEVersion()) {
                                     head.removeChild(this);
                                 }
                             }
@@ -2791,11 +2906,13 @@ if (__thisIsNewer) {
                     _run_func_array.call((params.context || this), params.onbefore, [httpRequest, params.hitch, this]);
                     httpRequest.onreadystatechange = function (xp) {
                         params.onstatechange(xp);
+                        var resrej = res;
                         var data = _ajaxServerResponse(this), done = this.readyState == 4;
                         if (data) {
                             _run_func_array.call((params.context || this), params.onsuccess, [data, params.hitch, params.thiss, params.context, this.status]);
                         } else if (done) {
                             try {
+                                var resrej = alwaysResolve ? res : rej;
                                 _run_func_array.call((params.context || this), params.onerror, [eval(this.responseText), params.hitch, params.thiss, params.context, this.status]);
                             } catch (e) {
                                 _run_func_array.call((params.context || this), params.onerror, [this.responseText, params.hitch, params.thiss, params.context, this.status]);
@@ -2808,7 +2925,7 @@ if (__thisIsNewer) {
                         } else if (returnData == "request" || returnData == "req") {
                             rtn = httpRequest;
                         }
-                        res(rtn);
+                        resrej(rtn);
                     };
                     httpRequest.open(params.method, params.url, true);
                     httpRequest.setRequestHeader("Content-type", params.contentType);
@@ -2826,6 +2943,7 @@ if (__thisIsNewer) {
                 prm = new Promise(cbk);
                 prm._then = prm.then || foo;
                 prm.then = function (res, rej) { //noinspection CommaExpressionJS
+                    alwaysResolve = params.alwaysResolve || false;
                     params.onsuccess.push(res);
                     params.onerror.push(rej);
                     return this;
@@ -2838,8 +2956,10 @@ if (__thisIsNewer) {
             }
 
             prm.otherwise = function (callback) { //noinspection CommaExpressionJS
+                alwaysResolve = params.alwaysResolve || false;
                 return params.onerror.push(callback),this; };
             prm['finally'] = function (callback) { //noinspection CommaExpressionJS
+                alwaysResolve = params.alwaysResolve || false;
                 return params.oncomplete.push(callback),this; };
             return prm
         } catch (e) {
@@ -3004,7 +3124,7 @@ if (__thisIsNewer) {
             }
 
             if (!c && !values.length) { return {}; }
-            if (options.path && $c.isString(options.path)) {path = 'path=' + options.path + ';'}
+            if (options.path && $c.isString(options.path)) {path = 'path=' + (options.path || '/') + ';'}
             if (options.domain && $c.isString(options.domain)) {domain = 'domain=' + options.domain + ';'}
             if (options["delete"]) {
                 $d.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;' + path + domain;
@@ -3069,7 +3189,20 @@ if (__thisIsNewer) {
             "returnType": "(Mixed)"
         }|*/
         try {
+            options = options || {};
             if (!variable) {
+                var search = this.$l.search || "";
+                var hash = this.$l.hash || "";
+                if (options.url) {
+                    var index = -1;
+                    if (~(index = url.indexOf("#"))) {
+                        hash = url.substring(index);
+                        search = url.substring(0, index);
+                    }
+                    if (~(index = url.indexOf("?"))) {
+                        search = url.substring(index);
+                    }
+                }
                 var allkeyvalues = {},
                     mapFunc = function(value){
                         if (value == "") {
@@ -3085,12 +3218,10 @@ if (__thisIsNewer) {
                         }
                         return allkeyvalues[keyvalue[0]] = keyvalue[1];
                     };
-
                 ($l.search[0] == "?" ? $l.search.substr(1) : $l.search).split('&').map(mapFunc);
                 ($l.hash[0] == "#" ? $l.hash.substr(1) : $l.hash).split('@').map(mapFunc);
                 return allkeyvalues;
             }
-            options = options || {};
             var ignoreCase = options.ignoreCase || options == "ignoreCase" ? "i" : "",
                 defer = /*!!$COMMIT.update && */(options.defer || options == "defer"),
                 regex = new RegExp("[\?|&|@]" + variable + "=", ignoreCase),
@@ -3102,14 +3233,14 @@ if (__thisIsNewer) {
             if (defer) {
                 location.hash = $COMMIT.hash || "";
                 location.search = $COMMIT.search || "";
-            } else if (options.url || $c && $c.isString && ($c.isString(options) && (options.indexOf("?") != -1 || options.indexOf("#") != -1))) {
+            } else if (options.url || $c && $c.isString && ($c.isString(options) && (~options.indexOf("?") || ~options.indexOf("#")))) {
                 var query = options.url || options,
                     hindex, qindex = query.indexOf("?");
 
-                qindex != -1 && (query = query.substr(qindex));
+                ~qindex && (query = query.substr(qindex));
 
                 hindex = query.indexOf("#");
-                if (hindex != -1) {
+                if (~hindex) {
                     location.hash = query.substr(hindex);
                     query = query.substr(0,hindex);
                 }
@@ -3460,7 +3591,40 @@ if (__thisIsNewer) {
             cout("Error in " + fname + "\n" + (e.description || e));
         }
     }
-    function fillTemplate (htmlTemplate, objs, offset, max, bound) {
+    function exclude(list) {
+        /*|{
+            "info": "Exclude prototyping",
+            "category": "Global",
+            "parameters":[
+                {"list": "(String[]) Array of strings in containing the property to exclude from prototyping."}],
+
+            "overloads":[],
+            "description": "This method enables the ability exclude prototyping on a specific property or property to a specific class.  The format for the string is a single property such as 'map' or property on a specific class 'Array:map'.",
+            "url": "http://www.craydent.com/library/1.8.1/docs#exclude",
+            "returnType": "(void)"
+        }|*/
+        try {
+            list = list || [];
+            for (var i = 0, len = list.length; i < len; i++) {
+                var name = list[i] || "";
+                if (~name.indexOf(':')) {
+                    var parts = name.split(':');
+                    delete $w[$c.capitalize((parts[0] || "").toLowerCase())];
+                    continue;
+                }
+
+                delete Array.prototype[name];
+                delete Function.prototype[name];
+                delete String.prototype[name];
+                delete Number.prototype[name];
+                delete Boolean.prototype[name];
+                delete Date.prototype[name];
+            }
+        } catch (e) {
+            error('cuid', e);
+        }
+    }
+    function fillTemplate (htmlTemplate, objs, offset, max, bound, newlineToHtml) {
         /*|{
             "info": "Function for templetizing",
             "category": "Global",
@@ -3470,6 +3634,10 @@ if (__thisIsNewer) {
                 {"objs": "(Objects[]) Objects to fill the template variables"}],
 
             "overloads":[
+                {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
+                    {"objs": "(Objects[]) Objects to fill the template variables"},
+                    {"options": "(Object) Options to use: max,offset,bound,newlineToHtml"}]},
                 {"parameters":[
                     {"htmlTemplate": "(String) Template to be used"},
                     {"objs": "(Objects[]) Objects to fill the template variables"},
@@ -3484,7 +3652,14 @@ if (__thisIsNewer) {
                     {"objs": "(Objects[]) Objects to fill the template variables"},
                     {"offset": "(Int) The start index of the Object array"},
                     {"max": "(Int) The maximum number of records to process"},
-                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]}],
+                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"}]},
+                {"parameters":[
+                    {"htmlTemplate": "(String) Template to be used"},
+                    {"objs": "(Objects[]) Objects to fill the template variables"},
+                    {"offset": "(Int) The start index of the Object array"},
+                    {"max": "(Int) The maximum number of records to process"},
+                    {"bound": "(Boolean) Flag to automatically bind the object to the rendered DOM"},
+                    {"newlineToHtml":"(Boolean) Flag to replace all new line chars (\\n) to the HTML <br /> tag.  Default is true."}]}],
 
             "url": "http://www.craydent.com/library/1.8.1/docs#fillTemplate",
             "returnType": "(String)"
@@ -3498,7 +3673,12 @@ if (__thisIsNewer) {
                 fillTemplate.refs = [];
             }
             if (!htmlTemplate) { return ""; }
-            if ($c.isBoolean(offset)) {
+            if ($c.isObject(offset)) {
+                bound = offset.bound;
+                max = offset.max || 0;
+                newlineToHtml = isNull(offset.newlineToHtml, true);
+                offset = offset.offset;
+            } else if ($c.isBoolean(offset)) {
                 bound = offset;
                 max = offset = 0;
             } else if (!isNull(offset) && isNull(max)) {
@@ -3521,7 +3701,7 @@ if (__thisIsNewer) {
                 objs = [objs];
             }
             var html = "", variable, value, ttc = $c.TEMPLATE_TAG_CONFIG, tvs = $c.TEMPLATE_VARS,
-				hasDataProps = htmlTemplate.indexOf('${dataproperties}') != -1,
+                hasDataProps = !!~htmlTemplate.indexOf('${dataproperties}'),
                 vsyntax = ttc.VARIABLE,
                 vnsyntax = ttc.VARIABLE_NAME, j = 0, tv, decl = false;
 			while (tv = tvs[j++]) {
@@ -3589,13 +3769,13 @@ if (__thisIsNewer) {
                     template = $c.replace_all(template, "${craydent_bind}", bind);
                 }
 
-                if (template.indexOf("${this}") != -1 || template.indexOf("${index}") != -1) {
+                if (~template.indexOf("${this}") || ~template.indexOf("${index}")) {
                     var uid = __add_fillTemplate_ref(obj);
                     template = $c.replace_all(template, ["${this}","${index}"],["fillTemplate.refs['" + uid + "']",i]);
                 }
 
 
-				while (template.indexOf("${this.") != -1 && (match=/\$\{this\.(.+?)\}/.exec(template))) {
+                while (~template.indexOf("${this.") && (match=/\$\{this\.(.+?)\}/.exec(template))) {
                     value = $c.getProperty(obj, match[1]);
                     if (typeof value == "object") {
                         value = "fillTemplate.refs['" + __add_fillTemplate_ref(value) + "']";
@@ -3609,14 +3789,19 @@ if (__thisIsNewer) {
 					expression = props[j];
                     var property = $c.isFunction(vnsyntax) ? vnsyntax(expression) : vnsyntax.exec && vnsyntax.exec(expression);
                     if (!obj.hasOwnProperty(property)) { continue; }
-                    if (template.indexOf(expression) != -1 && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true}))) {
+                    if (~template.indexOf(expression) && !isNull(objval = $c.getProperty(obj,property,null,{noInheritance:true}))) {
                         if (typeof objval == "object") {
                             objval = "fillTemplate.refs['" + __add_fillTemplate_ref(objval) + "']";
                         } else {
                             objval = parseRaw(objval, $c.isString(objval));
                         }
-                        objval = $c.replace_all(objval, ['\n',';'],['<br />',';\\']);
-						if (objval.indexOf('${') != -1) {
+                        var replacee_arr = [';'], replacer_arr = [';\\'];
+                        if (newlineToHtml) {
+                            replacee_arr.push('\n');
+                            replacer_arr.push('<br />');
+                        }
+                        objval = $c.replace_all(objval, replacee_arr,replacer_arr);
+                        if (~objval.indexOf('${')) {
                             objval = fillTemplate(objval,[obj]);
                         }
                         template = $c.replace_all(template, expression, objval);
@@ -3628,41 +3813,63 @@ if (__thisIsNewer) {
                 }
                 template = $c.replace_all(template, '\n', '');
                 // special run sytax
-				template = template.indexOf("${COUNT") != -1 ? template.replace(/\$\{COUNT\[(.*?)\]\}/g, '${RUN[__count;$1]}') : template;
-				template = template.indexOf("${ENUM") != -1 ? template.replace(/\$\{ENUM\[(.*?)\]\}/g, '${RUN[__enum;$1]}') : template;
-				template = template.indexOf("${RUN") != -1 ? __run_replace(/\$\{RUN\[(.+?)\]\}/, template, true, obj) : template;
-                var tmp, rptmp;
-				if (template.indexOf('||') != -1 && (tmp = /\$\{(.+?\|\|?.+?)\}/.exec(template)) && tmp[1]) {
-                    tmp = $c.strip(tmp[1], '|').replace(/\|{3,}/,'');
-					if (tmp.indexOf('||') != -1) {
-                        rptmp = (tmp && "__or|" + $c.replace_all(tmp, '||', "|") || "");
+                template = ~template.indexOf("${COUNT") ? template.replace(/\$\{COUNT\[(.*?)\]\}/g, '${RUN[__count;$1]}') : template;
+                template = ~template.indexOf("${ENUM") ? template.replace(/\$\{ENUM\[(.*?)\]\}/g, '${RUN[__enum;$1]}') : template;
+                template = ~template.indexOf("${RUN") ? __run_replace(/\$\{RUN\[(.+?)\]\}/, template, true, obj) : template;
+                var tmp, rptmp, skiplogicals = false;
+                if (~template.indexOf('||') && (tmp = /\$\{(.+?\|\|?.+?)\}/.exec(template)) && tmp[1]) {
+                    for (var tag in $c.TEMPLATE_TAG_CONFIG) {
+                        if (!$c.TEMPLATE_TAG_CONFIG[tag].begin) {
+                            continue;
+                        }
+                        if ($c.TEMPLATE_TAG_CONFIG[tag].begin.test(tmp[0])) {
+                            skiplogicals = true;
+                            break;
+                        }
+                    }
+                    if (!skiplogicals) {
+                        tmp = $c.strip(tmp[1], '|').replace(/\|{3,}/, '');
+                        if (~tmp.indexOf('||')) {
+                            rptmp = (tmp && "__or|" + $c.replace_all(tmp, '||', "|") || "");
+                            template = $c.replace_all(template, tmp, rptmp);
+                        }
+                        template = template.replace("||", '|');
+                    }
+                }
+                if (~template.indexOf('&&') && (tmp = /\$\{(.+?\&\&?.+?)\}/.exec(template)) && tmp[1]) {
+                    for (var tag in $c.TEMPLATE_TAG_CONFIG) {
+                        if (!$c.TEMPLATE_TAG_CONFIG[tag].begin) {
+                            continue;
+                        }
+                        if ($c.TEMPLATE_TAG_CONFIG[tag].begin.test(tmp[0])) {
+                            skiplogicals = true;
+                            break;
+                        }
+                    }
+                    if (!skiplogicals) {
+                        tmp = tmp[1];
+                        rptmp = (tmp && "__and|" + $c.replace_all(tmp, '&&', "|") || "");
                         template = $c.replace_all(template, tmp, rptmp);
                     }
-                    template = template.replace("||",'|');
-                }
-				if (template.indexOf('&&') != -1 && (tmp = /\$\{(.+?\&\&?.+?)\}/.exec(template)) && tmp[1]) {
-                    tmp = tmp[1];
-                    rptmp = (tmp && "__and|"+$c.replace_all(tmp, '&&', "|") || "");
-                    template = $c.replace_all(template, tmp, rptmp);
                 }
                 var leftovervars = template.match(vsyntax);
                 if (leftovervars) {
 					for (var k = 0, klen = leftovervars.length; k < klen; k++) {
 						var variable = leftovervars[k];
-						if (variable.indexOf('|') != -1) {
+						if (~variable.indexOf('|')) {
                             var regex = new RegExp($c.replace_all(variable, ['$','{','}','|'],['\\$','\\{(',')\\}','\\|']));
                             template = __run_replace (regex, template, false,obj);
                         }
                     }
                 }
-                template = $c.contains(template, /\$\{.*?(\|.*?)+?\}/) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
+                template = /\$\{.*?(\|.*?)+?\}/.test(template) && !/\$\{.*?(\|\|.*?)+?\}/.test(template) ? __run_replace (/\$\{(.+?(\|?.+?)+)\}/, template, false,obj) : template;
 
 				var declarations = template.match($c.addFlags(ttc.DECLARE.syntax, 'g')) || []
 				for (var j = 0, jlen = declarations.length; j < jlen; j++) {
 					template = ttc.DECLARE.parser(template, declarations[j]);
 				}
                 template = __logic_parser(template, obj, bind);
-                html += $c.replace_all(($c.contains(template, vsyntax) ? template.replace(vsyntax,"") : template), ';\\', ';');
+                html += $c.replace_all((vsyntax.test(template) ? template.replace(vsyntax,"") : template),';\\', ';');
             }
 
             if (domRef) {
@@ -3670,6 +3877,7 @@ if (__thisIsNewer) {
             }
             html = html.replace_all(fillTemplate.binding.original, fillTemplate.binding.replacer);
             if (!nested) {
+                html = html.replace(/fillTemplate.refs\['.*?'\]/g,"");
                 fillTemplate.binding = fillTemplate.declared = fillTemplate.refs = undefined;
             }
             return html;
@@ -3730,7 +3938,7 @@ if (__thisIsNewer) {
 			"returnType": "()"
 		}|*/
         var isnull = value == null || value == undefined;
-        if (defaultValue == null || defaultValue == undefined) {
+        if (arguments.length === 1) {
             return isnull;
         }
         return isnull ? defaultValue : value;
@@ -4045,7 +4253,7 @@ if (__thisIsNewer) {
                 }
                 raw = "[" + tmp.join(',') + "]";
             } else if ($c.isDate(value)) {
-                return "new Date('"+value.toString()+"')";
+                return "new Date('" + value.toString() + "')";
             } else if ($c.isRegExp(value)) {
                 return value.toString();
             } else if (value instanceof Object && !$c.isFunction(value) && !$c.isGenerator(value)) {
@@ -4063,7 +4271,7 @@ if (__thisIsNewer) {
                     }
                 }
                 var index = __windowVars.indexOf(value);
-                if (index == -1) {
+                if (!~index) {
                     if (saveCircular) {
                         __windowVars.push(value);
                         __windowVarNames.push(suid());
@@ -4172,8 +4380,8 @@ if (__thisIsNewer) {
 						if ($c.isPromise(obj.value)) { return obj.value.then(cb).catch(cb); }
 						setTimeout(function () { cb(obj.value); }, 0);
 					} else {
-						var val = obj.value || value;
-						res(val);
+                        var val = $c.isNull(obj.value, value);
+                        res($c.isNull(obj.value, value));
 					}
 				})();
 			});
@@ -4255,7 +4463,7 @@ if (__thisIsNewer) {
                 }
                 for (var j = 0, jlen = variables.length; j < jlen; j++) {
                     var variable = variables[j], regex, values;
-                    if (variable.indexOf('=') != -1) {
+                    if (~variable.indexOf('=')) {
                         variable = variable.split('=')[0].trim();
                     }
                     regex = new RegExp(variable + '\\s*?=\\s*?.*?\\s*?[,;]', 'gi');
@@ -4337,19 +4545,55 @@ if (__thisIsNewer) {
         }
     }
 
-    function yieldable(value) {
+    function yieldable(value,context,callbackIndex) {
         /*|{
             "info": "Makes a value yieldable via a Promise.",
             "category": "Global",
             "parameters":[
                 {"value": "(Mixed) Value to make yieldable"}],
 
-            "overloads":[],
+            "overloads":[
+                {"parameters":[
+         	        {"func": "(Function) Function to make yieldable"},
+                    {"context": "(Mixed) Context to use to execute func."}]},
+
+                {"parameters":[
+                    {"func": "(Function) Function to make yieldable"},
+                    {"callbackIndex": "(Integer) Index of callback argument."}]},
+
+                {"parameters":[
+                    {"func": "(Function) Function to make yieldable"},
+                    {"context": "(Mixed) Context to use to execute func."},
+                    {"callbackIndex": "(Integer) Index of callback argument."}]}],
+
             "url": "http://www.craydent.com/library/1.8.1/docs#yieldable",
             "returnType": "(Promise)"
         }|*/
         try {
-            return new Promise(function (res, rej) {
+            if (value.constructor == Function) {
+                context = context || this;
+                return function () {
+                    var args = [];
+                    for (var i = 0, len = arguments.length; i < len; i++) {
+                        args.push(arguments[i]);
+                    }
+                    return new Promise(function (res) {
+                        var fn = function () {
+                            if (arguments.length == 1) {
+                                return res(arguments[0]);
+                            }
+                            return res(arguments);
+                        };
+                        if ($c.isNull(callbackIndex)) {
+                            args.push(fn);
+                        } else {
+                            $c.insertAt(args, callbackIndex, fn);
+                        }
+                        value.apply(context,args);
+                    });
+                };
+            }
+            return new Promise(function (res) {
                 return res(value);
             });
 
@@ -4613,7 +4857,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             var rv = IEVersion();
-            return (rv != -1 && rv < 7.0);
+            return (~rv && rv < 7.0);
         } catch (e) {
             error('isIE6', e);
         }
@@ -4630,7 +4874,7 @@ if (__thisIsNewer) {
             "returnType": "(Bool)"
         }|*/
         try {
-            return (IEVersion() != -1);
+            return (!!~IEVersion());
         } catch (e) {
             error('isIE', e);
         }
@@ -4935,7 +5179,7 @@ if (__thisIsNewer) {
         _droid = isAndroid(),_bbery = isBlackBerry(),_ipad = isIPad(),_ifon = isIPhone(),_ipod = isIPod(),_linx = isLinux(),_mac = isMac(),_palm = isPalmOS(),_symb = isSymbian(),_win = isWindows(),_winm = isWindowsMobile(),
         _amay = isAmaya(),_gekk = isGecko(),_khtm = isKHTML(),_pres = isPresto(),_prin = isPrince(),_trid = isTrident(),_webk = isWebkit(),
         console = $w.console,
-        _browser = (_ie != -1 && 'Internet Explorer') || (_chrm != -1 && 'Chrome') || (_ff != -1 && 'Firefox') || (_saf != -1 && 'Safari'),
+        _browser = (~_ie && 'Internet Explorer') || (~_chrm && 'Chrome') || (~_ff && 'Firefox') || (~_saf && 'Safari'),
         _os = (_droid && 'Android') || (_bbery && 'BlackBerry') || (_linx && 'Linux') || ((_ipad || _ifon || _ipod) && 'iOS') || (_mac && 'Mac') || (_palm && 'PalmOS') || (_symb && 'Symbian') || (_win && 'Windows') || (_winm && 'Windows Mobile'),
         _device = (_droid && 'Android') || (_bbery && 'BlackBerry') || (_ipad && 'iPad') || (_ifon && 'iPhone') || (_ipod && 'iPod') || (_linx && 'Linux') || (_mac && 'Mac') || (_palm && 'PalmOS') || (_symb && 'Symbian') || (_win && 'Windows') || (_winm && 'Windows Mobile'),
         _engine = (_amay && 'Amaya') || (_gekk && 'Gekko') || (_khtm && 'KHTML') || (_pres && 'Presto') || (_prin && 'Prince') || (_trid && 'Trident') || (_webk && 'WebKit'),
@@ -4953,7 +5197,7 @@ if (__thisIsNewer) {
         var Craydent = {
                 BROWSER:{
                     CURRENT: _browser,
-                    CURRENT_VERSION:(_ie != -1 && _ie) || (_chrm != -1 && _chrm) || (_ff != -1 && _ff) || (_saf != -1 && _saf),
+                    CURRENT_VERSION:(~_ie && _ie) || (~_chrm && _chrm) || (~_ff && _ff) || (~_saf && _saf),
                     IE:isIE(),
                     IE_VERSION:_ie,
                     IE6:(_ie < 7.0 && _ie >= 6.0),
@@ -5043,11 +5287,11 @@ if (__thisIsNewer) {
                 OPERA_VERSION:OperaVersion(),
                 PAGE_NAME: (function () {
                     var pn = $l.href.substring($l.href.lastIndexOf('/') + 1).replace(/([^#^?]*).*/gi,'$1');
-                    return !pn || pn.indexOf('.') == -1 ? "index.html" : pn;
+                    return !pn || !~pn.indexOf('.') ? "index.html" : pn;
                 })(),
                 PAGE_NAME_RAW: (function () {
                     var pn = $l.href.substring($l.href.lastIndexOf('/') + 1).replace(/(.*)?\?.*/gi,'$1');
-                    return !pn || pn.indexOf('.') == -1 ? "index.html" : pn;
+                    return !pn || !~pn.indexOf('.') ? "index.html" : pn;
                 })(),
                 PALM:isPalmOS(),
                 POINTER: "default",
@@ -5106,11 +5350,10 @@ if (__thisIsNewer) {
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                if (!~code_result.indexOf(obj.id)) { continue; }
                                 code_result = $c.replace_all(code_result,id, FOR.helper(block, obj.body));
                             }
                             var ____execMatches = code_result.match($c.TEMPLATE_TAG_CONFIG.VARIABLE), ____execMatchIndex = 0;
-                            //____execMatches[____execMatchIndex] = 0;
                             while (____execMatchIndex < ____execMatches.length) {
                                 code_result = code_result.replace(____execMatches[____execMatchIndex],$c.tryEval(ttc.VARIABLE_NAME(____execMatches[____execMatchIndex])));
                                 ____execMatchIndex++;
@@ -5135,7 +5378,7 @@ if (__thisIsNewer) {
                             }
                             var value = mresult[2] || mresult[4];
                             objs = $c.tryEval(value);
-                            if (!objs && value.startsWithAny("${","{{") && !value.endsWith("}")) {
+                            if (!objs && $c.startsWithAny(value,"${","{{") && !value.endsWith("}")) {
                                 return code;
                             }
                             var_name = ttc.VARIABLE_NAME(mresult[1] || mresult[3]);
@@ -5170,12 +5413,12 @@ if (__thisIsNewer) {
                             while (obj = blocks[i++]) {
                                 var block = obj.block,
                                     id = obj.id, index;
-                                if (i == 1 && (index = obj.code.lastIndexOf("##")) != -1) {
+                                if (i == 1 && ~(index = obj.code.lastIndexOf("##"))) {
                                     post = obj.code.substring(index + 2);
                                     obj.code = obj.code.substring(0, index + 2);
                                 }
                                 code_result = code_result || obj.code;
-                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                if (!~code_result.indexOf(obj.id)) { continue; }
                                 code_result = $c.replace_all(code_result,id, FOREACH.helper(block, obj.body, result_obj, uid, obj, bind, ref_obj));
                                 if (!code_result) { break; }
                             }
@@ -5214,7 +5457,7 @@ if (__thisIsNewer) {
                                 declared = fillTemplate.declared,
                                 loop_limit = 100000;
                             for (var prop in declared) {
-                                if (code.indexOf("${" + prop + "}") == -1 || !declared.hasOwnProperty(prop)) {
+                                if (!~code.indexOf("${" + prop + "}") || !declared.hasOwnProperty(prop)) {
                                     continue;
                                 }
                                 var val = declared[prop];
@@ -5257,18 +5500,18 @@ if (__thisIsNewer) {
                                 var block = obj.block,
                                     id = obj.id, index;
 
-                                if (i == 1 && (index = obj.code.lastIndexOf("##")) != -1) {
+                                if (i == 1 && ~(index = obj.code.lastIndexOf("##"))) {
                                     post = obj.code.substring(index + 2);
                                     obj.code = obj.code.substring(0, index + 2);
                                 }
 
                                 code_result = code_result || obj.code;
-                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                if (!~code_result.indexOf(obj.id)) { continue; }
                                 code_result = $c.replace_all(code_result,id, WHILE.helper(block, obj.body));
                             }
 
                             for (var prop in declared) {
-                                if (code.indexOf("${" + prop + "}") == -1) { continue; }
+                                if (!~code.indexOf("${" + prop + "}")) { continue; }
                                 vars += "var " + prop + "=" + declared[prop] + ";";
                             }
                             eval(vars);
@@ -5335,8 +5578,8 @@ if (__thisIsNewer) {
 
                                     if (value !== undefined && value) {
                                         var eindex = code.indexOf(ifmatch[i + 1]);
-                                        if (eindex == -1) {
-                                            return pre + code.substring(sindex) + post;
+                                        if (!~eindex) {
+                                            return pre + code.substring(sindex, endindex) + post;
                                         }
                                         return pre + code.substring(sindex, eindex) + post;
                                     } else if (ifm.match(IF["else"])) {
@@ -5357,7 +5600,7 @@ if (__thisIsNewer) {
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                if (!~code_result.indexOf(obj.id)) { continue; }
                                 code_result = IF.helper(code_result.replace(id, block));
                             }
                             return __logic_parser(code_result);
@@ -5371,7 +5614,6 @@ if (__thisIsNewer) {
                         "break": /(\$\{break\})|(\{\{break\}\})/i,
                         "helper": function (code) {
                             var SWITCH = $c.TEMPLATE_TAG_CONFIG.SWITCH,
-                            //csyntax = SWITCH["case"],
                                 switchmatch = $c.condense((code.match(SWITCH.begin) || [])),
 								endlength = code.match(SWITCH.end)[0].length,
 								startindex = $c.indexOfAlt(code, SWITCH.begin),
@@ -5401,12 +5643,12 @@ if (__thisIsNewer) {
                                     if (val == cvalue) {
                                         var cindex = code.indexOf(cse),
                                             bindex = $c.indexOfAlt(code,brk, cindex);
-                                        bindex = bindex == -1 ? code.length : bindex;
+                                        bindex = !~bindex ? code.length : bindex;
                                         return pre + code.substring(cindex + cse.length, bindex).replace(cgsyntax, '') + post;
                                     }
                                 }
                                 var dindex = $c.indexOfAlt(code,dflt);
-                                if (dindex != -1) {
+                                if (~dindex) {
                                     return pre + code.substring(dindex + code.match(dflt)[0].length).replace(cgsyntax, '').replace(brk, '') + post;
                                 }
 
@@ -5422,7 +5664,7 @@ if (__thisIsNewer) {
                                     id = obj.id;
 
                                 code_result = code_result || obj.code;
-                                if (code_result.indexOf(obj.id) == -1) { continue; }
+                                if (!~code_result.indexOf(obj.id)) { continue; }
                                 code_result = SWITCH.helper(code_result.replace(id, block));
                             }
                             return __logic_parser(code_result);
@@ -5442,7 +5684,7 @@ if (__thisIsNewer) {
 								eindex = $c.indexOfAlt(code,SCRIPT.end),
                                 elen = code.match(SCRIPT.end)[0].length;
 
-                            if (eindex == -1) {
+                            if (!~eindex) {
                                 eindex = undefined;
                             }
                             var block = code.substring(sindex + slen, eindex), str = "",
@@ -5468,8 +5710,8 @@ if (__thisIsNewer) {
 								eindex = $c.indexOfAlt(code,TRY["end"]),
                                 tend = cindex;
 
-                            if (tend == -1) {
-                                tend = findex != -1 ? findex : eindex;
+                            if (!~tend) {
+                                tend = ~findex ? findex : eindex;
                             }
 
 							var tindex = $c.indexOfAlt(code,TRY.begin),
@@ -5499,12 +5741,10 @@ if (__thisIsNewer) {
                             try {
                                 str = eval("(function(){" + body + ";return echo.out; })()");
                             } catch (e) {
-                                if (cindex != -1) {
-                                    //echo.out = "";
-                                    tend = findex != -1 ? findex : eindex;
+                                if (~cindex) {
+                                    tend = ~findex ? findex : eindex;
                                     var catchBlock = code.substring(cindex, tend),
                                         catchLine = catchBlock.match(TRY["catch"]),
-                                    //errorString = JSON.stringify(e);
                                         errorString = $c.replace_all(e.toString(),'\'','\\\'');
                                     catchBlock = catchBlock.replace(catchLine[0], '');
 
@@ -5516,7 +5756,7 @@ if (__thisIsNewer) {
                                     str += eval("(function(" + catchLine[1] + "){" + catchBlock + ";return echo.out;})(new Error('" + errorString + "'))");
                                 }
                             } finally {
-                                if (findex != -1) {
+                                if (~findex) {
                                     echo.out = "";
                                     str += eval("(function(){" + code.substring(findex + code.match(TRY["finally"])[0].length, eindex) + ";return echo.out; })()");
                                 }
@@ -5533,7 +5773,6 @@ if (__thisIsNewer) {
                                 id = obj.id;
 
                             return __logic_parser(TRY.helper(obj.code.replace(id, block), lookups));
-                            //return __logic_parser(code_result);
                         }
 
                     },
@@ -5542,7 +5781,7 @@ if (__thisIsNewer) {
                     /* tokens config */
                     VARIABLE: /(?:\$\{((?!\$)\S)*?\})|(?:\{\{((?!\{\{)\S)*?\}\})/gi,
                     VARIABLE_NAME: function (match) {
-                        return match.slice(2, match.indexOf('}}') != -1 ? -2 : -1);
+                        return match.slice(2, ~match.indexOf('}}') ? -2 : -1);
                     },
                     DECLARE: {
                         "syntax": /(?:\$\{declare (.*?);?\})|(?:\{\{declare (.*?);?\}\})/i,
@@ -5703,6 +5942,55 @@ if (__thisIsNewer) {
     /*----------------------------------------------------------------------------------------------------------------
      /-	String class Extensions
      /---------------------------------------------------------------------------------------------------------------*/
+    _ext(String, 'acronymize', function (capsOnly, delimiter) {
+        /*|{
+            "info": "String class extension to capitalize parts of the string",
+            "category": "String",
+            "parameters":[
+                {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."}],
+
+            "overloads":[
+                {"parameters":[
+                    {"match": "(RegExp) Pattern to match to qualify the Acronym."}]},
+
+                 {"parameters":[
+                     {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."},
+                     {"delimiter": "(String) Character that delimits the string."}]},
+
+                 {"parameters":[
+                     {"match": "(RegExp) Pattern to match to qualify the Acronym."},
+                     {"delimiter": "(String) Character that delimits the string."}]},
+
+                 {"parameters":[
+                     {"capsOnly": "(Boolean) Flag to indicate to use capital letters only."},
+                     {"delimiter": "(RegExp) RegExp pattern that delimits the string."}]},
+
+                 {"parameters":[
+                     {"match": "(RegExp) Pattern to match to qualify the Acronym."},
+                     {"delimiter": "(RegExp) RegExp pattern that delimits the string."}]}],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#string.capitalize",
+            "returnType": "(String)"
+        }|*/
+        try {
+            delimiter = delimiter || " ";
+            if ($c.isBoolean(capsOnly)) {
+                if (capsOnly) {
+                    capsOnly = /[A-Z]/
+                } else {
+                    capsOnly = /[a-zA-Z]/
+                }
+            }
+            var words = this.split(delimiter),
+                acronym = "";
+            for (var i = 0, len = words.length; i < len; i++) {
+                if (capsOnly.test(words[0])) { acronym += words[0]; }
+            }
+            return acronym.toUpperCase();
+        } catch (e) {
+            error("String.acronymize", e);
+        }
+    }, true);
     _ext(String, 'capitalize', function (pos, everyWord) {
         /*|{
             "info": "String class extension to capitalize parts of the string",
@@ -5869,7 +6157,7 @@ if (__thisIsNewer) {
             cssClass = cssClass || "chighlight";
             tag = tag || "span";
             var txt = "", flags = "g";
-			if ($c.isRegExp(search) && search.source.indexOf("(") == -1) {
+            if ($c.isRegExp(search) && !~search.source.indexOf("(")) {
                 txt = "(" + search.source + ")";
                 if (search.ignoreCase) {
                     flags += "i";
@@ -5877,7 +6165,7 @@ if (__thisIsNewer) {
                 if (search.multiline) {
                     flags += "m";
                 }
-			} else if (search.indexOf("(") == -1) {
+            } else if (!~search.indexOf("(")) {
                 txt = "(" + search + ")";
             }
             return this.replace($c.addFlags((new RegExp(txt)), flags),"<" + tag + " class=\"" + cssClass + "\">$1</" + tag + ">");
@@ -5980,7 +6268,7 @@ if (__thisIsNewer) {
         }|*/
         try {
             regex = (regex.global) ? regex : new RegExp(regex.source, "g" + (regex.ignoreCase ? "i" : "") + (regex.multiLine ? "m" : ""));
-			pos = $c.isNull(pos) ? this.length : pos;
+            pos = $c.isNull(pos, this.length);
             if(pos < 0) {
                 pos = 0;
             }
@@ -6254,7 +6542,7 @@ if (__thisIsNewer) {
                 }
             }
             if (options.gmt) {
-                var offset = !isNull(options.offset) ? options.offset : _getGMTOffset.call(new Date());
+                var offset = isNull(options.offset, _getGMTOffset.call(new Date()));
                 dt = new Date(dt.valueOf() + offset * 60*60000);
             }
 			return options.format ? $c.format(dt,options.format) : dt;
@@ -6485,6 +6773,40 @@ if (__thisIsNewer) {
         }|*/
         return _condense(this, check_values);
     }, true);
+    _ext(Array, 'createIndex', function (indexes) {
+        /*|{
+            "info": "Array class extension to create indexes for faster searches during where",
+            "category": "Array",
+            "parameters":[
+                {"properties": "(String) Property or comma delimited property list to index."}],
+
+            "overloads":[
+                {"parameters":[
+                    {"indexes": "(String[]) Array of properties to index"}]}],
+
+            "url": "http://www.craydent.com/library/1.8.1/docs#array.condense",
+            "returnType": "(Array)"
+        }|*/
+        try {
+            if (!indexes || !indexes.length) { return false; }
+            if (!$c.isArray(indexes)) { indexes = indexes.split(','); }
+            this.__indexes = {};
+
+            for (var i = 0, len = indexes.length; i < len; i++) {
+                var prop = indexes[i], arr = [];
+
+                for (var j = 0, jlen = this.length; j < jlen; j++) {
+                    var index = _binarySearch(arr, prop, this[j][prop], null, null, true);
+                    $c.insertAt(arr,index,this[j]);
+
+                }
+                this.__indexes[prop] = arr;
+            }
+        } catch(e) {
+            error("Array.createIndex", e);
+            return false;
+        }
+    });
     _ext(Array, 'delete', function(condition, justOne) {
 		/*|{
 			"info": "Array class extension to delete records",
@@ -6501,7 +6823,12 @@ if (__thisIsNewer) {
 			"returnType": "(Array)"
 		}|*/
         try {
-		var thiz = this;
+            var thiz = this, _qnp = __queryNestedProperty,
+                _clt = _contains_lessthan,
+                _clte = _contains_lessthanequal,
+                _cgt = _contains_greaterthan,
+                _cgte = _contains_greaterthanequal,
+                _ct = _contains_type, _cm = _contains_mod;
             justOne = parseBoolean($c.isNull(justOne) ? true : $c.isNull(justOne.justOne, justOne));
             // if no condition was given, remove all
             if (!condition) {
@@ -6761,9 +7088,12 @@ if (__thisIsNewer) {
 					return true;
 				};
 
-
-
-			var thiz = this, ifblock = _subQuery(condition), func = "(function (record,i) {"+
+            var thiz = this, _qnp = __queryNestedProperty,
+                _clt = _contains_lessthan,
+                _clte = _contains_lessthanequal,
+                _cgt = _contains_greaterthan,
+                _cgte = _contains_greaterthanequal,
+                _ct = _contains_type, _cm = _contains_mod, ifblock = _subQuery(condition), func = "(function (record,i) {"+
 				"	var values,finished;" +
 				"	if ("+ifblock+") {" +
 				"		if(!cb.call(thiz,record,i)) { throw 'keep going'; }" +
@@ -6849,6 +7179,7 @@ if (__thisIsNewer) {
         }
     }, true);
     _ext(Array, 'insertAfter', _insertAfter, true);
+    _ext(Array, 'insertAt', _insertAt, true);
     _ext(Array, 'insertBefore', function(index, value) {
         /*|{
             "info": "Array class extension to add to the array before a specific index",
@@ -6984,7 +7315,7 @@ if (__thisIsNewer) {
 					for (var prop in options.sort) {
 						if (!options.sort.hasOwnProperty(prop)) { continue; }
 						if (options.sort[prop] == 1) { sortProps.push(prop); }
-						if (options.sort[prop] == -1) { sortProps.push("!"+prop); }
+                        if (!~options.sort[prop]) { sortProps.push("!"+prop); }
 					}
 					results = $c.sortBy(results, sortProps);
 				} else {
@@ -7053,6 +7384,70 @@ if (__thisIsNewer) {
             error("Array.normalize", e);
         }
     }, true);
+    _ext(Array, 'parallelEach', function (gen, args) {
+        /*|{
+            "info": "Array class extension to execute each array item in parallel or run each item against a generator/function in parallel",
+            "category": "Array",
+            "parameters":[],
+
+            "overloads":[
+                {"parameters":[
+                    {"gen": "(Generator) Generator function to apply to each item"}]},
+
+                {"parameters":[
+                    {"func": "(Function) Function to apply to each item"}]},
+
+                {"parameters":[
+                    {"args": "(Array) Argument array to apply to pass to generator or function (only should be used when the array contains generators, promises, or functions)"}]}],
+
+            "url": "http://www.craydent.com/library/1.9.2/docs#array.normalize",
+            "returnType": "(Promise)"
+        }|*/
+        try {
+            var self = this, arr = this;
+            if ($c.isArray(gen)) {
+                args = gen;
+                gen = undefined;
+            }
+            if (!$c.isArray(args)) {
+                args = [];
+            }
+            var len = arr.length, results = Array(len), completed = 0;
+            if (gen) {
+                var isgen = $c.isGenerator(gen), isfunc = $c.isFunction(gen);
+                return new Promise(function (res, rej) {
+                    for (var i = 0; i < len; i++) {
+                        if (isgen) {
+                            eval('$c.syncroit(function*() { results[i] = yield * gen.call(self, arr[i], i); if (++completed == len) { res(results); } });');
+                        } else if (isfunc) {
+                            results[i] = gen.call(self, arr[i], i);
+                            if (++completed == len) {
+                                res(results);
+                            }
+                        }
+                    }
+                });
+            }
+            return new Promise(function (res, rej) {
+                for (var i = 0; i < len; i++) {
+                    if ($c.isGenerator(arr[i])) {
+                        eval('$c.syncroit(function*(){ results[' + i + '] = yield* arr[' + i + '].apply(self,args); if (++completed == len) { res(results); } });');
+                    } else if ($c.isPromise(arr[i])) {
+                        eval('$c.syncroit(function*(){ results[' + i + '] = yield arr[' + i + ']; if (++completed == len) { res(results); } });');
+                    } else if ($c.isFunction(arr[i])) {
+                        eval('setTimeout(function(){ results[' + i + '] = arr[' + i + '].apply(self,args);if (++completed == len) { res(results); } },0);');
+                    } else {
+                        results[i] = arr[i];
+                        if (++completed == len) {
+                            res(results);
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            error("Array.parallelEach", e);
+        }
+    }, true);
     _ext(Array, 'remove', _remove, true);
     _ext(Array, 'removeAll', function (value, indexOf) {
         /*|{
@@ -7073,10 +7468,8 @@ if (__thisIsNewer) {
             if (value) {
                 indexOf = indexOf || this.indexOf;
                 var  removed = [], index = indexOf.call(this, value);
-                if (index == -1) {
-                    return false;
-                }
-				while (index != -1 && $c.isInt(index)) {
+                if (!~index) { return false; }
+                while (~index && $c.isInt(index)) {
                     removed.push($c.remove(this, value, indexOf));
                     index = indexOf.call(this, value);
                 }
@@ -7371,7 +7764,12 @@ if (__thisIsNewer) {
 				}
 			}
 
-			var thiz = this, ifblock = _subQuery(condition), func = "(function (record,i) {"+
+			var thiz = this, _qnp = __queryNestedProperty,
+                _clt = _contains_lessthan,
+                _clte = _contains_lessthanequal,
+                _cgt = _contains_greaterthan,
+                _cgte = _contains_greaterthanequal,
+                _ct = _contains_type, _cm = _contains_mod, ifblock = _subQuery(condition), func = "(function (record,i) {"+
 				"	var values,finished;" +
 				"	if ("+ifblock+") {" +
 				"		if(!cb.call(thiz,record,i)) { throw 'keep going'; }" +
@@ -7404,7 +7802,7 @@ if (__thisIsNewer) {
 					if (setObject['$max']) {
 						for (var prop in setObject['$max']) {
 							if (!setObject['$max'].hasOwnProperty(prop)) { continue; }
-							obj[prop] = $c.isNull(obj[prop]) ? setObject['$max'][prop] : obj[prop];
+                            obj[prop] = $c.isNull(obj[prop], setObject['$max'][prop]);
 							var value = obj[prop];
 							value < setObject['$max'][prop] && (obj[prop] = setObject['$max'][prop]);
 						}
@@ -7412,7 +7810,7 @@ if (__thisIsNewer) {
 					if (setObject['$min']) {
 						for (var prop in setObject['$min']) {
 						if (!setObject['$min'].hasOwnProperty(prop)) { continue; }
-							obj[prop] = $c.isNull(obj[prop]) ? setObject['$min'][prop] : obj[prop];
+                            obj[prop] = $c.isNull(obj[prop], setObject['$min'][prop]);
 							var value = obj[prop];
 							value > setObject['$min'][prop] && (obj[prop] = setObject['$min'][prop]);
 						}
@@ -7464,7 +7862,7 @@ if (__thisIsNewer) {
 						for (var prop in setObject['$pop']) {
 							if(!setObject['$pop'].hasOwnProperty(prop) || !$c.isArray(obj[prop])) { continue; }
 							if (setObject['$pop'][prop] == 1) { obj[prop].pop(); }
-							else if (setObject['$pop'][prop] == -1) { obj[prop].shift(); }
+                            else if (!~setObject['$pop'][prop]) { obj[prop].shift(); }
 						}
 					}
 					if (setObject['$pullAll']) {
@@ -7517,7 +7915,7 @@ if (__thisIsNewer) {
 									if (!sort.hasOwnProperty(p)) { continue; }
 									if (sort[p] == 1) {
 										sorter.push(p)
-									} else if (sort[p] == -1) {
+                                    } else if (!~sort[p]) {
 										sorter.push("!"+p)
 									}
 								}
@@ -7599,7 +7997,7 @@ if (__thisIsNewer) {
 					isEqual = callback && callback(obj,record),
                     index = uIndex,
                     arr = uArr;
-				if (!$c.isNull(isEqual) ? isEqual : $c.equals(record,obj)) {
+                if ($c.isNull(isEqual, $c.equals(record,obj))) {
                     index = sIndex;
                     arr = sArr;
                 } else {
@@ -7610,7 +8008,12 @@ if (__thisIsNewer) {
                 ids.splice(ref.index-(j++), 1);
                 return true;
 			};
-			var ifblock = _subQuery(condition), func = "(function (record,i) {"+
+			var _qnp = __queryNestedProperty,
+                _clt = _contains_lessthan,
+                _clte = _contains_lessthanequal,
+                _cgt = _contains_greaterthan,
+                _cgte = _contains_greaterthanequal,
+                _ct = _contains_type, _cm = _contains_mod, ifblock = _subQuery(condition), func = "(function (record,i) {"+
 				"	var values,finished;" +
 				"	if ("+ifblock+") {" +
 				"		cb(record,i);" +
@@ -7668,7 +8071,13 @@ if (__thisIsNewer) {
             "returnType": "(Array)"
         }|*/
         try {
-			var useReference = !projection;
+			var useReference = !projection,
+                _qnp = __queryNestedProperty,
+                _clt = _contains_lessthan,
+                _clte = _contains_lessthanequal,
+                _cgt = _contains_greaterthan,
+                _cgte = _contains_greaterthanequal,
+                _ct = _contains_type, _cm = _contains_mod;
 
             // if no condition was given, return all
 			if (!condition) { return this.slice(0,limit); }
@@ -7694,53 +8103,94 @@ if (__thisIsNewer) {
 			} catch (e) { }
 
 			if (simple) {
-				limit = limit || this.length;
-				this.temp_count = 0;
-				this.temp_limit = limit;
+                limit = limit || 0//this.length;
+                var props = [],indexProps = [];
+                if (this.__indexes) {
+                    for (var prop in condition) {
+                        if (condition.hasOwnProperty(prop)) {
+                            //props.push(prop);
+                            if (this.__indexes[prop]) {
+                                indexProps.push(prop);
+                            }
+                        }
+                    }
+                }
+                var arr = this,ipHasLength = !!indexProps.length;
+                if (ipHasLength) {
+                    var prop, i = 0;
+
+                    var orderedLists = [], fi = 0,len = arr.length;
+                    while (prop = indexProps[i++]) {
+                        var ordered = _binarySearch(arr.__indexes[prop],prop,condition[prop]);
+                        if (len > ordered.length) {
+                            len = ordered.length;
+                            fi = i - 1;
+                        }
+                        orderedLists.push(ordered);
+                    }
+                    if (len < 1000) {
+                        var farr = orderedLists[fi];
+                        arr = [];
+                        for (var i = 0; i < len; i++) {
+                            var addit = true;
+                            for (var j = 0, jlen = orderedLists.length; j < jlen; j++) {
+                                if (fi == j) { continue; }
+                                if (!~orderedLists[j].indexOf(farr[i])) {
+                                    addit = false;
+                                    break;
+                                }
+                            }
+                            addit && arr.push(farr[i]);
+                        }
+                    }
+                }
 				var boolCond = "", useQueryNested = false, func = function (cobj,index,arr) {
 					if (arr.temp_count++ < this.temp_limit) { return false; }
 						for (var prop in condition) {
-							if (cobj[prop]) {
-								return cobj[prop] === condition[prop];
-							} else if (prop.indexOf('.') != -1 && !__queryNestedProperty(cobj, prop).contains(condition[prop])) {
-								return false;
-							} else if ($c.isNull(cobj[prop])) {
+                            if (~prop.indexOf('.')) {
+                                if (!$c.contains(_qnp(cobj, prop),condition[prop])) {
+									return false;
+                                }
+                            } else if (cobj[prop] && cobj[prop] !== condition[prop] || $c.isNull(cobj[prop])) {
 								return false;
 							}
 						}
 					return true;
 				};
 				for (var prop in condition) {
-					if (condition.hasOwnProperty(prop)) {
-						if (prop.indexOf('.') != -1) { useQueryNested = true; break; }
-						var q = $c.isString(condition[prop]) ? "\"" : "";
-						if ($c.isRegExp(condition[prop])) {
-							boolCond += condition[prop] + ".test(cobj[\"" + prop + "\"]) && ";
-						} else if (typeof condition[prop] == "object") {
-							boolCond += "$c.equals(cobj[\"" + prop + "\"]," + JSON.stringify(condition[prop]) + ") && ";
-						} else {
-							boolCond += "cobj[\"" + prop + "\"]==" + q + condition[prop] + q + " && ";
-						}
-					}
+                    if (!condition.hasOwnProperty(prop) || ipHasLength && ~indexProps.indexOf(prop)) { continue; }
+                    if (~prop.indexOf('.')) { useQueryNested = true; break; }
+                    var q = $c.isString(condition[prop]) ? "\"" : "";
+                    if ($c.isRegExp(condition[prop])) {
+                        boolCond += condition[prop] + ".test(cobj[\"" + prop + "\"]) && ";
+                    } else if (typeof condition[prop] == "object") {
+                        boolCond += "$c.equals(cobj[\"" + prop + "\"]," + JSON.stringify(condition[prop]) + ") && ";
+                    } else {
+                        boolCond += "cobj[\"" + prop + "\"]==" + q + condition[prop] + q + " && ";
+                    }
 				}
 				if (!useQueryNested) {
-					func = ($c.tryEval("function(cobj,index,arr){ return arr.temp_count++ < arr.temp_limit && "+boolCond+"1;}") || func);
+                    var limitLogic = "";
+                    limit && (limitLogic = "arr.temp_count++ < arr.temp_limit && ");
+                    func = (eval("(function(cobj,index,arr){ return " + limitLogic + boolCond + "true;})") || func);
 				}
+                arr.temp_count = 0;
+                arr.temp_limit = limit;
 
-				return this.filter(func);
+                arr = arr.filter(func);
+                delete arr.temp_count;
+                delete arr.temp_limit;
+
+                return arr;
 			}
 
-			var arr = [];
-			var ifblock = _subQuery(condition), func = "(function (record,i) {"+
-				"	var values,finished;" +
-				"	if (limit > 0 && arr.length == limit) { throw 'keep going'; }" +
-				"	if ("+ifblock+") {" +
-				"		if (useReference) { return true; }" +
-				"		return arr.push(_copyWithProjection(projection, record));" +
-				"	}" +
-				"})";
+			var arr = [], rarr;
+			var ifblock = _subQuery(condition),
+                func = eval("(function (record) {var values;" +
+                    (limit ? "if (arr.length == limit) { throw 'keep going'; } " : "") +
+                    "return " + (useReference ? ifblock : ifblock + " && arr.push(_copyWithProjection(projection, record))") + ";})");
 			try {
-				var rarr = this.filter(eval(func));
+				rarr = this.filter(func);
 			} catch(e) {
 				if (e != 'keep going') { throw e;}
 			}
@@ -7796,8 +8246,11 @@ if (__thisIsNewer) {
                     'Alaska Daylight Time':'AKDT',
                     'Alaska Standard Time':'AKST',
                     'Arab Standard Time (Kuwait, Riyadh)':'AST',
+                    'Arab Standard Time':'AST',
                     'Arabian Standard Time (Abu Dhabi, Muscat)':'AST',
+                    'Arabian Standard Time':'AST',
                     'Arabic Standard Time (Baghdad)':'AST',
+                    'Arabic Standard Time':'AST',
                     'Argentina Time':'ART',
                     'Armenia Summer Time':'AMST',
                     'Armenia Time':'AMT',
@@ -7819,15 +8272,20 @@ if (__thisIsNewer) {
                     'Brasilia Time':'BRT',
                     'British Indian Ocean Time':'BIOT',
                     'British Summer Time (British Standard Time from Feb 1968 to Oct 1971)':'BST',
+                    'British Summer Time':'BST',
                     'Brunei Time':'BDT',
                     'Cape Verde Time':'CVT',
                     'Central Africa Time':'CAT',
                     'Central Daylight Time (North America)':'CDT',
+                    'Central Daylight Time':'CDT',
                     'Central European Daylight Time':'CEDT',
                     'Central European Summer Time (Cf. HAEC)':'CEST',
+                    'Central European Summer Time':'CEST',
                     'Central European Time':'CET',
-                    'Central Standard Time (Australia)':'CST',
+                    'Central Standard Time (Australia)':'ACST',
+                    'Central Standard Time':'CST',
                     'Central Standard Time (North America)':'CST',
+                    'Central Standard Time':'CST',
                     'Chamorro Standard Time':'CHST',
                     'Chatham Daylight Time':'CHADT',
                     'Chatham Standard Time':'CHAST',
@@ -7845,11 +8303,14 @@ if (__thisIsNewer) {
                     'East Africa Time':'EAT',
                     'Easter Island Standard Time':'EAST',
                     'Eastern Caribbean Time (does not recognise DST)':'ECT',
+                    'Eastern Caribbean Time':'ECT',
                     'Eastern Daylight Time (North America)':'EDT',
+                    'Eastern Daylight Time':'EDT',
                     'Eastern European Daylight Time':'EEDT',
                     'Eastern European Summer Time':'EEST',
                     'Eastern European Time':'EET',
                     'Eastern Standard Time (North America)':'EST',
+                    'Eastern Standard Time':'EST',
                     'Ecuador Time':'ECT',
                     'Falkland Islands Summer Time':'FKST',
                     'Falkland Islands Time':'FKT',
@@ -7892,7 +8353,9 @@ if (__thisIsNewer) {
                     'Moscow Standard Time':'MSK',
                     'Moscow Summer Time':'MSD',
                     'Mountain Daylight Time (North America)':'MDT',
+                    'Mountain Daylight Time':'MDT',
                     'Mountain Standard Time (North America)':'MST',
+                    'Mountain Standard Time':'MST',
                     'Myanmar Standard Time':'MST',
                     'Nepal Time':'NPT',
                     'New Zealand Daylight Time':'NZDT',
@@ -7903,7 +8366,9 @@ if (__thisIsNewer) {
                     'Norfolk Time':'NFT',
                     'Omsk Time':'OMST',
                     'Pacific Daylight Time (North America)':'PDT',
+                    'Pacific Daylight Time':'PDT',
                     'Pacific Standard Time (North America)':'PST',
+                    'Pacific Standard Time':'PST',
                     'Pakistan Standard Time':'PKT',
                     'Philippine Standard Time':'PST',
                     'Phoenix Island Time':'PHOT',
@@ -7932,8 +8397,9 @@ if (__thisIsNewer) {
                     'Yekaterinburg Time':'YEKT'
                 },
 				ct = datetime.toTimeString().replace(/.*?\((.*?)\).*?/, '$1'),
-				currentTimezone = "\\"+ct.split('').join("\\"),
-				currentTimezoneLong = "\\"+$c.keyOf(timezones,ct).split('').join("\\");
+                ctkey = $c.keyOf(timezones,ct),
+				currentTimezone = "\\"+(!ctkey ? (timezones[ct] || "") : ct).split('').join("\\"),
+				currentTimezoneLong = "\\"+(ctkey || ct).split('').join("\\"),
                 minuteWithZero = (minute < 10 ? "0" + minute : minute),
                 secondsWithZero = (second < 10 ? "0" + second : second);
 
@@ -8184,7 +8650,7 @@ if (__thisIsNewer) {
 				$c.namespace[className] = $c.namespaces && $c.namespaces[className];
                 for (var prop in cls) {
 					if (inheritAsOwn && !cls.hasOwnProperty(prop)) { continue; }
-					this.prototype[prop] = /*this[prop] || */ this.prototype[prop] || cls[prop];
+                    this.prototype[prop] = /* this[prop] || */ this.prototype[prop] || cls[prop];
                 }
 				if (!inheritAsOwn) {
                     for (var prop in extendee) {
@@ -8277,9 +8743,9 @@ if (__thisIsNewer) {
             "returnType": "(RegExp)"
         }|*/
         try {
-			if (this.global && flags.indexOf('g') == -1) { flags += "g"; }
-			if (this.ignoreCase && flags.indexOf('i') == -1) { flags += "i"; }
-			if (this.multiline && flags.indexOf('m') == -1) { flags += "m"; }
+            if (this.global && !~flags.indexOf('g')) { flags += "g"; }
+            if (this.ignoreCase && !~flags.indexOf('i')) { flags += "i"; }
+            if (this.multiline && !~flags.indexOf('m')) { flags += "m"; }
 
             return new RegExp(this.source, flags);
         } catch (e) {
@@ -8363,60 +8829,30 @@ if (__thisIsNewer) {
             switch(true) {
                 case $c.isArray(this):
 					if ($c.isFunction(func) || $c.isRegExp(val)) {
-						return $c.indexOfAlt(this,val,func) != -1;
+                        return !!~$c.indexOfAlt(this,val,func);
                     } else if ($c.isString(func)) {
                         var f = foo;
                         switch(func){
                             case "$lt":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i] < val) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_lessthan;
                                 break;
                             case "$lte":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i] <= val) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_lessthanequal;
                                 break;
                             case "$gt":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i] > val) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_greaterthan;
                                 break;
                             case "$gte":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i] >= val) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_greaterthanequal;
                                 break;
                             case "$mod":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i] % val[0] == val[1]) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_mod;
                                 break;
                             case "$type":
-                                f = function(vals){
-                                    for (var i = 0, len = vals.length; i < len; i++) {
-                                        if (vals[i].constructor == val) { return true; }
-                                    }
-                                    return false;
-                                };
+                                f = _contains_type;
                                 break;
                         }
-                        return !!f(this);
+                        return !!f(this, val);
 					} else if ($c.isArray(val)) {
 						for (var i = 0, len = val.length; i < len; i++) {
 							var item = val[i];
@@ -8425,9 +8861,9 @@ if (__thisIsNewer) {
                             }
                         }
                     }
-                    return this.indexOf(val) != -1;
+                    return false;
                 case $c.isString(this):
-                    return ($c.isRegExp(val) ? this.search(val) : this.indexOf(val)) != -1;
+                    return !!~($c.isRegExp(val) ? this.search(val) : this.indexOf(val));
                 case $c.isObject(this):
                     for (var prop in this) {
                         if (!this.hasOwnProperty(prop)) { continue; }
@@ -8437,7 +8873,8 @@ if (__thisIsNewer) {
                     }
                     break;
                 case $c.isNumber(this):
-                    return this.toString().indexOf(val) != -1;
+                    //return this.toString().indexOf(val) != -1;
+                    return !!~this.toString().indexOf(val);
             }
             return false;
         } catch (e) {
@@ -8467,7 +8904,7 @@ if (__thisIsNewer) {
 			"info": "Object class extension to count the properties in the object/elements in arrays/characters in strings.",
 			"category": "Object",
 			"parameters":[],
-	
+
 			"overloads":[
 				{"parameters":[
 					{"option": "(Mixed) Query used in Array.where when counting elements in an Array"}]},
@@ -8475,7 +8912,7 @@ if (__thisIsNewer) {
 		 			{"option": "(String) Word or phrase to count in the String"}]},
 				{"parameters":[
 					{"option": "(RegExp) Word or phrase pattern to count in the String"}]}],
-	
+
 			"url": "http://www.craydent.com/library/1.8.1/docs#object.count",
 			"returnType": "(Int)"
 		}|*/
@@ -8498,7 +8935,7 @@ if (__thisIsNewer) {
 					var reg_str = word.toString(),
 						index = reg_str.lastIndexOf('/'),
 						options = reg_str.substring(index + 1);
-	
+
 					word = new RegExp(word, "g"+options);
 				}
 				return (this.match(word) || []).length;
@@ -8590,6 +9027,7 @@ if (__thisIsNewer) {
 			}
 			if (this === undefined && compare !== undefined || this !== undefined && compare === undefined) { return false; }
 			if (this === null && compare !== null || this !== null && compare === null) { return false; }
+            if ($c.isRegExp(compare)) { return compare.test(this.toString()); }
 			return (this.toString() == compare.toString() && this.constructor == compare.constructor);
         } catch (e) {
             error('Object.equals', e);
@@ -8669,6 +9107,7 @@ if (__thisIsNewer) {
 			}
             options = options || {};
             delimiter = delimiter || ".";
+            path = $c.strip(path, delimiter);
             var props = path.split(delimiter);
 			var value = this, i = 0, prop;
 			while (prop = props[i++]) {
@@ -9049,7 +9488,7 @@ if (__thisIsNewer) {
 
                 return true;
             } else {
-				return this.toString().indexOf(compare.toString()) != -1 && this.constructor == compare.constructor;
+                return ~this.toString().indexOf(compare.toString()) && this.constructor == compare.constructor;
             }
         } catch (e) {
             error('Object.isSubset', e);
@@ -9198,7 +9637,7 @@ if (__thisIsNewer) {
                         objtmp.push($c.duplicate(secondary[prop]));
                     } else {
 						if ($c.isArray(objtmp) && ($c.isNull(condition) || recurse)) {
-                            if (objtmp.indexOf(secondary[prop]) == -1) {
+                            if (!~objtmp.indexOf(secondary[prop])) {
                                 objtmp.push(secondary[prop]);
                             }
 						} else if (recurse && ($c.isArray(objtmp[prop]) || $c.isObject(objtmp[prop])) && ($c.isArray(secondary[prop]) || $c.isObject(secondary[prop]))) {
@@ -9239,6 +9678,7 @@ if (__thisIsNewer) {
         try {
             options = options || {};
             delimiter = delimiter || ".";
+            path = $c.strip(path, delimiter);
             var props = path.split(delimiter);
 			var obj = this, i = 0, prop, len = props.length, pobj, pprop;
 			while (prop = props[i++]) {
@@ -9411,7 +9851,7 @@ if (__thisIsNewer) {
             }
             var arr = this.className.split(' '), i = 0, name;
             while (name = names[i++]) {
-                arr.indexOf(name) != -1 || arr.push(name);
+                ~arr.indexOf(name) || arr.push(name);
                 this.className = arr.join(' ').trim();
             }
             return true;
@@ -9786,35 +10226,7 @@ if (__thisIsNewer) {
             return false;
         }
     });
-    _ah("insertAt", function (elem, pos){
-        /*|{
-            "info": "HTMLElement class extension to insert element at a specified index",
-            "category": "HTMLElement",
-            "parameters":[
-                {"elem": "(HTMLElement) Element to insert"},
-                {"pos": "(Int) Index to add element"}],
-
-            "overloads":[],
-
-            "url": "http://www.craydent.com/library/1.8.1/docs#htmlelement.insertAt",
-            "returnType": "(Bool)"
-        }|*/
-        try {
-            var children = this.children;
-            pos = pos || 0;
-            if (children.length > pos) {
-                this.insertBefore(elem, children[pos]);
-                return true;
-            } else if (children.length == pos) {
-                this.appendChild(elem);
-                return true;
-            }
-            return false;
-        } catch (e) {
-            error("DOM.insertAt", e);
-            return false;
-        }
-    });
+    _ah("insertAt", _insertAt);
     _ah("invalid", function (callback) {
         /*|{
             "info": "HTMLElement class extension to handle and trigger invalid event",
@@ -10087,7 +10499,7 @@ if (__thisIsNewer) {
             var arr = this.className.split(' '),i = 0, name;
             while(name = names[i++]) {
                 var index = arr.indexOf(name);
-                if (index != -1) {
+                if (~index) {
                     arr.splice(index, 1);
                 }
             }
@@ -10302,7 +10714,7 @@ if (__thisIsNewer) {
         this.events[evt] = this.events[evt] || [];
         if (func) {
             var index = this.events[evt].indexOfAlt(func, function (obj, value) {return(obj.toString() == value.toString());});
-            index != -1 && this.events[evt].splice(index,1);
+            ~index && this.events[evt].splice(index,1);
         } else {
             this.events[evt] = [];
         }
@@ -11269,6 +11681,60 @@ if (__thisIsNewer) {
 
                 throw new SyntaxError('JSON.parse');
             };
+        }
+
+        if (typeof JSON.parseAdvanced !== 'function') {
+            JSON.parseAdvanced = function (text, reviver) {
+                return _parseAdvanced($c.isObject(text) ? text : JSON.parse(text,reviver));
+            };
+            function _parseAdvanced (obj,_original) {
+                if (!obj) { return; }
+                _original = _original || obj;
+                for (var prop in obj) {
+                    if (!obj.hasOwnProperty(prop)) { continue; }
+                    if (~prop.indexOf('.') && !(~$c.count(prop,/\./))) {
+                        var parts = prop.split('.'),
+                            name = parts[0],
+                            type = parts[1],
+                            value;
+
+                        if (type == "Number") {
+                            value = Number(obj[prop]);
+                        } else if (type == "Function") {
+                            value = $c.tryEval(obj[prop]);
+                        } else if (type == "RegExp") {
+                            value = new RegExp($c.strip(obj[prop], '/'));
+                        } else if ($g[type]) {
+                            value = new $g[type](obj[prop]);
+                        } else if ($c.isObject(obj[prop])) {
+                            value = _parseAdvanced(obj[prop], _original);
+                            value = new $g[type](obj[prop]);
+                        }
+
+                        obj[name] = value;
+                        delete obj[prop];
+                    } else if (prop == '$ref') {
+                        var value = obj[prop],
+                            hashIndex = value.indexOf('#'),
+                            refobj = obj,
+                            parts = value.split('#'),
+                            filepath = parts[0],
+                            fieldpath = parts[1];
+                        if (hashIndex == 0) {
+                            value = value.substring(1);
+                            if (value[0] == "/") {
+                                refobj = _original;
+                            }
+                            return $c.getProperty(refobj, value, '/');
+                        }
+                        try { refobj = require(__relativePathFinder(filepath)); } catch (e) { return null; }
+                        return fieldpath ? $c.getProperty(refobj, fieldpath, '/') : refobj;
+                    } else if ($c.isObject(obj[prop])) {
+                        obj[prop] = _parseAdvanced(obj[prop],_original);
+                    }
+                }
+                return obj;
+            }
         }
     }());
 }
