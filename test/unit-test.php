@@ -13,7 +13,7 @@
   <script src="lib/jasmine-2.4.1/boot.js"></script>
 
   <!-- include source files here... -->
-  <script src="../craydent-1.8.2.js"></script>
+  <script src="../craydent<?php echo '-' . ($_GET['version'] ? $_GET['version'] : ''); ?>.js"></script>
   <script>$c.DEBUG_MODE=true;console.log("***********************************"+$c.VERSION+"***********************************");document.getElementsByTagName('title')[0].innerHTML = 'Craydent v'+$c.VERSION;</script>
 
   <!-- include spec files here... -->
